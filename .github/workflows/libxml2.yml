@@ -1,0 +1,47 @@
+name: Build libxml2
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: libxml2 tag to build
+        required: true
+      php:
+        description: PHP version to build for
+        required: true
+defaults:
+  run:
+    shell: cmd
+jobs:
+  build:
+    strategy:
+      matrix:
+          arch: [x64, x86]
+    runs-on: windows-2019
+    steps:
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v2
+        with:
+          path: winlib-builder
+      - name: Checkout libxml2
+        uses: actions/checkout@v2
+        with:
+          path: libxml2
+          repository: winlibs/libxml2
+          ref: ${{github.event.inputs.version}}
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}}
+      - name: Setup MSVC development environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{matrix.arch}}
+          toolset: ${{steps.virtuals.outputs.toolset}}
+      - name: Fetch dependencies
+        run: powershell winlib-builder/scripts/fetch-deps -lib libxml2 -version ${{github.event.inputs.php}} -vs ${{steps.virtuals.outputs.vs}} -arch ${{matrix.arch}}
+      - name: Build libxml2
+        run: cd winlib-builder && nmake /f libxml2.mak VS=${{steps.virtuals.outputs.vs}} ARCH=${{matrix.arch}}
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
+          path: winlib-builder/build
