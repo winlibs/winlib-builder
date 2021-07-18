@@ -1,9 +1,9 @@
-name: Build libxml2
+name: Build nghttp2
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: libxml2 tag to build
+        description: nghttp2 tag to build
         required: true
       php:
         description: PHP version to build for
@@ -22,24 +22,28 @@ jobs:
         uses: actions/checkout@v2
         with:
           path: winlib-builder
-      - name: Checkout libxml2
+      - name: Checkout nghttp2
         uses: actions/checkout@v2
         with:
-          path: libxml2
-          repository: winlibs/libxml2
+          path: nghttp2
+          repository: winlibs/nghttp2
           ref: ${{github.event.inputs.version}}
       - name: Compute virtual inputs
         id: virtuals
         run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
-      - name: Setup MSVC development environment
-        uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: ${{matrix.arch}}
-          toolset: ${{steps.virtuals.outputs.toolset}}
       - name: Fetch dependencies
-        run: powershell winlib-builder/scripts/fetch-deps -lib libxml2 -version ${{github.event.inputs.php}} -vs ${{steps.virtuals.outputs.vs}} -arch ${{matrix.arch}}
-      - name: Build libxml2
-        run: cd winlib-builder && nmake /f libxml2.mak VS=${{steps.virtuals.outputs.vs}} ARCH=${{matrix.arch}}
+        run: powershell winlib-builder/scripts/fetch-deps -lib nghttp2 -version ${{github.event.inputs.php}} -vs ${{steps.virtuals.outputs.vs}} -arch ${{matrix.arch}}
+      - name: Configure nghttp2
+        run: cd nghttp2 && cmake -G "Visual Studio 16 2019" -A ${{steps.virtuals.outputs.msarch}} -T ${{steps.virtuals.outputs.msts}} .
+      - name: Build nghttp2
+        run: cd nghttp2 && cmake --build . --config RelWithDebInfo --target nghttp2
+      - name: Install nghttp2
+        run: |
+          cd nghttp2
+          cmake --install . --config RelWithDebInfo --prefix ..\winlib-builder\build
+          copy lib\RelWithDebInfo\nghttp2.pdb ..\winlib-builder\build\bin
+          del /s /q ..\winlib-builder\build\lib\pkgconfig\*
+          del /s /q ..\winlib-builder\build\share\*
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:

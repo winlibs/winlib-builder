@@ -1,5 +1,6 @@
 param(
-    [Parameter(Mandatory)] [String] $version
+    [Parameter(Mandatory)] [String] $version,
+    [Parameter(Mandatory)] [String] $arch
 )
 
 $ErrorActionPreference = "Stop"
@@ -35,5 +36,25 @@ if (-not $toolset) {
     throw "no suitable toolset available"
 }
 
+$mstoolsets = @{
+    "vc15" = "v141"
+    "vs16" = "v142"
+}
+$msts = $mstoolsets.$vs
+if (-not $msts) {
+    throw "no suitable MS toolset available"
+}
+
+$msarchs = @{
+    "x64" = "x64"
+    "x86" = "Win32"
+}
+$msarch = $msarchs.$arch
+if (-not $msarch) {
+    throw "no suitable MS arch available"
+}
+
 Write-Output "::set-output name=vs::$vs"
 Write-Output "::set-output name=toolset:$toolset"
+Write-Output "::set-output name=msts::$msts"
+Write-Output "::set-output name=msarch::$msarch"
