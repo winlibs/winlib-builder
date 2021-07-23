@@ -1,0 +1,49 @@
+name: Build curl
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: curl tag to build
+        required: true
+      php:
+        description: PHP version to build for
+        required: true
+defaults:
+  run:
+    shell: cmd
+jobs:
+  build:
+    strategy:
+      matrix:
+          arch: [x64, x86]
+    runs-on: windows-2019
+    steps:
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v2
+        with:
+          path: winlib-builder
+      - name: Checkout curl
+        uses: actions/checkout@v2
+        with:
+          path: curl
+          repository: winlibs/curl
+          ref: ${{github.event.inputs.version}}
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+      - name: Fetch dependencies
+        run: powershell winlib-builder/scripts/fetch-deps -lib curl -version ${{github.event.inputs.php}} -vs ${{steps.virtuals.outputs.vs}} -arch ${{matrix.arch}}
+      - name: Setup MSVC development environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{matrix.arch}}
+          toolset: ${{steps.virtuals.outputs.toolset}}
+      - name: Build curl
+        run: cd curl\winbuild && nmake /f Makefile.vc mode=static VC=${{steps.virtuals.outputs.vsnum}} WITH_DEVEL=..\..\deps WITH_SSL=dll WITH_ZLIB=static WITH_NGHTTP2=dll WITH_SSH2=dll ENABLE_WINSSL=no USE_IDN=yes ENABLE_IPV6=yes GEN_PDB=yes DEBUG=no MACHINE=${{matrix.arch}} CURL_DISABLE_MQTT=1
+      - name: Install nghttp2
+        run: cd curl && xcopy /e builds\libcurl-vc${{steps.virtuals.outputs.vsnum}}-${{matrix.arch}}-release-static-ssl-dll-zlib-static-ssh2-dll-ipv6-sspi-nghttp2-dll\* ..\build\*
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
+          path: build

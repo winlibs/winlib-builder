@@ -16,6 +16,7 @@ $vs = $versions.$version
 if (-not $vs) {
     throw "unsupported PHP version"
 }
+$vsnum = $vs.substring(2)
 
 $toolsets = @{
     "vc14" = "14.0"
@@ -55,6 +56,7 @@ if (-not $msarch) {
 }
 
 Write-Output "::set-output name=vs::$vs"
+Write-Output "::set-output name=vsnum::$vsnum"
 Write-Output "::set-output name=toolset:$toolset"
 Write-Output "::set-output name=msts::$msts"
 Write-Output "::set-output name=msarch::$msarch"
