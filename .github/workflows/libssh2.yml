@@ -8,6 +8,10 @@ on:
       php:
         description: PHP version to build for
         required: true
+      stability:
+        description: the series stability
+        required: false
+        default: 'staging'
 defaults:
   run:
     shell: cmd

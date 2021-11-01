@@ -2,7 +2,8 @@ param (
     [Parameter(Mandatory)] [String] $lib,
     [Parameter(Mandatory)] [String] $version,
     [Parameter(Mandatory)] [String] $vs,
-    [Parameter(Mandatory)] [String] $arch
+    [Parameter(Mandatory)] [String] $arch,
+    [Parameter(Mandatory)] [String] $stability
 )
 
 $ErrorActionPreference = "Stop"
@@ -18,7 +19,7 @@ if (-not $deps) {
 }
 
 $needs = @{}
-$response = Invoke-WebRequest "https://windows.php.net/downloads/php-sdk/deps/series/packages-$version-$vs-$arch-staging.txt"
+$response = Invoke-WebRequest "https://windows.php.net/downloads/php-sdk/deps/series/packages-$version-$vs-$arch-$stability.txt"
 foreach ($line in $response.Content) {
     foreach ($dep in $deps) {
         if ($line -match "$dep-(.+)-$vs-$arch.zip") {
