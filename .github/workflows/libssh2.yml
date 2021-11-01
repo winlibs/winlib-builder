@@ -36,7 +36,7 @@ jobs:
         id: virtuals
         run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
       - name: Fetch dependencies
-        run: powershell winlib-builder/scripts/fetch-deps -lib libssh2 -version ${{github.event.inputs.php}} -vs ${{steps.virtuals.outputs.vs}} -arch ${{matrix.arch}}
+        run: powershell winlib-builder/scripts/fetch-deps -lib libssh2 -version ${{github.event.inputs.php}} -vs ${{steps.virtuals.outputs.vs}} -arch ${{matrix.arch} -stability ${{github.event.inputs.stability}}}
       - name: Configure libssh2
         run: cd libssh2 && cmake -G "Visual Studio 16 2019" -A ${{steps.virtuals.outputs.msarch}} -T ${{steps.virtuals.outputs.msts}} -DCRYPTO_BACKEND=OpenSSL -DOPENSSL_ROOT_DIR:PATH=${{github.workspace}}/deps -DENABLE_ZLIB_COMPRESSION=ON -DZLIB_INCLUDE_DIR:PATH=${{github.workspace}}/deps/include -DZLIB_LIBRARY:FILEPATH=${{github.workspace}}/deps/lib/zlib_a.lib -DBUILD_SHARED_LIBS=ON .
       - name: Build libssh2

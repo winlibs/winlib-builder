@@ -36,7 +36,7 @@ jobs:
         id: virtuals
         run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
       - name: Fetch dependencies
-        run: powershell winlib-builder/scripts/fetch-deps -lib libtidy -version ${{github.event.inputs.php}} -vs ${{steps.virtuals.outputs.vs}} -arch ${{matrix.arch}}
+        run: powershell winlib-builder/scripts/fetch-deps -lib libtidy -version ${{github.event.inputs.php}} -vs ${{steps.virtuals.outputs.vs}} -arch ${{matrix.arch}} -stability ${{github.event.inputs.stability}}
       - name: Configure libtidy
         run: cd libtidy && cmake -G "Visual Studio 16 2019" -A ${{steps.virtuals.outputs.msarch}} -T ${{steps.virtuals.outputs.msts}} .
       - name: Build libtidy

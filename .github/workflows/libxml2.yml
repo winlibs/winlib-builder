@@ -41,7 +41,7 @@ jobs:
           arch: ${{matrix.arch}}
           toolset: ${{steps.virtuals.outputs.toolset}}
       - name: Fetch dependencies
-        run: powershell winlib-builder/scripts/fetch-deps -lib libxml2 -version ${{github.event.inputs.php}} -vs ${{steps.virtuals.outputs.vs}} -arch ${{matrix.arch}}
+        run: powershell winlib-builder/scripts/fetch-deps -lib libxml2 -version ${{github.event.inputs.php}} -vs ${{steps.virtuals.outputs.vs}} -arch ${{matrix.arch}}  -stability ${{github.event.inputs.stability}}
       - name: Build libxml2
         run: cd winlib-builder && nmake /f libxml2.mak VS=${{steps.virtuals.outputs.vs}} ARCH=${{matrix.arch}}
       - name: Upload artifacts
