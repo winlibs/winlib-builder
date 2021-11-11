@@ -1,0 +1,55 @@
+name: Build libwebp
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: libwebp tag to build
+        required: true
+      php:
+        description: PHP version to build for
+        required: true
+      stability:
+        description: the series stability
+        required: false
+        default: 'staging'
+defaults:
+  run:
+    shell: cmd
+jobs:
+  build:
+    strategy:
+      matrix:
+          arch: [x64, x86]
+    runs-on: windows-2019
+    steps:
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v2
+        with:
+          path: winlib-builder
+      - name: Checkout libwebp
+        uses: actions/checkout@v2
+        with:
+          path: libwebp
+          repository: winlibs/libwebp
+          ref: ${{github.event.inputs.version}}
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+      - name: Setup MSVC development environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{matrix.arch}}
+          toolset: ${{steps.virtuals.outputs.toolset}}
+      - name: Build libwebp
+        run: cd libwebp && nmake /f Makefile.vc CFG=release-static RTLIBCFG=dynamic OBJDIR=output
+      - name: Install libwebp
+        run: |
+          cd libwebp
+          xcopy output\release-static\${{matrix.arch}}\bin\*.exe ..\build\bin\*
+          xcopy src\webp\*.h ..\build\include\webp\*
+          xcopy output\release-static\${{matrix.arch}}\lib\* ..\build\lib\*
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
+          path: build
