@@ -47,6 +47,7 @@ jobs:
           cd pthreads
           xcopy pthreadVC2.dll ..\build\bin\*
           xcopy pthreadVC2.pdb ..\build\bin\*
+          xcopy _ptw32.h ..\build\include\*
           xcopy pthread.h ..\build\include\*
           xcopy sched.h ..\build\include\*
           xcopy pthreadVC2.lib ..\build\lib\*
