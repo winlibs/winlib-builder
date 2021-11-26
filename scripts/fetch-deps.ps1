@@ -20,7 +20,7 @@ if (-not $deps) {
 
 $needs = @{}
 $response = Invoke-WebRequest "https://windows.php.net/downloads/php-sdk/deps/series/packages-$version-$vs-$arch-$stability.txt"
-foreach ($line in $response.Content) {
+foreach ($line in $response.Content -split "`r`n") {
     foreach ($dep in $deps) {
         if ($line -match "$dep-(.+)-$vs-$arch.zip") {
             $needs.$dep = $matches[1]
