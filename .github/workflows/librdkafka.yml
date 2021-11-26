@@ -1,0 +1,58 @@
+name: Build librdkafka
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: librdkafka tag to build
+        required: true
+      php:
+        description: PHP version to build for
+        required: true
+      stability:
+        description: the series stability
+        required: false
+        default: 'staging'
+defaults:
+  run:
+    shell: cmd
+jobs:
+  build:
+    strategy:
+      matrix:
+          arch: [x64, x86]
+    runs-on: windows-2019
+    steps:
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v2
+        with:
+          path: winlib-builder
+      - name: Checkout librdkafka
+        uses: actions/checkout@v2
+        with:
+          path: librdkafka
+          repository: edenhill/librdkafka
+          ref: ${{github.event.inputs.version}}
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+      - name: Fetch dependencies
+        run: powershell winlib-builder/scripts/fetch-deps -lib librdkafka -version ${{github.event.inputs.php}} -vs ${{steps.virtuals.outputs.vs}} -arch ${{matrix.arch}} -stability ${{github.event.inputs.stability}}
+      - name: Patch librdkafka
+        run: cd librdkafka && git apply --ignore-whitespace ..\winlib-builder\patches\librdkafka.patch
+      - name: Configure librdkafka
+        run: cd librdkafka && cmake -G "Visual Studio 16 2019" -A ${{steps.virtuals.outputs.msarch}} -T ${{steps.virtuals.outputs.msts}} -DWITH_ZSTD=ON -DWITH_SSL=ON -DWITH_ZLIB=ON -DCMAKE_PREFIX_PATH:PATH=${{github.workspace}}\deps -DZLIB_LIBRARY:PATH=${{github.workspace}}\deps\lib\zlib_a.lib -DZSTD_LIBRARY:PATH=${{github.workspace}}\deps\lib\libzstd_a.lib .
+      - name: Build librdkafka
+        run: cd librdkafka && cmake --build . --config RelWithDebInfo
+      - name: Install librdkafka
+        run: |
+          cd librdkafka
+          cmake --install . --config RelWithDebInfo --prefix ${{github.workspace}}\install
+          del /s /q ..\install\lib\pkgconfig
+          move ..\install\share\licenses\librdkafka\LICENSES.txt ..\install
+          ren ..\install\LICENSES.txt LICENSE
+          del /s /q ..\install\share
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: librdkafka-${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
+          path: install

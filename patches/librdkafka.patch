@@ -1,0 +1,40 @@
+ packaging/cmake/Modules/FindZSTD.cmake | 4 ++--
+ src-cpp/CMakeLists.txt                 | 2 ++
+ src/CMakeLists.txt                     | 2 ++
+ 3 files changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/packaging/cmake/Modules/FindZSTD.cmake b/packaging/cmake/Modules/FindZSTD.cmake
+index 7de137e0..851468fe 100644
+--- a/packaging/cmake/Modules/FindZSTD.cmake
++++ b/packaging/cmake/Modules/FindZSTD.cmake
+@@ -8,8 +8,8 @@
+ 
+ find_path(ZSTD_INCLUDE_DIR NAMES zstd.h)
+ 
+-find_library(ZSTD_LIBRARY_DEBUG NAMES zstdd zstd_staticd)
+-find_library(ZSTD_LIBRARY_RELEASE NAMES zstd zstd_static)
++
++find_library(ZSTD_LIBRARY_RELEASE NAMES libzstd_a)
+ 
+ include(SelectLibraryConfigurations)
+ SELECT_LIBRARY_CONFIGURATIONS(ZSTD)
+diff --git a/src-cpp/CMakeLists.txt b/src-cpp/CMakeLists.txt
+index a7b3e83e..a518ebcc 100644
+--- a/src-cpp/CMakeLists.txt
++++ b/src-cpp/CMakeLists.txt
+@@ -97,3 +97,5 @@ install(
+     FILES "rdkafkacpp.h"
+     DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/librdkafka"
+ )
++
++set_target_properties(rdkafka++ PROPERTIES OUTPUT_NAME librdkafka++)
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index c6c05e06..3b45590d 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -348,3 +348,5 @@ install(
+     FILES "rdkafka.h" "rdkafka_mock.h"
+     DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/librdkafka"
+ )
++
++set_target_properties(rdkafka PROPERTIES OUTPUT_NAME librdkafka)
