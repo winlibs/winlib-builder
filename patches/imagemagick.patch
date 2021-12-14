@@ -1,0 +1,32 @@
+ configure/CommandLineInfo.cpp | 4 ++--
+ configure/ProjectFile.cpp     | 2 --
+ 2 files changed, 2 insertions(+), 4 deletions(-)
+
+diff --git a/configure/CommandLineInfo.cpp b/configure/CommandLineInfo.cpp
+index 7df7c40..77103d0 100644
+--- a/configure/CommandLineInfo.cpp
++++ b/configure/CommandLineInfo.cpp
+@@ -140,8 +140,8 @@ void CommandLineInfo::ParseParam(const wchar_t* pszParam, BOOL bFlag, BOOL bLast
+     _useOpenMP=false;
+   else if (_wcsicmp(pszParam, L"noWizard") == 0)
+     _noWizard=true;
+-  else if (_wcsicmp(pszParam, L"openCL") == 0)
+-    _useOpenCL=true;
++  else if (_wcsicmp(pszParam, L"noOpenCL") == 0)
++    _useOpenCL=false;
+   else if (_wcsicmp(pszParam, L"Q8") == 0)
+     _quantumDepth=Q8;
+   else if (_wcsicmp(pszParam, L"Q16") == 0)
+diff --git a/configure/ProjectFile.cpp b/configure/ProjectFile.cpp
+index 16ac012..99208b5 100644
+--- a/configure/ProjectFile.cpp
++++ b/configure/ProjectFile.cpp
+@@ -600,8 +600,6 @@ void ProjectFile::writeItemDefinitionGroup(wofstream &file,const bool debug)
+     file << "      <WarningLevel>TurnOffAllWarnings</WarningLevel>" << endl;
+   else
+     file << "      <WarningLevel>Level" << _project->warningLevel() << "</WarningLevel>" << endl;
+-  if (_project->treatWarningAsError())
+-    file << "      <TreatWarningAsError>true</TreatWarningAsError>" << endl;
+   file << "      <SuppressStartupBanner>true</SuppressStartupBanner>" << endl;
+   file << "      <CompileAs>Default</CompileAs>" << endl;
+   file << "      <InlineFunctionExpansion>" << (debug ? "Disabled" : "AnySuitable") << "</InlineFunctionExpansion>" << endl;
