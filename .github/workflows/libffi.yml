@@ -1,0 +1,56 @@
+name: Build libffi
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: libffi tag to build
+        required: true
+      php:
+        description: PHP version to build for
+        required: true
+defaults:
+  run:
+    shell: cmd
+jobs:
+  build:
+    strategy:
+      matrix:
+          arch: [x64, x86]
+    runs-on: windows-2019
+    steps:
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v2
+        with:
+          path: winlib-builder
+      - name: Checkout libffi
+        uses: actions/checkout@v2
+        with:
+          path: libffi
+          repository: winlibs/libffi
+          ref: ${{github.event.inputs.version}}
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+      - name: Setup msbuild
+        uses: microsoft/setup-msbuild@v1.0.3
+      - name: Build libffi
+        run: cd libffi\win32\${{steps.virtuals.outputs.vs}}_${{matrix.arch}} && msbuild libffi-msvc.sln /p:Configuration=Release /p:Platform=${{steps.virtuals.outputs.msarch}}
+      - name: Install libffi
+        run: |
+          cd libffi
+          xcopy include\ffi.h ..\install\include\*
+          perl -pi -e "s/#define LIBFFI_H/#define LIBFFI_H\n#define FFI_BUILDING/" ..\install\include\ffi.h
+          xcopy src\x86\ffitarget.h ..\install\include\*
+          xcopy fficonfig.h ..\install\include\*
+          if "${{matrix.arch}}" == "x64" (
+              xcopy win32\${{steps.virtuals.outputs.vs}}_${{matrix.arch}}\x64\Release\libffi.lib ..\install\lib\*
+              xcopy win32\${{steps.virtuals.outputs.vs}}_${{matrix.arch}}\x64\Release\libffi.pdb ..\install\lib\*
+          ) else (
+              xcopy win32\${{steps.virtuals.outputs.vs}}_${{matrix.arch}}\Release\libffi.lib ..\install\lib\*
+              xcopy win32\${{steps.virtuals.outputs.vs}}_${{matrix.arch}}\Release\libffi.pdb ..\install\lib\*
+          )
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
+          path: install
