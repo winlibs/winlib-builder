@@ -1,0 +1,55 @@
+name: Build libiconv
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: libiconv tag to build
+        required: true
+      php:
+        description: PHP version to build for
+        required: true
+defaults:
+  run:
+    shell: cmd
+jobs:
+  build:
+    strategy:
+      matrix:
+          arch: [x64, x86]
+    runs-on: windows-2019
+    steps:
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v2
+        with:
+          path: winlib-builder
+      - name: Checkout libiconv
+        uses: actions/checkout@v2
+        with:
+          path: libiconv
+          repository: winlibs/libiconv
+          ref: ${{github.event.inputs.version}}
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+      - name: Setup MSVC development environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{matrix.arch}}
+          toolset: ${{steps.virtuals.outputs.toolset}}
+      - name: Setup msbuild
+        uses: microsoft/setup-msbuild@v1.0.3
+      - name: Build libiconv
+        run: cd libiconv\MSVC${{steps.virtuals.outputs.vsnum}} && msbuild libiconv.sln /p:Configuration=Release /p:Platform=${{steps.virtuals.outputs.msarch}}
+      - name: Install libiconv
+        run: |
+          cd libiconv\MSVC${{steps.virtuals.outputs.vsnum}}
+          xcopy ${{steps.virtuals.outputs.msarch}}\bin\*.dll ..\..\install\bin\*
+          xcopy ${{steps.virtuals.outputs.msarch}}\bin\*.pdb ..\..\install\bin\*
+          xcopy ..\source\include\iconv.h ..\..\install\include\*
+          xcopy ${{steps.virtuals.outputs.msarch}}\lib\*.lib ..\..\install\lib\*
+          xcopy ${{steps.virtuals.outputs.msarch}}\lib\*.pdb ..\..\install\lib\*
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
+          path: install
