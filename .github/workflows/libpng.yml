@@ -1,0 +1,77 @@
+name: Build libpng
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: libpng tag to build
+        required: true
+      php:
+        description: PHP version to build for
+        required: true
+      stability:
+        description: the series stability
+        required: false
+        default: 'staging'
+defaults:
+  run:
+    shell: cmd
+jobs:
+  build:
+    strategy:
+      matrix:
+          arch: [x64, x86]
+    runs-on: windows-2019
+    steps:
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v2
+        with:
+          path: winlib-builder
+      - name: Checkout libpng
+        uses: actions/checkout@v2
+        with:
+          path: libpng
+          repository: winlibs/libpng
+          ref: ${{github.event.inputs.version}}
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+      - name: Setup msbuild
+        uses: microsoft/setup-msbuild@v1.0.3
+      - name: Fetch zlib for MSVC 15
+        if: ${{steps.virtuals.outputs.vs == 'vc15'}}
+        run: cd libpng\projects\vstudio2017 && curl -Lo zlib1211.zip https://zlib.net/zlib1211.zip && 7z x zlib1211.zip
+      - name: Fetch zlib for MSVC 16
+        if: ${{steps.virtuals.outputs.vs == 'vs16'}}
+        run: cd libpng\projects\vstudio2019 && curl -Lo zlib1211.zip https://zlib.net/zlib1211.zip && 7z x zlib1211.zip
+      - name: Build dynamic libpng with MSVC 15
+        if: ${{steps.virtuals.outputs.vs == 'vc15'}}
+        run: cd libpng\projects\vstudio2017 && msbuild vstudio.sln /t:libpng /p:Configuration=Release /p:Platform=${{steps.virtuals.outputs.msarch}} /p:PlatformToolset=${{steps.virtuals.outputs.msts}}
+      - name: Build dynamic libpng with MSVC 16
+        if: ${{steps.virtuals.outputs.vs == 'vs16'}}
+        run: cd libpng\projects\vstudio2019 && msbuild vstudio.sln /t:libpng /p:Configuration=Release /p:Platform=${{steps.virtuals.outputs.msarch}} /p:PlatformToolset=${{steps.virtuals.outputs.msts}}
+      - name: Build static libpng with MSVC 15
+        if: ${{steps.virtuals.outputs.vs == 'vc15'}}
+        run: cd libpng\projects\vstudio2017 && msbuild vstudio.sln /t:libpng "/p:Configuration=Release Library" /p:Platform=${{steps.virtuals.outputs.msarch}} /p:PlatformToolset=${{steps.virtuals.outputs.msts}}
+      - name: Build static libpng with MSVC 16
+        if: ${{steps.virtuals.outputs.vs == 'vs16'}}
+        run: cd libpng\projects\vstudio2019 && msbuild vstudio.sln /t:libpng "/p:Configuration=Release Library" /p:Platform=${{steps.virtuals.outputs.msarch}} /p:PlatformToolset=${{steps.virtuals.outputs.msts}}
+      - name: Install libpng
+        run: |
+          cd libpng\projects\vstudio2019
+          if "${{matrix.arch}}" == "x64" (
+              set objdir=x64
+          ) else (
+              set objdir=.
+          )
+          xcopy %objdir%\Release\libpng.dll ..\..\..\install\bin\*
+          xcopy %objdir%\Release\libpng.pdb ..\..\..\install\bin\*
+          xcopy ..\..\png.h ..\..\..\install\include\libpng16\*
+          xcopy ..\..\pngconf.h ..\..\..\install\include\libpng16\*
+          xcopy ..\..\pnglibconf.h ..\..\..\install\include\libpng16\*
+          xcopy %objdir%\Release\libpng.lib ..\..\..\install\lib\*
+          xcopy "%objdir%\Release Library\libpng_a.*" ..\..\..\install\lib\*
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
+          path: install
