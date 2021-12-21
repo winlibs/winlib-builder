@@ -1,0 +1,53 @@
+name: Build libxpm
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: libxpm tag to build
+        required: true
+      php:
+        description: PHP version to build for
+        required: true
+      stability:
+        description: the series stability
+        required: false
+        default: 'staging'
+defaults:
+  run:
+    shell: cmd
+jobs:
+  build:
+    strategy:
+      matrix:
+          arch: [x64, x86]
+    runs-on: windows-2019
+    steps:
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v2
+        with:
+          path: winlib-builder
+      - name: Checkout libxpm
+        uses: actions/checkout@v2
+        with:
+          path: libxpm
+          repository: winlibs/libxpm
+          ref: ${{github.event.inputs.version}}
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+      - name: Setup msbuild
+        uses: microsoft/setup-msbuild@v1.0.3
+      - name: Patch libxpm
+        run: cd libxpm && git apply --ignore-whitespace ..\winlib-builder\patches\libxpm.patch
+      - name: Build libxpm
+        run: cd libxpm\windows\${{steps.virtuals.outputs.vs}} && msbuild libxpm.sln "/p:Configuration=Static Release" /p:Platform=${{steps.virtuals.outputs.msarch}} /p:PlatformToolset=${{steps.virtuals.outputs.msts}}
+      - name: Install libxpm
+        run: |
+          cd libxpm\windows\${{steps.virtuals.outputs.vs}}
+          xcopy ..\..\include\X11\* ..\..\..\install\include\X11\*
+          xcopy "..\builds\${{steps.virtuals.outputs.msarch}}\Static Release\libxpm_a.*" ..\..\..\install\lib\*
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
+          path: install
