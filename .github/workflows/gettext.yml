@@ -1,0 +1,63 @@
+name: Build gettext
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: gettext tag to build
+        required: true
+      php:
+        description: PHP version to build for
+        required: true
+      stability:
+        description: the series stability
+        required: false
+        default: 'staging'
+defaults:
+  run:
+    shell: cmd
+jobs:
+  build:
+    strategy:
+      matrix:
+          arch: [x64, x86]
+    runs-on: windows-2019
+    steps:
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v2
+        with:
+          path: winlib-builder
+      - name: Checkout gettext
+        uses: actions/checkout@v2
+        with:
+          path: gettext
+          repository: winlibs/gettext
+          ref: ${{github.event.inputs.version}}
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+      - name: Setup msbuild
+        uses: microsoft/setup-msbuild@v1.0.3
+      - name: Build gettext
+        run: cd gettext\MSVC${{steps.virtuals.outputs.vsnum}} && msbuild gettext.sln /p:Configuration=Release /p:Platform=${{steps.virtuals.outputs.msarch}} /p:PlatformToolset=${{steps.virtuals.outputs.msts}}
+      - name: Install gettext
+        run: |
+          cd gettext\MSVC${{steps.virtuals.outputs.vsnum}}
+          if "${{matrix.arch}}" == "x64" (
+              set release_out=x64\Release
+              set libintl_lib_out=libintl_dll\x64\Release\libintl.lib
+          ) else (
+              set release_out=Release
+              set libintl_lib_out=Release\libintl.lib
+          )
+          xcopy libintl_dll\%release_out%\libintl.dll ..\..\install\bin\*
+          xcopy libintl_dll\%release_out%\libintl.pdb ..\..\install\bin\*
+          xcopy ..\source\gettext-runtime\intl\libgnuintl.h ..\..\install\include\*
+          rename ..\..\install\include\libgnuintl.h libintl.h
+          xcopy %libintl_lib_out% ..\..\install\lib\*
+          xcopy libintl_static\%release_out%\libintl_a.lib ..\..\install\lib\*
+          xcopy libintl_static\%release_out%\libintl_a.pdb ..\..\install\lib\*
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
+          path: install
