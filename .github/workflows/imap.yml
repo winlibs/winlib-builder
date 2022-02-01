@@ -1,0 +1,50 @@
+name: Build imap
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: imap tag to build
+        required: true
+      php:
+        description: PHP version to build for
+        required: true
+defaults:
+  run:
+    shell: cmd
+jobs:
+  build:
+    strategy:
+      matrix:
+          arch: [x64, x86]
+    runs-on: windows-2019
+    steps:
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v2
+        with:
+          path: winlib-builder
+      - name: Checkout imap
+        uses: actions/checkout@v2
+        with:
+          path: imap
+          repository: winlibs/imap
+          ref: ${{github.event.inputs.version}}
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+      - name: Setup MSVC development environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{matrix.arch}}
+          toolset: ${{steps.virtuals.outputs.toolset}}
+      - name: Build imap
+        run: cd imap && nmake /f makefile.w2k
+      - name: Install imap
+        run: |
+          cd imap
+          xcopy c-client\*.h ..\install\include\c-client\*
+          xcopy c-client\cclient_a.lib ..\install\lib\*
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
+          path: install
