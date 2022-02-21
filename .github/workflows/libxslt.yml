@@ -1,0 +1,59 @@
+name: Build libxslt
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: libxslt tag to build
+        required: true
+      php:
+        description: PHP version to build for
+        required: true
+      stability:
+        description: the series stability
+        required: false
+        default: 'staging'
+defaults:
+  run:
+    shell: cmd
+jobs:
+  build:
+    strategy:
+      matrix:
+          arch: [x64, x86]
+    runs-on: windows-2019
+    steps:
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v2
+        with:
+          path: winlib-builder
+      - name: Checkout libxslt
+        uses: actions/checkout@v2
+        with:
+          path: libxslt
+          repository: winlibs/libxslt
+          ref: ${{github.event.inputs.version}}
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+      - name: Setup MSVC development environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{matrix.arch}}
+          toolset: ${{steps.virtuals.outputs.toolset}}
+      - name: Fetch dependencies
+        run: powershell winlib-builder/scripts/fetch-deps -lib libxslt -version ${{github.event.inputs.php}} -vs ${{steps.virtuals.outputs.vs}} -arch ${{matrix.arch}}  -stability ${{github.event.inputs.stability}}
+      - name: Build libxslt
+        run: |
+          cd libxslt\win32
+          cscript configure.js lib=..\..\deps\lib include="..\..\deps\include;..\..\deps\include\libxml2" modules=yes crypto=no vcmanifest=yes
+          nmake /f Makefile.msvc
+          nmake /f Makefile.msvc install
+          xcopy bin\* ..\..\install\bin\*
+          xcopy /e include\* ..\..\install\include\*
+          xcopy lib\* ..\..\install\lib\*
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
+          path: install

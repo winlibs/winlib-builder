@@ -12,7 +12,8 @@ $deps = @{
     "curl" = "libssh2", "nghttp2", "openssl", "zlib";
     "librdkafka" = "libzstd", "openssl", "zlib";
     "libssh2" = "openssl", "zlib";
-    "libxml2" = "libiconv"
+    "libxml2" = "libiconv";
+    "libxslt" = "libiconv", "libxml2"
 }
 $deps = $deps.$lib
 if (-not $deps) {
