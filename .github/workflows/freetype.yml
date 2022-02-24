@@ -1,0 +1,60 @@
+name: Build freetype
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: freetype tag to build
+        required: true
+      php:
+        description: PHP version to build for
+        required: true
+defaults:
+  run:
+    shell: cmd
+jobs:
+  build:
+    strategy:
+      matrix:
+          arch: [x64, x86]
+    runs-on: windows-2019
+    steps:
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v2
+        with:
+          path: winlib-builder
+      - name: Checkout freetype
+        uses: actions/checkout@v2
+        with:
+          path: freetype
+          repository: winlibs/freetype
+          ref: ${{github.event.inputs.version}}
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+      - name: Setup MSVC development environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{matrix.arch}}
+          toolset: ${{steps.virtuals.outputs.toolset}}
+      - name: Setup msbuild
+        uses: microsoft/setup-msbuild@v1.0.3
+      - name: Set FREETYPE_BUILDFOLDER
+        if: ${{steps.virtuals.outputs.vsnum == '15'}}
+        run: echo FREETYPE_BUILDFOLDER=vc2017>> %GITHUB_ENV%
+      - name: Set FREETYPE_BUILDFOLDER
+        if: ${{steps.virtuals.outputs.vsnum == '16'}}
+        run: echo FREETYPE_BUILDFOLDER=vc2019>> %GITHUB_ENV%
+      - name: Build freetype
+        run: |
+          cd freetype\builds\windows\${{env.FREETYPE_BUILDFOLDER}}
+          msbuild freetype.sln /p:Configuration=Release /p:Platform=${{steps.virtuals.outputs.msarch}} /p:PlatformToolset=${{steps.virtuals.outputs.msts}} /p:TargetName=freetype_a
+      - name: Install freetype
+        run: |
+          cd freetype
+          xcopy /e include ..\install\include\freetype2\*
+          xcopy objs\${{env.FREETYPE_BUILDFOLDER}}\${{steps.virtuals.outputs.msarch}}\freetype_a.* ..\install\lib\*
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
+          path: install
