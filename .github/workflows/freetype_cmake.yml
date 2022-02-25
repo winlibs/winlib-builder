@@ -1,0 +1,48 @@
+name: Build freetype_cmake
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: freetype tag to build
+        required: true
+      php:
+        description: PHP version to build for
+        required: true
+defaults:
+  run:
+    shell: cmd
+jobs:
+  build:
+    strategy:
+      matrix:
+          arch: [x64, x86]
+    runs-on: windows-2019
+    steps:
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v2
+        with:
+          path: winlib-builder
+      - name: Checkout freetype
+        uses: actions/checkout@v2
+        with:
+          path: freetype
+          repository: winlibs/freetype
+          ref: ${{github.event.inputs.version}}
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+      - name: Configure freetype
+        run: cd freetype && md build && cd build && cmake -G "Visual Studio 16 2019" -A ${{steps.virtuals.outputs.msarch}} -T ${{steps.virtuals.outputs.msts}} ..
+      - name: Build freetype
+        run: cd freetype\build && cmake --build . --config RelWithDebInfo
+      - name: Install freetype
+        run: |
+          cd freetype\build
+          cmake --install . --config RelWithDebInfo --prefix ..\..\install
+          xcopy RelWithDebInfo\freetype_a.pdb ..\..\install\lib\*
+          rmdir /s /q ..\..\install\lib\pkgconfig
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
+          path: install
