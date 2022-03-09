@@ -1,0 +1,57 @@
+name: Build libmemcached
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: libmemcached tag to build
+        required: true
+      php:
+        description: PHP version to build for
+        required: true
+      stability:
+        description: the series stability
+        required: false
+        default: 'staging'
+defaults:
+  run:
+    shell: cmd
+jobs:
+  build:
+    strategy:
+      matrix:
+          arch: [x64, x86]
+    runs-on: windows-2019
+    steps:
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v2
+        with:
+          path: winlib-builder
+      - name: Checkout libmemcached
+        uses: actions/checkout@v2
+        with:
+          path: libmemcached
+          repository: awesomized/libmemcached
+          ref: ${{github.event.inputs.version}}
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+      - name: Install flex and bison
+        run: choco install winflexbison3
+      - run: path
+      - name: Configure libmemcached
+        run: cd libmemcached && md build && cd build && cmake -G "Visual Studio 16 2019" -A ${{steps.virtuals.outputs.msarch}} -T ${{steps.virtuals.outputs.msts}} ..
+      - name: Build libmemcached
+        run: cd libmemcached\build && cmake --build . --config RelWithDebInfo
+      - name: Install libmemcached
+        run: |
+          cd libmemcached\build
+          cmake --install . --config RelWithDebInfo --prefix ..\..\install
+          xcopy src\libhashkit\RelWithDebInfo\libhashkit.pdb ..\..\install\bin\*
+          xcopy src\libmemcached\RelWithDebInfo\libmemcached.pdb ..\..\install\bin\*
+          xcopy src\libmemcachedprotocol\RelWithDebInfo\libmemcachedprotocol.pdb ..\..\install\bin\*
+          xcopy src\libmemcachedutil\RelWithDebInfo\libmemcachedutil.pdb ..\..\install\bin\*
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: libmemcached-${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
+          path: install
