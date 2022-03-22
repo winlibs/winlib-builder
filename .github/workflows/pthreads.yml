@@ -45,12 +45,12 @@ jobs:
       - name: Install pthreads
         run: |
           cd pthreads
-          xcopy pthreadVC2.dll ..\build\bin\*
-          xcopy pthreadVC2.pdb ..\build\bin\*
+          xcopy pthreadVC?.dll ..\build\bin\*
+          xcopy pthreadVC?.pdb ..\build\bin\*
           xcopy _ptw32.h ..\build\include\*
           xcopy pthread.h ..\build\include\*
           xcopy sched.h ..\build\include\*
-          xcopy pthreadVC2.lib ..\build\lib\*
+          xcopy pthreadVC?.lib ..\build\lib\*
           xcopy COPYING ..\build\*
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
