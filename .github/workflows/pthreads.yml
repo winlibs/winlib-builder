@@ -51,7 +51,8 @@ jobs:
           xcopy pthread.h ..\build\include\*
           xcopy sched.h ..\build\include\*
           xcopy pthreadVC?.lib ..\build\lib\*
-          xcopy COPYING ..\build\*
+          if exist COPYING xcopy COPYING ..\build\*
+          if exist LICENSE xcopy LICENSE ..\build\*
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
