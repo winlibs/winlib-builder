@@ -13,7 +13,8 @@ $deps = @{
     "librdkafka" = "libzstd", "openssl", "zlib";
     "libssh2" = "openssl", "zlib";
     "libxml2" = "libiconv";
-    "libxslt" = "libiconv", "libxml2"
+    "libxslt" = "libiconv", "libxml2";
+    "libzip" = "libbzip2", "liblzma", "zlib"
 }
 $deps = $deps.$lib
 if (-not $deps) {

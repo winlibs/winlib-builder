@@ -1,0 +1,58 @@
+name: Build libzip
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: libzip tag to build
+        required: true
+      php:
+        description: PHP version to build for
+        required: true
+      stability:
+        description: the series stability
+        required: false
+        default: 'staging'
+defaults:
+  run:
+    shell: cmd
+jobs:
+  build:
+    strategy:
+      matrix:
+          arch: [x64, x86]
+    runs-on: windows-2019
+    steps:
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v2
+        with:
+          path: winlib-builder
+      - name: Checkout libzip
+        uses: actions/checkout@v2
+        with:
+          path: libzip
+          repository: winlibs/libzip
+          ref: ${{github.event.inputs.version}}
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+      - name: Fetch dependencies
+        run: powershell winlib-builder/scripts/fetch-deps -lib libzip -version ${{github.event.inputs.php}} -vs ${{steps.virtuals.outputs.vs}} -arch ${{matrix.arch}} -stability ${{github.event.inputs.stability}}
+      - name: Configure libzip for PHP < 8.0
+        if: github.event.inputs.php < 8.0
+        run: cd libzip && md build && cd build && cmake -G "Visual Studio 16 2019" -A ${{steps.virtuals.outputs.msarch}} -T ${{steps.virtuals.outputs.msts}} -DZLIB_INCLUDE_DIR:PATH=${{github.workspace}}\deps\include -DZLIB_LIBRARY:PATH=${{github.workspace}}\deps\lib\zlib_a.lib -DBZIP2_INCLUDE_DIR:PATH=${{github.workspace}}\deps\include -DBZIP2_LIBRARIES:PATH=${{github.workspace}}\deps\lib\libbz2_a.lib -DBUILD_TOOLS=OFF -DBUILD_REGRESS=OFF -DBUILD_EXAMPLES=OFF -DBUILD_DOC=OFF ..
+      - name: Configure libzip for PHP >= 8.0
+        if: github.event.inputs.php >= 8.0
+        run: cd libzip && md build && cd build && cmake -G "Visual Studio 16 2019" -A ${{steps.virtuals.outputs.msarch}} -T ${{steps.virtuals.outputs.msts}} -DZLIB_INCLUDE_DIR:PATH=${{github.workspace}}\deps\include -DZLIB_LIBRARY:PATH=${{github.workspace}}\deps\lib\zlib_a.lib -DBZIP2_INCLUDE_DIR:PATH=${{github.workspace}}\deps\include -DBZIP2_LIBRARIES:PATH=${{github.workspace}}\deps\lib\libbz2_a.lib -DLIBLZMA_INCLUDE_DIR:PATH=${{github.workspace}}\deps\include -DLIBLZMA_LIBRARY:PATH=${{github.workspace}}\deps\lib\liblzma_a.lib -DBUILD_TOOLS=OFF -DBUILD_REGRESS=OFF -DBUILD_EXAMPLES=OFF -DBUILD_DOC=OFF ..
+      - name: Build libzip
+        run: cd libzip\build && cmake --build . --config RelWithDebInfo
+      - name: Install libzip
+        run: |
+          cd libzip\build
+          cmake --install . --config RelWithDebInfo --prefix ..\..\install
+          xcopy lib\RelWithDebInfo\libzip_a.pdb ..\..\install\lib\*
+          rmdir /s /q ..\..\install\lib\pkgconfig
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
+          path: install
