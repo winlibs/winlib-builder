@@ -39,10 +39,10 @@ jobs:
         uses: microsoft/setup-msbuild@v1.0.3
       - name: Fetch zlib for MSVC 15
         if: ${{steps.virtuals.outputs.vs == 'vc15'}}
-        run: cd libpng\projects\vstudio2017 && curl -Lo zlib1211.zip https://zlib.net/zlib1211.zip && 7z x zlib1211.zip
+        run: cd libpng\projects\vstudio2017 && curl -Lo zlib1212.zip https://zlib.net/zlib1212.zip && 7z x zlib1212.zip
       - name: Fetch zlib for MSVC 16
         if: ${{steps.virtuals.outputs.vs == 'vs16'}}
-        run: cd libpng\projects\vstudio2019 && curl -Lo zlib1211.zip https://zlib.net/zlib1211.zip && 7z x zlib1211.zip
+        run: cd libpng\projects\vstudio2019 && curl -Lo zlib1212.zip https://zlib.net/zlib1212.zip && 7z x zlib1212.zip
       - name: Build dynamic libpng with MSVC 15
         if: ${{steps.virtuals.outputs.vs == 'vc15'}}
         run: cd libpng\projects\vstudio2017 && msbuild vstudio.sln /t:libpng /p:Configuration=Release /p:Platform=${{steps.virtuals.outputs.msarch}} /p:PlatformToolset=${{steps.virtuals.outputs.msts}}
