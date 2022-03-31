@@ -46,6 +46,15 @@ if (-not $msts) {
     throw "no suitable MS toolset available"
 }
 
+$winsdks = @{
+    "vc15" = "10.0.17763.0"
+    "vs16" = "10.0.18362.0"
+}
+$winsdk = $winsdks.$vs
+if (-not $winsdk) {
+    throw "no suitable Windows SDK available"
+}
+
 $msarchs = @{
     "x64" = "x64"
     "x86" = "Win32"
@@ -60,3 +69,4 @@ Write-Output "::set-output name=vsnum::$vsnum"
 Write-Output "::set-output name=toolset:$toolset"
 Write-Output "::set-output name=msts::$msts"
 Write-Output "::set-output name=msarch::$msarch"
+Write-Output "::set-output name=winsdk::$winsdk"

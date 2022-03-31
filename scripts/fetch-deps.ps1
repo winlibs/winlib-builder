@@ -10,6 +10,7 @@ $ErrorActionPreference = "Stop"
 
 $deps = @{
     "curl" = "libssh2", "nghttp2", "openssl", "zlib";
+    "glib" = "libffi", "libintl", "zlib";
     "librdkafka" = "libzstd", "openssl", "zlib";
     "libssh2" = "openssl", "zlib";
     "libxml2" = "libiconv";
