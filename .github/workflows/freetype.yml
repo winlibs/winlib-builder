@@ -47,7 +47,7 @@ jobs:
       - name: Build freetype
         run: |
           cd freetype\builds\windows\${{env.FREETYPE_BUILDFOLDER}}
-          msbuild freetype.sln /p:Configuration=Release /p:Platform=${{steps.virtuals.outputs.msarch}} /p:PlatformToolset=${{steps.virtuals.outputs.msts}} /p:TargetName=freetype_a
+          msbuild freetype.sln /p:Configuration=Release /p:Platform=${{steps.virtuals.outputs.msarch}} /p:PlatformToolset=${{steps.virtuals.outputs.msts}} /p:WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}} /p:TargetName=freetype_a
       - name: Install freetype
         run: |
           cd freetype

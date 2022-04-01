@@ -40,7 +40,7 @@ jobs:
       - name: Patch libxpm
         run: cd libxpm && git apply --ignore-whitespace ..\winlib-builder\patches\libxpm.patch
       - name: Build libxpm
-        run: cd libxpm\windows\${{steps.virtuals.outputs.vs}} && msbuild libxpm.sln "/p:Configuration=Static Release" /p:Platform=${{steps.virtuals.outputs.msarch}} /p:PlatformToolset=${{steps.virtuals.outputs.msts}}
+        run: cd libxpm\windows\${{steps.virtuals.outputs.vs}} && msbuild libxpm.sln "/p:Configuration=Static Release" /p:Platform=${{steps.virtuals.outputs.msarch}} /p:PlatformToolset=${{steps.virtuals.outputs.msts}} /p:WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}}
       - name: Install libxpm
         run: |
           cd libxpm\windows\${{steps.virtuals.outputs.vs}}

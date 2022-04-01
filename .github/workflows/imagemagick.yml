@@ -44,7 +44,7 @@ jobs:
               start /wait configure /noWizard /${{matrix.arch}} /noHdri /noOpenCL /deprecated /VS2017
           )
       - name: Build imagemagick
-        run: cd imagemagick-windows\VisualMagick && msbuild /p:Configuration=Release;Platform=${{steps.virtuals.outputs.msarch}};PlatformToolset=${{steps.virtuals.outputs.msts}};WindowsTargetPlatformVersion=10.0.18362.0 VisualDynamicMT.sln
+        run: cd imagemagick-windows\VisualMagick && msbuild /p:Configuration=Release;Platform=${{steps.virtuals.outputs.msarch}};PlatformToolset=${{steps.virtuals.outputs.msts}};WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}} VisualDynamicMT.sln
       - name: Install imagemagick
         run: |
           cd imagemagick-windows\VisualMagick

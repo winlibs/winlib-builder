@@ -38,7 +38,7 @@ jobs:
       - name: Setup msbuild
         uses: microsoft/setup-msbuild@v1.0.3
       - name: Build gettext
-        run: cd gettext\MSVC${{steps.virtuals.outputs.vsnum}} && msbuild gettext.sln /p:Configuration=Release /p:Platform=${{steps.virtuals.outputs.msarch}} /p:PlatformToolset=${{steps.virtuals.outputs.msts}}
+        run: cd gettext\MSVC${{steps.virtuals.outputs.vsnum}} && msbuild gettext.sln /p:Configuration=Release /p:Platform=${{steps.virtuals.outputs.msarch}} /p:PlatformToolset=${{steps.virtuals.outputs.msts}} /p:WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}}
       - name: Install gettext
         run: |
           cd gettext\MSVC${{steps.virtuals.outputs.vsnum}}

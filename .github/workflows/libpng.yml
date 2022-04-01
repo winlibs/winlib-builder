@@ -45,16 +45,16 @@ jobs:
         run: cd libpng\projects\vstudio2019 && curl -Lo zlib1212.zip https://zlib.net/zlib1212.zip && 7z x zlib1212.zip
       - name: Build dynamic libpng with MSVC 15
         if: ${{steps.virtuals.outputs.vs == 'vc15'}}
-        run: cd libpng\projects\vstudio2017 && msbuild vstudio.sln /t:libpng /p:Configuration=Release /p:Platform=${{steps.virtuals.outputs.msarch}} /p:PlatformToolset=${{steps.virtuals.outputs.msts}}
+        run: cd libpng\projects\vstudio2017 && msbuild vstudio.sln /t:libpng /p:Configuration=Release /p:Platform=${{steps.virtuals.outputs.msarch}} /p:PlatformToolset=${{steps.virtuals.outputs.msts}} /p:WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}}
       - name: Build dynamic libpng with MSVC 16
         if: ${{steps.virtuals.outputs.vs == 'vs16'}}
-        run: cd libpng\projects\vstudio2019 && msbuild vstudio.sln /t:libpng /p:Configuration=Release /p:Platform=${{steps.virtuals.outputs.msarch}} /p:PlatformToolset=${{steps.virtuals.outputs.msts}}
+        run: cd libpng\projects\vstudio2019 && msbuild vstudio.sln /t:libpng /p:Configuration=Release /p:Platform=${{steps.virtuals.outputs.msarch}} /p:PlatformToolset=${{steps.virtuals.outputs.msts}} /p:WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}}
       - name: Build static libpng with MSVC 15
         if: ${{steps.virtuals.outputs.vs == 'vc15'}}
-        run: cd libpng\projects\vstudio2017 && msbuild vstudio.sln /t:libpng "/p:Configuration=Release Library" /p:Platform=${{steps.virtuals.outputs.msarch}} /p:PlatformToolset=${{steps.virtuals.outputs.msts}}
+        run: cd libpng\projects\vstudio2017 && msbuild vstudio.sln /t:libpng "/p:Configuration=Release Library" /p:Platform=${{steps.virtuals.outputs.msarch}} /p:PlatformToolset=${{steps.virtuals.outputs.msts}} /p:WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}}
       - name: Build static libpng with MSVC 16
         if: ${{steps.virtuals.outputs.vs == 'vs16'}}
-        run: cd libpng\projects\vstudio2019 && msbuild vstudio.sln /t:libpng "/p:Configuration=Release Library" /p:Platform=${{steps.virtuals.outputs.msarch}} /p:PlatformToolset=${{steps.virtuals.outputs.msts}}
+        run: cd libpng\projects\vstudio2019 && msbuild vstudio.sln /t:libpng "/p:Configuration=Release Library" /p:Platform=${{steps.virtuals.outputs.msarch}} /p:PlatformToolset=${{steps.virtuals.outputs.msts}} /p:WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}}
       - name: Install libpng
         run: |
           cd libpng\projects\vstudio2019

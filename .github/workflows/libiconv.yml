@@ -39,7 +39,7 @@ jobs:
       - name: Setup msbuild
         uses: microsoft/setup-msbuild@v1.0.3
       - name: Build libiconv
-        run: cd libiconv\MSVC${{steps.virtuals.outputs.vsnum}} && msbuild libiconv.sln /p:Configuration=Release /p:Platform=${{steps.virtuals.outputs.msarch}} /p:PlatformToolset=${{steps.virtuals.outputs.msts}}
+        run: cd libiconv\MSVC${{steps.virtuals.outputs.vsnum}} && msbuild libiconv.sln /p:Configuration=Release /p:Platform=${{steps.virtuals.outputs.msarch}} /p:PlatformToolset=${{steps.virtuals.outputs.msts}} /p:WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}}
       - name: Install libiconv
         run: |
           cd libiconv\MSVC${{steps.virtuals.outputs.vsnum}}
