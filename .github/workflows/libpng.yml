@@ -37,27 +37,15 @@ jobs:
         run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
       - name: Setup msbuild
         uses: microsoft/setup-msbuild@v1.0.3
-      - name: Fetch zlib for MSVC 15
-        if: ${{steps.virtuals.outputs.vs == 'vc15'}}
-        run: cd libpng\projects\vstudio2017 && curl -Lo zlib1212.zip https://zlib.net/zlib1212.zip && 7z x zlib1212.zip
-      - name: Fetch zlib for MSVC 16
-        if: ${{steps.virtuals.outputs.vs == 'vs16'}}
-        run: cd libpng\projects\vstudio2019 && curl -Lo zlib1212.zip https://zlib.net/zlib1212.zip && 7z x zlib1212.zip
-      - name: Build dynamic libpng with MSVC 15
-        if: ${{steps.virtuals.outputs.vs == 'vc15'}}
-        run: cd libpng\projects\vstudio2017 && msbuild vstudio.sln /t:libpng /p:Configuration=Release /p:Platform=${{steps.virtuals.outputs.msarch}} /p:PlatformToolset=${{steps.virtuals.outputs.msts}} /p:WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}}
-      - name: Build dynamic libpng with MSVC 16
-        if: ${{steps.virtuals.outputs.vs == 'vs16'}}
-        run: cd libpng\projects\vstudio2019 && msbuild vstudio.sln /t:libpng /p:Configuration=Release /p:Platform=${{steps.virtuals.outputs.msarch}} /p:PlatformToolset=${{steps.virtuals.outputs.msts}} /p:WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}}
-      - name: Build static libpng with MSVC 15
-        if: ${{steps.virtuals.outputs.vs == 'vc15'}}
-        run: cd libpng\projects\vstudio2017 && msbuild vstudio.sln /t:libpng "/p:Configuration=Release Library" /p:Platform=${{steps.virtuals.outputs.msarch}} /p:PlatformToolset=${{steps.virtuals.outputs.msts}} /p:WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}}
-      - name: Build static libpng with MSVC 16
-        if: ${{steps.virtuals.outputs.vs == 'vs16'}}
-        run: cd libpng\projects\vstudio2019 && msbuild vstudio.sln /t:libpng "/p:Configuration=Release Library" /p:Platform=${{steps.virtuals.outputs.msarch}} /p:PlatformToolset=${{steps.virtuals.outputs.msts}} /p:WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}}
+      - name: Fetch zlib
+        run: cd libpng\projects\vstudio${{steps.virtuals.outputs.vsyear}} && curl -Lo zlib1212.zip https://zlib.net/zlib1212.zip && 7z x zlib1212.zip
+      - name: Build dynamic libpng
+        run: cd libpng\projects\vstudio${{steps.virtuals.outputs.vsyear}} && msbuild vstudio.sln /t:libpng /p:Configuration=Release /p:Platform=${{steps.virtuals.outputs.msarch}} /p:PlatformToolset=${{steps.virtuals.outputs.msts}} /p:WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}}
+      - name: Build static libpng
+        run: cd libpng\projects\vstudio${{steps.virtuals.outputs.vsyear}} && msbuild vstudio.sln /t:libpng "/p:Configuration=Release Library" /p:Platform=${{steps.virtuals.outputs.msarch}} /p:PlatformToolset=${{steps.virtuals.outputs.msts}} /p:WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}}
       - name: Install libpng
         run: |
-          cd libpng\projects\vstudio2019
+          cd libpng\projects\vstudio${{steps.virtuals.outputs.vsyear}}
           if "${{matrix.arch}}" == "x64" (
               set objdir=x64
           ) else (

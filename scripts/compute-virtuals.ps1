@@ -18,6 +18,12 @@ if (-not $vs) {
 }
 $vsnum = $vs.substring(2)
 
+$years = @{
+    "vc15" = "2017"
+    "vs16" = "2019"
+}
+$vsyear = $years.$vs
+
 $toolsets = @{
     "vc14" = "14.0"
 }
@@ -66,6 +72,7 @@ if (-not $msarch) {
 
 Write-Output "::set-output name=vs::$vs"
 Write-Output "::set-output name=vsnum::$vsnum"
+Write-Output "::set-output name=vsyear::$vsyear"
 Write-Output "::set-output name=toolset:$toolset"
 Write-Output "::set-output name=msts::$msts"
 Write-Output "::set-output name=msarch::$msarch"
