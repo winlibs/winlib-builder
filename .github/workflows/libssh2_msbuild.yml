@@ -1,0 +1,59 @@
+name: Build libssh2 < 1.10.0
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: libssh2 tag to build
+        required: true
+      php:
+        description: PHP version to build for
+        required: true
+      stability:
+        description: the series stability
+        required: false
+        default: 'staging'
+defaults:
+  run:
+    shell: cmd
+jobs:
+  build:
+    strategy:
+      matrix:
+          arch: [x64, x86]
+    runs-on: windows-2019
+    steps:
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v2
+        with:
+          path: winlib-builder
+      - name: Checkout libssh2
+        uses: actions/checkout@v2
+        with:
+          path: libssh2
+          repository: winlibs/libssh2
+          ref: ${{github.event.inputs.version}}
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+      - name: Fetch dependencies
+        run: powershell winlib-builder/scripts/fetch-deps -lib libssh2 -version ${{github.event.inputs.php}} -vs ${{steps.virtuals.outputs.vs}} -arch ${{matrix.arch}} -stability ${{github.event.inputs.stability}}
+      - name: Setup msbuild
+        uses: microsoft/setup-msbuild@v1.1
+      - name: Build libssh2
+        run: |
+          cd libssh2
+          xcopy /e ..\deps\* deps\*
+          msbuild win32\libssh2.${{steps.virtuals.outputs.vs}}.sln /p:Configuration=Release /p:Platform=${{steps.virtuals.outputs.msarch}} /p:PlatformToolset=${{steps.virtuals.outputs.msts}} /p:WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}}
+      - name: Install libssh2
+        run: |
+          cd libssh2
+          xcopy win32\Release_dll\libssh2.dll ..\install\bin\*
+          xcopy win32\Release_dll\libssh2.pdb ..\install\bin\*
+          xcopy include\*.h ..\install\include\libssh2\*
+          xcopy win32\Release_lib\libssh2_a.* ..\install\lib\*
+          xcopy win32\Release_dll\libssh2.lib ..\install\lib\*
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
+          path: install
