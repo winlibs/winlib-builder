@@ -49,7 +49,11 @@ jobs:
         run: |
           cd libzip\build
           cmake --install . --config RelWithDebInfo --prefix ..\..\install
-          xcopy lib\RelWithDebInfo\libzip_a.pdb ..\..\install\lib\*
+          if exist lib\RelWithDebInfo\libzip_a.pdb (
+              xcopy lib\RelWithDebInfo\libzip_a.pdb ..\..\install\lib\*
+          ) else (
+              xcopy lib\libzip_a.dir\RelWithDebInfo\libzip_a.pdb ..\..\install\lib\*
+          )
           rmdir /s /q ..\..\install\lib\pkgconfig
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
