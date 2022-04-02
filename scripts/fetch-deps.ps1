@@ -15,7 +15,10 @@ $deps = @{
     "libssh2" = "openssl", "zlib";
     "libxml2" = "libiconv";
     "libxslt" = "libiconv", "libxml2";
-    "libzip" = "libbzip2", "liblzma", "zlib"
+    "libzip" = "libbzip2", "zlib"
+}
+if ($version -ge "8.0") {
+    $deps."libzip" += "liblzma"
 }
 $deps = $deps.$lib
 if (-not $deps) {
