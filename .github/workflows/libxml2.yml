@@ -42,10 +42,20 @@ jobs:
           toolset: ${{steps.virtuals.outputs.toolset}}
       - name: Fetch dependencies
         run: powershell winlib-builder/scripts/fetch-deps -lib libxml2 -version ${{github.event.inputs.php}} -vs ${{steps.virtuals.outputs.vs}} -arch ${{matrix.arch}}  -stability ${{github.event.inputs.stability}}
+      - name: Configure libxml2
+        run: cd libxml2\win32 && cscript configure.js lib=%GITHUB_WORKSPACE%\deps\lib include=%GITHUB_WORKSPACE%\deps\include vcmanifest=yes prefix=%GITHUB_WORKSPACE%\install
       - name: Build libxml2
-        run: cd winlib-builder && nmake /f libxml2.mak VS=${{steps.virtuals.outputs.vs}} ARCH=${{matrix.arch}}
+        run: cd libxml2\win32 && nmake /f Makefile.msvc
+      - name: Install libxml2
+        run: |
+          cd libxml2\win32
+          nmake /f Makefile.msvc install
+          cd ..\..
+          del /q install\bin\run*
+          del /q install\bin\test*
+          del /q install\bin\xml*.pdb
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
           name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
-          path: winlib-builder/build
+          path: install
