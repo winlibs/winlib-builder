@@ -1,0 +1,70 @@
+name: Build net-snmp
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: net-snmp tag to build
+        required: true
+      php:
+        description: PHP version to build for
+        required: true
+      stability:
+        description: the series stability
+        required: false
+        default: 'staging'
+defaults:
+  run:
+    shell: cmd
+jobs:
+  build:
+    strategy:
+      matrix:
+          arch: [x64, x86]
+    runs-on: windows-2019
+    steps:
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v2
+        with:
+          path: winlib-builder
+      - name: Checkout net-snmp
+        uses: actions/checkout@v2
+        with:
+          path: net-snmp
+          repository: winlibs/net-snmp
+          ref: ${{github.event.inputs.version}}
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+      - name: Fetch dependencies
+        run: powershell winlib-builder/scripts/fetch-deps -lib net-snmp -version ${{github.event.inputs.php}} -vs ${{steps.virtuals.outputs.vs}} -arch ${{matrix.arch}} -stability ${{github.event.inputs.stability}}
+      - name: Setup MSVC development environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{matrix.arch}}
+          toolset: ${{steps.virtuals.outputs.toolset}}
+      - name: Configure net-snmp
+        run: cd net-snmp\win32 && perl Configure --with-sdk --with-ssl --config=release --with-ipv6 --prefix=c:/usr
+      - name: Build libsnmp
+        run: cd net-snmp\win32 && set INCLUDE=${{github.workspace}}\deps\include;%INCLUDE% && nmake libsnmp
+      - name: Build libagent
+        run: cd net-snmp\win32 && set INCLUDE=${{github.workspace}}\deps\include;%INCLUDE% && nmake libagent
+      - name: Build netsnmpmibs
+        run: cd net-snmp\win32 && set INCLUDE=${{github.workspace}}\deps\include;%INCLUDE% && nmake netsnmpmibs
+      - name: Build snmpd
+        run: cd net-snmp\win32 && set INCLUDE=${{github.workspace}}\deps\include;%INCLUDE% && xcopy ${{github.workspace}}\deps\lib\*.lib lib\release && nmake snmpd
+      - name: Install net-snmp
+        run: |
+          cd net-snmp
+          xcopy win32\bin\release\snmpd.exe ..\install\bin\*
+          xcopy win32\bin\release\snmpd.pdb ..\install\bin\*
+          xcopy /e include\net-snmp\*.h ..\install\include\net-snmp\*
+          xcopy /e win32\net-snmp\*.h ..\install\include\net-snmp\*
+          xcopy include\net-snmp\library\README ..\install\include\net-snmp\library\*
+          xcopy win32\lib\release\netsnmp.lib ..\install\lib\*
+          xcopy win32\libsnmp\release\libsnmp.pdb ..\install\lib\*
+          xcopy mibs\* ..\install\share\mibs\*
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
+          path: install
