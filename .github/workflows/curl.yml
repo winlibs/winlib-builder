@@ -44,7 +44,7 @@ jobs:
           toolset: ${{steps.virtuals.outputs.toolset}}
       - name: Build curl
         run: cd curl\winbuild && nmake /f Makefile.vc mode=static VC=${{steps.virtuals.outputs.vsnum}} WITH_DEVEL=..\..\deps WITH_SSL=dll WITH_ZLIB=static WITH_NGHTTP2=dll WITH_SSH2=dll ENABLE_WINSSL=no USE_IDN=yes ENABLE_IPV6=yes GEN_PDB=yes DEBUG=no MACHINE=${{matrix.arch}} CURL_DISABLE_MQTT=1
-      - name: Install nghttp2
+      - name: Install curl
         run: cd curl && xcopy /e builds\libcurl-vc${{steps.virtuals.outputs.vsnum}}-${{matrix.arch}}-release-static-ssl-dll-zlib-static-ssh2-dll-ipv6-sspi-nghttp2-dll\* ..\build\*
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
