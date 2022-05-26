@@ -1,0 +1,53 @@
+name: Build qdbm
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: qdbm tag to build
+        required: true
+      php:
+        description: PHP version to build for
+        required: true
+defaults:
+  run:
+    shell: cmd
+jobs:
+  build:
+    strategy:
+      matrix:
+          arch: [x64, x86]
+    runs-on: windows-2019
+    steps:
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v2
+        with:
+          path: winlib-builder
+      - name: Checkout qdbm
+        uses: actions/checkout@v2
+        with:
+          path: qdbm
+          repository: winlibs/qdbm
+          ref: ${{github.event.inputs.version}}
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+      - name: Setup MSVC development environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{matrix.arch}}
+          toolset: ${{steps.virtuals.outputs.toolset}}
+      - name: Build qdbm
+        run: cd qdbm && nmake /f VCmakefile
+      - name: Install qdbm
+        run: |
+          cd qdbm
+          xcopy qdbm.dll ..\install\bin\*
+          xcopy tmp\qdbm.pdb ..\install\bin\*
+          xcopy *.h ..\install\include\qdbm\*
+          del ..\install\include\qdbm\hovel.h ..\install\include\qdbm\myconf.h
+          xcopy *.lib ..\install\lib\*
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
+          path: install
