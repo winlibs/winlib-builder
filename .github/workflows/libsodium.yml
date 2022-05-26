@@ -1,0 +1,54 @@
+name: Build libsodium
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: libsodium tag to build
+        required: true
+      php:
+        description: PHP version to build for
+        required: true
+defaults:
+  run:
+    shell: cmd
+jobs:
+  build:
+    strategy:
+      matrix:
+          arch: [x64, x86]
+    runs-on: windows-2019
+    steps:
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v2
+        with:
+          path: winlib-builder
+      - name: Checkout libsodium
+        uses: actions/checkout@v2
+        with:
+          path: libsodium
+          repository: winlibs/libsodium
+          ref: ${{github.event.inputs.version}}
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+      - name: Setup msbuild
+        uses: microsoft/setup-msbuild@v1.1
+      - name: Build libsodium
+        run: cd libsodium\builds\msvc\vs${{steps.virtuals.outputs.vsyear}} && msbuild /t:Rebuild /p:Configuration=StaticRelease;Platform=${{steps.virtuals.outputs.msarch}};PlatformToolset=${{steps.virtuals.outputs.msts}};WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}} libsodium.sln && msbuild /t:Rebuild /p:Configuration=DynRelease;Platform=${{steps.virtuals.outputs.msarch}};PlatformToolset=${{steps.virtuals.outputs.msts}};WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}} libsodium.sln
+      - name: Install libsodium
+        run: |
+          cd libsodium
+          set platform=${{steps.virtuals.outputs.msarch}}
+          set toolset=${{steps.virtuals.outputs.msts}}
+          xcopy bin\%platform%\Release\%toolset%\dynamic\libsodium.dll ..\install\bin\*
+          xcopy bin\%platform%\Release\%toolset%\dynamic\libsodium.pdb ..\install\bin\*
+          xcopy /e src\libsodium\include\*.h ..\install\include\*
+          rmdir /s /q ..\install\include\sodium\private
+          del ..\install\include\sodium\randombytes_nativeclient.h
+          xcopy bin\%platform%\Release\%toolset%\dynamic\libsodium.lib ..\install\lib\*
+          copy bin\%platform%\Release\%toolset%\static\libsodium.lib ..\install\lib\libsodium_a.lib
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
+          path: install
