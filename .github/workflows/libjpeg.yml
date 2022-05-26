@@ -1,0 +1,51 @@
+name: Build libjpeg
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: libjpeg tag to build
+        required: true
+      php:
+        description: PHP version to build for
+        required: true
+defaults:
+  run:
+    shell: cmd
+jobs:
+  build:
+    strategy:
+      matrix:
+          arch: [x64, x86]
+    runs-on: windows-2019
+    steps:
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v2
+        with:
+          path: winlib-builder
+      - name: Checkout libjpeg
+        uses: actions/checkout@v2
+        with:
+          path: libjpeg
+          repository: winlibs/libjpeg
+          ref: ${{github.event.inputs.version}}
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+      - name: Configure libjpeg
+        run: cd libjpeg && cmake -G "Visual Studio 16 2019" -A ${{steps.virtuals.outputs.msarch}} -T ${{steps.virtuals.outputs.msts}} -DWITH_JPEG8=1 -DWITH_CRT_DLL=1 -DENABLE_SHARED=0 -DWITH_TURBOJPEG=0 .
+      - name: Build libjpeg
+        run: cd libjpeg && cmake --build . --config RelWithDebInfo
+      - name: Install libjpeg
+        run: |
+          cd libjpeg
+          cmake --install . --config RelWithDebInfo --prefix ..\install
+          xcopy jversion.h ..\install\include\*
+          xcopy RelWithDebInfo\libjpeg_a.pdb ..\install\lib\*
+          rmdir /s /q ..\install\bin
+          rmdir /s /q ..\install\doc
+          rmdir /s /q ..\install\lib\pkgconfig
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
+          path: install
