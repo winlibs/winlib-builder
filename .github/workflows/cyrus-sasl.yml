@@ -1,0 +1,61 @@
+name: Build cyrus-sasl
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: cyrus-sasl tag to build
+        required: true
+      php:
+        description: PHP version to build for
+        required: true
+      stability:
+        description: the series stability
+        required: false
+        default: 'staging'
+defaults:
+  run:
+    shell: cmd
+jobs:
+  build:
+    strategy:
+      matrix:
+          arch: [x64, x86]
+    runs-on: windows-2019
+    steps:
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v2
+        with:
+          path: winlib-builder
+      - name: Checkout cyrus-sasl
+        uses: actions/checkout@v2
+        with:
+          path: cyrus-sasl
+          repository: winlibs/cyrus-sasl
+          ref: ${{github.event.inputs.version}}
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+      - name: Fetch dependencies
+        run: powershell winlib-builder/scripts/fetch-deps -lib cyrus-sasl -version ${{github.event.inputs.php}} -vs ${{steps.virtuals.outputs.vs}} -arch ${{matrix.arch}} -stability ${{github.event.inputs.stability}}
+      - name: Setup msbuild
+        uses: microsoft/setup-msbuild@v1.1
+      - name: Build cyrus-sasl-core
+        run: cd cyrus-sasl\win32 && msbuild /p:Configuration=Release;Platform=${{matrix.arch}};PlatformToolset=${{steps.virtuals.outputs.msts}};WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}} cyrus-sasl-core.sln
+      - name: Build cyrus-sasl-sasldb
+        run: cd cyrus-sasl\win32 && msbuild /p:Configuration=Release;Platform=${{matrix.arch}};PlatformToolset=${{steps.virtuals.outputs.msts}};WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}} cyrus-sasl-sasldb.sln
+      - name: Install cyrus-sasl
+        run: |
+          cd cyrus-sasl\win32
+          set platform=${{steps.virtuals.outputs.msarch}}
+          xcopy %platform%\Release\libsasl.dll ..\..\install\bin\*
+          xcopy %platform%\Release\libsasl.pdb ..\..\install\bin\*
+          xcopy %platform%\Release\plugin_sasldb.dll ..\..\install\bin\sasl2\*
+          xcopy %platform%\Release\plugin_sasldb.pdb ..\..\install\bin\sasl2\*
+          xcopy ..\include\*.h ..\..\install\include\sasl\*
+          xcopy include\md5global.h ..\..\install\include\sasl\*
+          xcopy %platform%\Release\libsasl.lib ..\..\install\lib\*
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
+          path: install
