@@ -1,0 +1,50 @@
+name: Build mpir
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: mpir tag to build
+        required: true
+      php:
+        description: PHP version to build for
+        required: true
+defaults:
+  run:
+    shell: cmd
+jobs:
+  build:
+    strategy:
+      matrix:
+          arch: [x64, x86]
+    runs-on: windows-2019
+    steps:
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v2
+        with:
+          path: winlib-builder
+      - name: Checkout mpir
+        uses: actions/checkout@v2
+        with:
+          path: mpir
+          repository: winlibs/mpir
+          ref: ${{github.event.inputs.version}}
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+      - name: Setup msbuild
+        uses: microsoft/setup-msbuild@v1.1
+      - name: Build mpir
+        run: cd mpir && msbuild /p:Configuration=Release;Platform=${{steps.virtuals.outputs.msarch}};PlatformToolset=${{steps.virtuals.outputs.msts}};WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}} build.vc${{steps.virtuals.outputs.vsnum}}\lib_mpir_gc\lib_mpir_gc.vcxproj
+      - name: Install mpir
+        run: |
+          cd mpir
+          xcopy lib\${{steps.virtuals.outputs.msarch}}\Release\config.h ..\install\include\mpir\*
+          xcopy lib\${{steps.virtuals.outputs.msarch}}\Release\gmp-mparam.h ..\install\include\mpir\*
+          xcopy lib\${{steps.virtuals.outputs.msarch}}\Release\gmp.h ..\install\include\mpir\*
+          xcopy lib\${{steps.virtuals.outputs.msarch}}\Release\mpir.h ..\install\include\mpir\*
+          xcopy build.vc${{steps.virtuals.outputs.vsnum}}\lib_mpir_gc\${{steps.virtuals.outputs.msarch}}\Release\mpir_a.??? ..\install\lib\*
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
+          path: install
