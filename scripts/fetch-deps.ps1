@@ -18,7 +18,8 @@ $deps = @{
     "libxml2" = "libiconv";
     "libxslt" = "libiconv", "libxml2";
     "libzip" = "libbzip2", "zlib";
-    "net-snmp" = "openssl"
+    "net-snmp" = "openssl";
+    "openldap" = "openssl", "libsasl"
 }
 if ($version -ge "8.0") {
     $deps."libzip" += "liblzma"
