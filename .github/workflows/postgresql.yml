@@ -1,0 +1,74 @@
+name: Build postgresql
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: postgresql tag to build
+        required: true
+      php:
+        description: PHP version to build for
+        required: true
+      stability:
+        description: the series stability
+        required: false
+        default: 'staging'
+defaults:
+  run:
+    shell: cmd
+jobs:
+  build:
+    strategy:
+      matrix:
+          arch: [x64, x86]
+    runs-on: windows-2019
+    steps:
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v2
+        with:
+          path: winlib-builder
+      - name: Checkout postgresql
+        uses: actions/checkout@v2
+        with:
+          path: postgresql
+          repository: winlibs/postgresql
+          ref: ${{github.event.inputs.version}}
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+      - name: Fetch dependencies
+        run: powershell winlib-builder/scripts/fetch-deps -lib postgresql -version ${{github.event.inputs.php}} -vs ${{steps.virtuals.outputs.vs}} -arch ${{matrix.arch}} -stability ${{github.event.inputs.stability}}
+      - name: Setup MSVC development environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{matrix.arch}}
+          toolset: ${{steps.virtuals.outputs.toolset}}
+      - name: Configure postgresql
+        run: >
+          cd postgresql\src\tools\msvc
+          && echo ^$config-^>^{openssl^} = '${{github.workspace}}\deps'; > config.pl 
+          && perl mkvcbuild.pl
+      - name: Build postgresql
+        run: >
+          cd postgresql
+          && msbuild /p:Configuration=Release;Platform=${{steps.virtuals.outputs.msarch}};PlatformToolset=${{steps.virtuals.outputs.msts}};WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}} libpq.vcxproj
+          && msbuild /p:Configuration=Release;Platform=${{steps.virtuals.outputs.msarch}};PlatformToolset=${{steps.virtuals.outputs.msts}};WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}};ConfigurationType=StaticLibrary;TargetName=libpq_a;IntDir=.\ReleaseStatic\libpq\;OutDir=.\ReleaseStatic\libpq\ libpq.vcxproj
+      - name: Install postgresql
+        run: |
+          cd postgresql
+          xcopy Release\libpq\libpq.dll ..\install\bin\*
+          xcopy Release\libpq\libpq.pdb ..\install\bin\*
+          xcopy src\include\pg_config.h ..\install\include\libpq\*
+          xcopy src\include\pg_config_ext.h ..\install\include\libpq\*
+          xcopy src\include\postgres_ext.h ..\install\include\libpq\*
+          xcopy src\include\libpq\*.h ..\install\include\libpq\*
+          xcopy src\interfaces\libpq\*.h ..\install\include\libpq\*
+          xcopy src\include\common\md5.h ..\install\include\libpq\*
+          xcopy src\include\common\ip.h ..\install\include\libpq\*
+          xcopy Release\libpq\libpq.lib ..\install\lib\*
+          xcopy ReleaseStatic\libpq\libpq_a.lib ..\install\lib\*
+          xcopy ReleaseStatic\libpq\libpq_a.pdb ..\install\lib\*
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
+          path: install
