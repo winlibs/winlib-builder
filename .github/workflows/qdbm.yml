@@ -19,11 +19,11 @@ jobs:
     runs-on: windows-2019
     steps:
       - name: Checkout winlib-builder
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           path: winlib-builder
       - name: Checkout qdbm
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           path: qdbm
           repository: winlibs/qdbm
