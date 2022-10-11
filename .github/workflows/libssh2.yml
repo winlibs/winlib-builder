@@ -52,7 +52,7 @@ jobs:
           del /s /q ..\build\lib\pkgconfig\*
           del /s /q ..\build\share\*
       - name: Upload artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
           path: build

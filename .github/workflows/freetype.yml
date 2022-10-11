@@ -54,7 +54,7 @@ jobs:
           xcopy /e include ..\install\include\freetype2\*
           xcopy objs\${{env.FREETYPE_BUILDFOLDER}}\${{steps.virtuals.outputs.msarch}}\freetype_a.* ..\install\lib\*
       - name: Upload artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
           path: install

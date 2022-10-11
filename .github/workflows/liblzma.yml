@@ -41,7 +41,7 @@ jobs:
           cmake --install . --config RelWithDebInfo --prefix ..\..\install
           xcopy RelWithDebInfo\liblzma_a.pdb ..\..\install\lib\*
       - name: Upload artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
           path: install

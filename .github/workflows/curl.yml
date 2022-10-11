@@ -47,7 +47,7 @@ jobs:
       - name: Install curl
         run: cd curl && xcopy /e builds\libcurl-vc${{steps.virtuals.outputs.vsnum}}-${{matrix.arch}}-release-static-ssl-dll-zlib-static-ssh2-dll-ipv6-sspi-nghttp2-dll\* ..\build\*
       - name: Upload artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
           path: build

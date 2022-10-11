@@ -55,7 +55,7 @@ jobs:
           xcopy include\md5global.h ..\..\install\include\sasl\*
           xcopy %platform%\Release\libsasl.lib ..\..\install\lib\*
       - name: Upload artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
           path: install

@@ -48,7 +48,7 @@ jobs:
           xcopy include\libps\*.h ..\install\include\libps\*
           xcopy RelWithDebInfo\pslib.lib ..\install\lib\*
       - name: Upload artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
           path: install

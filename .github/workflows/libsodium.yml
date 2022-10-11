@@ -48,7 +48,7 @@ jobs:
           xcopy bin\%platform%\Release\%toolset%\dynamic\libsodium.lib ..\install\lib\*
           copy bin\%platform%\Release\%toolset%\static\libsodium.lib ..\install\lib\libsodium_a.lib
       - name: Upload artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
           path: install

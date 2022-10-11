@@ -51,7 +51,7 @@ jobs:
           xcopy src\libmemcachedprotocol\RelWithDebInfo\libmemcachedprotocol.pdb ..\..\install\bin\*
           xcopy src\libmemcachedutil\RelWithDebInfo\libmemcachedutil.pdb ..\..\install\bin\*
       - name: Upload artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: libmemcached-${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
           path: install

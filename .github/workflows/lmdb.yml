@@ -45,7 +45,7 @@ jobs:
           xcopy lmdb.h ..\..\..\build\include\*
           xcopy liblmdb_a.* ..\..\..\build\lib\*
       - name: Upload artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
           path: build

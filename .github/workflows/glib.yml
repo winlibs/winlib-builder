@@ -44,7 +44,7 @@ jobs:
       - name: Install glib
         run: xcopy /e vs${{steps.virtuals.outputs.vsnum}}\${{steps.virtuals.outputs.msarch}} install\*
       - name: Upload artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
           path: install

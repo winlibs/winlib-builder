@@ -51,7 +51,7 @@ jobs:
           copy RelWithDebInfo\tidy.pdb ..\build\bin\tidy.pdb
           copy RelWithDebInfo\tidys.pdb ..\build\lib\tidy_a.pdb
       - name: Upload artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
           path: build

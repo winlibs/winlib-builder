@@ -45,7 +45,7 @@ jobs:
           rmdir /s /q ..\install\doc
           rmdir /s /q ..\install\lib\pkgconfig
       - name: Upload artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
           path: install

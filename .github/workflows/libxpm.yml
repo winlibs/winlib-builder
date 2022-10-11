@@ -47,7 +47,7 @@ jobs:
           xcopy ..\..\include\X11\* ..\..\..\install\include\X11\*
           xcopy "..\builds\${{steps.virtuals.outputs.msarch}}\Static Release\libxpm_a.*" ..\..\..\install\lib\*
       - name: Upload artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
           path: install

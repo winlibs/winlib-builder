@@ -50,7 +50,7 @@ jobs:
               xcopy win32\${{steps.virtuals.outputs.vs}}_${{matrix.arch}}\Release\libffi.pdb ..\install\lib\*
           )
       - name: Upload artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
           path: install

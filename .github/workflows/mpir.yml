@@ -44,7 +44,7 @@ jobs:
           xcopy lib\${{steps.virtuals.outputs.msarch}}\Release\mpir.h ..\install\include\mpir\*
           xcopy build.vc${{steps.virtuals.outputs.vsnum}}\lib_mpir_gc\${{steps.virtuals.outputs.msarch}}\Release\mpir_a.??? ..\install\lib\*
       - name: Upload artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
           path: install
