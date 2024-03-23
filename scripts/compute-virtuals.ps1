@@ -71,10 +71,12 @@ if (-not $msarch) {
     throw "no suitable MS arch available"
 }
 
-Write-Output "::set-output name=vs::$vs"
-Write-Output "::set-output name=vsnum::$vsnum"
-Write-Output "::set-output name=vsyear::$vsyear"
-Write-Output "::set-output name=toolset:$toolset"
-Write-Output "::set-output name=msts::$msts"
-Write-Output "::set-output name=msarch::$msarch"
-Write-Output "::set-output name=winsdk::$winsdk"
+& {
+  Write-Output "vs=$vs"
+  Write-Output "vsnum=$vsnum"
+  Write-Output "vsyear=$vsyear"
+  Write-Output "toolset=$toolset"
+  Write-Output "msts=$msts"
+  Write-Output "msarch=$msarch"
+  Write-Output "winsdk=$winsdk"
+} | Out-File -Append -FilePath $env:GITHUB_OUTPUT
