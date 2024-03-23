@@ -11,6 +11,7 @@ $versions = @{
     "8.0" = "vs16"
     "8.1" = "vs16"
     "8.2" = "vs16"
+    "8.3" = "vs16"
     "master" = "vs16"
 }
 $vs = $versions.$version
