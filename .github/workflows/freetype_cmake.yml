@@ -42,7 +42,7 @@ jobs:
           xcopy RelWithDebInfo\freetype_a.pdb ..\..\install\lib\*
           rmdir /s /q ..\..\install\lib\pkgconfig
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
           path: install

@@ -64,7 +64,7 @@ jobs:
           xcopy win32\libsnmp\release\libsnmp.pdb ..\install\lib\*
           xcopy mibs\* ..\install\share\mibs\*
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
           path: install
