@@ -19,11 +19,11 @@ jobs:
     runs-on: windows-2019
     steps:
       - name: Checkout winlib-builder
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: winlib-builder
       - name: Checkout icu4c
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: icu4c
           repository: winlibs/icu4c
