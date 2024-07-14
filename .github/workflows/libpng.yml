@@ -36,7 +36,7 @@ jobs:
         id: virtuals
         run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
       - name: Setup msbuild
-        uses: microsoft/setup-msbuild@v1.0.3
+        uses: microsoft/setup-msbuild@v2
       - name: Fetch zlib
         run: cd libpng\projects\vstudio${{steps.virtuals.outputs.vsyear}} && curl -Lo zlib1212.zip https://zlib.net/zlib1212.zip && 7z x zlib1212.zip
       - name: Build dynamic libpng
