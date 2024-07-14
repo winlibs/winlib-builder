@@ -38,7 +38,7 @@ jobs:
       - name: Fetch dependencies
         run: powershell winlib-builder/scripts/fetch-deps -lib glib -version ${{github.event.inputs.php}} -vs ${{steps.virtuals.outputs.vs}} -arch ${{matrix.arch}} -stability ${{github.event.inputs.stability}}
       - name: Setup msbuild
-        uses: microsoft/setup-msbuild@v1.1
+        uses: microsoft/setup-msbuild@v2
       - name: Build glib
         run: cd glib && msbuild /p:Configuration=Release_BundledPCRE;Platform=${{steps.virtuals.outputs.msarch}};PlatformToolset=${{steps.virtuals.outputs.msts}};WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}};PythonPath=C:\hostedtoolcache\windows\Python\3.7.9\x64 win32\vs${{steps.virtuals.outputs.vsnum}}\glib.sln
       - name: Install glib

@@ -38,7 +38,7 @@ jobs:
       - name: Fetch dependencies
         run: powershell winlib-builder/scripts/fetch-deps -lib cyrus-sasl -version ${{github.event.inputs.php}} -vs ${{steps.virtuals.outputs.vs}} -arch ${{matrix.arch}} -stability ${{github.event.inputs.stability}}
       - name: Setup msbuild
-        uses: microsoft/setup-msbuild@v1.1
+        uses: microsoft/setup-msbuild@v2
       - name: Build cyrus-sasl-core
         run: cd cyrus-sasl\win32 && msbuild /p:Configuration=Release;Platform=${{matrix.arch}};PlatformToolset=${{steps.virtuals.outputs.msts}};WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}} cyrus-sasl-core.sln
       - name: Build cyrus-sasl-sasldb

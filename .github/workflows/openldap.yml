@@ -38,7 +38,7 @@ jobs:
       - name: Fetch dependencies
         run: powershell winlib-builder/scripts/fetch-deps -lib openldap -version ${{github.event.inputs.php}} -vs ${{steps.virtuals.outputs.vs}} -arch ${{matrix.arch}} -stability ${{github.event.inputs.stability}}
       - name: Setup msbuild
-        uses: microsoft/setup-msbuild@v1.1
+        uses: microsoft/setup-msbuild@v2
       - name: Build openldap
         run: cd openldap\win32\${{steps.virtuals.outputs.vs}} && msbuild /p:Configuration=Release;Platform=${{steps.virtuals.outputs.msarch}};PlatformToolset=${{steps.virtuals.outputs.msts}};WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}} liblber.sln
       - name: Install openldap
