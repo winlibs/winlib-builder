@@ -37,7 +37,7 @@ jobs:
           arch: ${{matrix.arch}}
           toolset: ${{steps.virtuals.outputs.toolset}}
       - name: Setup msbuild
-        uses: microsoft/setup-msbuild@v1.0.3
+        uses: microsoft/setup-msbuild@v2
       - name: Set FREETYPE_BUILDFOLDER
         if: ${{steps.virtuals.outputs.vsnum == '15'}}
         run: echo FREETYPE_BUILDFOLDER=vc2017>> %GITHUB_ENV%

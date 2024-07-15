@@ -32,7 +32,7 @@ jobs:
         id: virtuals
         run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
       - name: Setup msbuild
-        uses: microsoft/setup-msbuild@v1.1
+        uses: microsoft/setup-msbuild@v2
       - name: Build libsodium
         run: cd libsodium\builds\msvc\vs${{steps.virtuals.outputs.vsyear}} && msbuild /t:Rebuild /p:Configuration=StaticRelease;Platform=${{steps.virtuals.outputs.msarch}};PlatformToolset=${{steps.virtuals.outputs.msts}};WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}} libsodium.sln && msbuild /t:Rebuild /p:Configuration=DynRelease;Platform=${{steps.virtuals.outputs.msarch}};PlatformToolset=${{steps.virtuals.outputs.msts}};WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}} libsodium.sln
       - name: Install libsodium

@@ -37,7 +37,7 @@ jobs:
           arch: ${{matrix.arch}}
           toolset: ${{steps.virtuals.outputs.toolset}}
       - name: Setup msbuild
-        uses: microsoft/setup-msbuild@v1.0.3
+        uses: microsoft/setup-msbuild@v2
       - name: Build icu4c
         run: cd icu4c && msbuild /p:Configuration=Release;Platform=${{steps.virtuals.outputs.msarch}};PlatformToolset=${{steps.virtuals.outputs.msts}};WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}} source\allinone\allinone.sln
       - name: Install icu4c

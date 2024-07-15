@@ -38,7 +38,7 @@ jobs:
       - name: Fetch dependencies
         run: powershell winlib-builder/scripts/fetch-deps -lib enchant -version ${{github.event.inputs.php}} -vs ${{steps.virtuals.outputs.vs}} -arch ${{matrix.arch}} -stability ${{github.event.inputs.stability}}
       - name: Setup msbuild
-        uses: microsoft/setup-msbuild@v1.1
+        uses: microsoft/setup-msbuild@v2
       - name: Build enchant
         run: cd enchant && msbuild /t:libenchant;libenchant_hunspell /p:Configuration=Release;Platform=${{steps.virtuals.outputs.msarch}};PlatformToolset=${{steps.virtuals.outputs.msts}};WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}} msvc${{steps.virtuals.outputs.vsnum}}\enchant2.sln
       - name: Install enchant

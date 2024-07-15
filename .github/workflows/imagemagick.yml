@@ -26,7 +26,7 @@ jobs:
           repository: ImageMagick/ImageMagick-Windows.git
           ref: main
       - name: Setup msbuild
-        uses: microsoft/setup-msbuild@v1.1
+        uses: microsoft/setup-msbuild@v2
       - name: Compute virtual inputs
         id: virtuals
         run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}

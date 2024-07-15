@@ -38,7 +38,7 @@ jobs:
       - name: Fetch dependencies
         run: powershell winlib-builder/scripts/fetch-deps -lib libssh2 -version ${{github.event.inputs.php}} -vs ${{steps.virtuals.outputs.vs}} -arch ${{matrix.arch}} -stability ${{github.event.inputs.stability}}
       - name: Setup msbuild
-        uses: microsoft/setup-msbuild@v1.1
+        uses: microsoft/setup-msbuild@v2
       - name: Build libssh2
         run: |
           cd libssh2
