@@ -50,7 +50,7 @@ jobs:
           xcopy out\libldap\${{steps.virtuals.outputs.msarch}}\Release\o*.lib ..\install\lib\*
           xcopy out\libldap\${{steps.virtuals.outputs.msarch}}\Release\o*.pdb ..\install\lib\*
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
           path: install

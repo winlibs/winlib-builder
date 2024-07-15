@@ -75,7 +75,7 @@ jobs:
           del ..\..\install\lib\CORE_RL_raqm_.pdb
           xcopy ..\ImageMagick\LICENSE ..\..\install\*
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ImageMagick-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
           path: install

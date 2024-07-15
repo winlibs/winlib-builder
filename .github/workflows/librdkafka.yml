@@ -52,7 +52,7 @@ jobs:
           ren ..\install\LICENSES.txt LICENSE
           del /s /q ..\install\share
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: librdkafka-${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
           path: install

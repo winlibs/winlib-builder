@@ -44,7 +44,7 @@ jobs:
           xcopy include\*.h ..\install\include\*
           xcopy argon2_a.* ..\install\lib\*
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
           path: install

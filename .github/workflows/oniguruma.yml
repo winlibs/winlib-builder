@@ -50,7 +50,7 @@ jobs:
           xcopy onig.lib ..\install\lib\*
           copy onig_s.lib ..\install\lib\onig_a.lib
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
           path: install

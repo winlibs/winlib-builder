@@ -47,7 +47,7 @@ jobs:
           del ..\install\include\qdbm\hovel.h ..\install\include\qdbm\myconf.h
           xcopy *.lib ..\install\lib\*
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
           path: install

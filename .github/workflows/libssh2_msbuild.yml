@@ -53,7 +53,7 @@ jobs:
           xcopy win32\Release_lib\libssh2_a.* ..\install\lib\*
           xcopy win32\Release_dll\libssh2.lib ..\install\lib\*
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
           path: install

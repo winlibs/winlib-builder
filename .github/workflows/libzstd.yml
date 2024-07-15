@@ -49,7 +49,7 @@ jobs:
           copy COPYING ..\install
           copy LICENSE ..\install
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: libzstd-${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
           path: install

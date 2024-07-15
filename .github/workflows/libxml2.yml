@@ -55,7 +55,7 @@ jobs:
           del /q install\bin\test*
           del /q install\bin\xml*.pdb
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
           path: install

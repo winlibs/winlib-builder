@@ -49,7 +49,7 @@ jobs:
           del /s /q ..\winlib-builder\build\lib\pkgconfig\*
           del /s /q ..\winlib-builder\build\share\*
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
           path: winlib-builder/build

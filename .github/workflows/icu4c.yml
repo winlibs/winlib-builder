@@ -54,7 +54,7 @@ jobs:
           xcopy %WB_LIBDIR%\* build\lib\*
           del build\lib\*test*.*
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
           path: build
