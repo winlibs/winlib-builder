@@ -31,7 +31,7 @@ if (-not $deps) {
 }
 
 $needs = @{}
-$response = Invoke-WebRequest "https://windows.php.net/downloads/php-sdk/deps/series/packages-$version-$vs-$arch-$stability.txt"
+$response = Invoke-WebRequest "https://downloads.php.net/~windows/php-sdk/deps/series/packages-$version-$vs-$arch-$stability.txt"
 foreach ($line in $response.Content -split "`r`n") {
     foreach ($dep in $deps) {
         if ($line -match "$dep-(.+)-$vs-$arch.zip") {
@@ -42,7 +42,7 @@ foreach ($line in $response.Content -split "`r`n") {
 
 New-Item "deps" -ItemType "directory"
 
-$baseurl = "https://windows.php.net/downloads/php-sdk/deps/$vs/$arch"
+$baseurl = "https://downloads.php.net/~windows/php-sdk/deps/$vs/$arch"
 foreach ($dep in $needs.GetEnumerator()) {
     Write-Output "Fetching $($dep.Name)-$($dep.Value)"
     $temp = New-TemporaryFile | Rename-Item -NewName {$_.Name + ".zip"} -PassThru
@@ -54,7 +54,7 @@ foreach ($dep in $needs.GetEnumerator()) {
 $deps = $deps | Where-Object {$needs.Keys -NotContains $_}
 if ($deps.Count -gt 0) {
     $needs = @{}
-    $response = Invoke-WebRequest "https://windows.php.net/downloads/pecl/deps/packages.txt"
+    $response = Invoke-WebRequest "https://downloads.php.net/~windows/pecl/deps/packages.txt"
     foreach ($line in $response.Content -split "`r`n") {
         foreach ($dep in $deps) {
             if ($line -match "$dep-(.+)-$vs-$arch.zip") {
@@ -63,7 +63,7 @@ if ($deps.Count -gt 0) {
         }
     }
 
-    $baseurl = "https://windows.php.net/downloads/pecl/deps"
+    $baseurl = "https://downloads.php.net/~windows/pecl/deps"
     foreach ($dep in $needs.GetEnumerator()) {
         Write-Output "Fetching $($dep.Name)-$($dep.Value)"
         $temp = New-TemporaryFile | Rename-Item -NewName {$_.Name + ".zip"} -PassThru
