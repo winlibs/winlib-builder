@@ -12,7 +12,8 @@ $versions = @{
     "8.1" = "vs16"
     "8.2" = "vs16"
     "8.3" = "vs16"
-    "master" = "vs16"
+    "8.4" = "vs17"
+    "master" = "vs17"
 }
 $vs = $versions.$version
 if (-not $vs) {
@@ -23,6 +24,7 @@ $vsnum = $vs.substring(2)
 $years = @{
     "vc15" = "2017"
     "vs16" = "2019"
+    "vs17" = "2022"
 }
 $vsyear = $years.$vs
 
@@ -36,8 +38,10 @@ foreach ($ts in (Get-ChildItem $dir)) {
         $toolsets."vc14" = $ts
     } elseif ((14 -eq $tsv[0]) -and (19 -ge $tsv[1])) {
         $toolsets."vc15" = $ts
-    } elseif (14 -eq $tsv[0]) {
+    } elseif ((14 -eq $tsv[0]) -and (39 -ge $tsv[1])) {
         $toolsets."vs16" = $ts
+    } elseif (14 -eq $tsv[0]) {
+        $toolsets."vs17" = $ts
     }
 }
 $toolset = $toolsets.$vs
@@ -48,6 +52,7 @@ if (-not $toolset) {
 $mstoolsets = @{
     "vc15" = "v141"
     "vs16" = "v142"
+    "vs17" = "v143"
 }
 $msts = $mstoolsets.$vs
 if (-not $msts) {
@@ -57,6 +62,7 @@ if (-not $msts) {
 $winsdks = @{
     "vc15" = "10.0.17763.0"
     "vs16" = "10.0.18362.0"
+    "vs17" = "10.0.20348.0"
 }
 $winsdk = $winsdks.$vs
 if (-not $winsdk) {
