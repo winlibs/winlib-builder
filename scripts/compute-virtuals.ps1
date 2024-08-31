@@ -56,7 +56,7 @@ if (-not $msts) {
 
 $winsdks = @{
     "vc15" = "10.0.17763.0"
-    "vs16" = "10.0.18362.0"
+    "vs16" = "10.0.20348.0"
 }
 $winsdk = $winsdks.$vs
 if (-not $winsdk) {
