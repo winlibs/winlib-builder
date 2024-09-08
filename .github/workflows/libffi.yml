@@ -34,7 +34,7 @@ jobs:
       - name: Setup msbuild
         uses: microsoft/setup-msbuild@v2
       - name: Build libffi
-        run: cd libffi\win32\${{steps.virtuals.outputs.vs}}_${{matrix.arch}} && msbuild libffi-msvc.sln /p:Configuration=Release /p:Platform=${{steps.virtuals.outputs.msarch}} /p:WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}}
+        run: cd libffi\win32\${{steps.virtuals.outputs.vs}}_${{matrix.arch}} && msbuild libffi-msvc.sln /p:Configuration=Release;Platform=${{steps.virtuals.outputs.msarch}};PlatformToolset=${{steps.virtuals.outputs.msts}};WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}}
       - name: Install libffi
         run: |
           cd libffi
