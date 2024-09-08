@@ -19,7 +19,7 @@ jobs:
   build:
     strategy:
       matrix:
-          arch: [x86]
+          arch: [x64, x86]
     runs-on: windows-2019
     steps:
       - name: Checkout winlib-builder
