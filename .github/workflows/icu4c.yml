@@ -38,6 +38,10 @@ jobs:
           toolset: ${{steps.virtuals.outputs.toolset}}
       - name: Setup msbuild
         uses: microsoft/setup-msbuild@v2
+      - name: Remove UWP projects
+        run: |
+          cd icu4c\source\allinone
+          for /f %%i in ('dotnet sln allinone.sln list ^| findstr _uwp') do @dotnet sln allinone.sln remove %%i
       - name: Build icu4c
         run: cd icu4c && msbuild /p:Configuration=Release;Platform=${{steps.virtuals.outputs.msarch}};PlatformToolset=${{steps.virtuals.outputs.msts}};WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}} source\allinone\allinone.sln
       - name: Install icu4c
