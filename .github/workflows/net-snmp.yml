@@ -43,7 +43,7 @@ jobs:
           arch: ${{matrix.arch}}
           toolset: ${{steps.virtuals.outputs.toolset}}
       - name: Configure net-snmp
-        run: cd net-snmp\win32 && perl Configure --with-sdk --with-ssl --config=release --with-ipv6 --prefix=c:/usr
+        run: cd net-snmp\win32 && perl Configure --with-sdk --with-ssl --config=release --linktype=static --with-ipv6 --prefix=c:/usr
       - name: Build libsnmp
         run: cd net-snmp\win32 && set INCLUDE=${{github.workspace}}\deps\include;%INCLUDE% && nmake libsnmp
       - name: Build libagent
