@@ -16,7 +16,7 @@ jobs:
     strategy:
       matrix:
           arch: [x64, x86]
-    runs-on: windows-2019
+    runs-on: windows-2022
     steps:
       - name: Checkout winlib-builder
         uses: actions/checkout@v4
@@ -32,7 +32,7 @@ jobs:
         id: virtuals
         run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
       - name: Configure liblzma
-        run: cd liblzma && md build && cd build && cmake -G "Visual Studio 16 2019" -A ${{steps.virtuals.outputs.msarch}} -T ${{steps.virtuals.outputs.msts}} ..
+        run: cd liblzma && md build && cd build && cmake -G "Visual Studio 17 2022" -A ${{steps.virtuals.outputs.msarch}} -T ${{steps.virtuals.outputs.msts}} ..
       - name: Build liblzma
         run: cd liblzma\build && cmake --build . --config RelWithDebInfo
       - name: Install liblzma
