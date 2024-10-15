@@ -32,6 +32,8 @@ jobs:
           path: libmemcached
           repository: awesomized/libmemcached
           ref: ${{github.event.inputs.version}}
+      - name: Patch libmemcached
+        run: cd libmemcached && git apply --ignore-whitespace ..\winlib-builder\patches\libmemcached.patch
       - name: Compute virtual inputs
         id: virtuals
         run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
