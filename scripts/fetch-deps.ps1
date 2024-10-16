@@ -40,9 +40,6 @@ foreach ($line in $response.Content -split "`r?`n") {
     }
 }
 
-$needs
-exit
-
 New-Item "deps" -ItemType "directory"
 
 $baseurl = "https://downloads.php.net/~windows/php-sdk/deps/$vs/$arch"
