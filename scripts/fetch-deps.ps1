@@ -40,13 +40,16 @@ foreach ($line in $response.Content -split "`r?`n") {
     }
 }
 
+$needs
+exit
+
 New-Item "deps" -ItemType "directory"
 
 $baseurl = "https://downloads.php.net/~windows/php-sdk/deps/$vs/$arch"
 foreach ($dep in $needs.GetEnumerator()) {
     Write-Output "Fetching $($dep.Name)-$($dep.Value)"
     $temp = New-TemporaryFile | Rename-Item -NewName {$_.Name + ".zip"} -PassThru
-    $url = "$baseurl/$($dep.Name)-$($dep.Value)-$vs-$arch.zip"
+    $url = "$baseurl/$($dep.Name)-$($dep.Value)-vs16-$arch.zip"
     Invoke-WebRequest $url -OutFile $temp
     Expand-Archive $temp -DestinationPath "deps"
 }
