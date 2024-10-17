@@ -1,0 +1,53 @@
+name: Build ssdeep
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: ssdeep tag to build
+        required: true
+      php:
+        description: PHP version to build for
+        required: true
+defaults:
+  run:
+    shell: cmd
+jobs:
+  build:
+    strategy:
+      matrix:
+          arch: [x64, x86]
+    runs-on: windows-2022
+    steps:
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v4
+        with:
+          path: winlib-builder
+      - name: Checkout ssdeep
+        uses: actions/checkout@v4
+        with:
+          path: ssdeep
+          repository: winlibs/ssdeep
+          ref: ${{github.event.inputs.version}}
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+      - name: Setup MSVC development environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{matrix.arch}}
+          toolset: ${{steps.virtuals.outputs.toolset}}
+      - name: Build ssdeep
+        run: cd ssdeep && nmake /f Makefile.vc && nmake /f Makefile.vc DEBUG=1
+      - name: Install ssdeep
+        run: |
+          cd ssdeep
+          xcopy edit_dist.h ..\install\include\*
+          xcopy fuzzy.h ..\install\include\*
+          xcopy *.lib ..\install\lib\*
+          xcopy *.pdb ..\install\lib\*
+          echo See http://news.php.net/php.pecl.dev/7625>..\install\LICENSE
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
+          path: install
