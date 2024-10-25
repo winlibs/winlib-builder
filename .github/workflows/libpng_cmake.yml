@@ -1,0 +1,58 @@
+name: Build libpng
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: libpng tag to build
+        required: true
+      php:
+        description: PHP version to build for
+        required: true
+      stability:
+        description: the series stability
+        required: false
+        default: 'staging'
+defaults:
+  run:
+    shell: cmd
+jobs:
+  build:
+    strategy:
+      matrix:
+          arch: [x64, x86]
+    runs-on: windows-2019
+    steps:
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v4
+        with:
+          path: winlib-builder
+      - name: Checkout libpng
+        uses: actions/checkout@v4
+        with:
+          path: libpng
+          repository: winlibs/libpng
+          ref: ${{github.event.inputs.version}}
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+      - name: Fetch dependencies
+        run: powershell winlib-builder/scripts/fetch-deps -lib libpng -version ${{github.event.inputs.php}} -vs ${{steps.virtuals.outputs.vs}} -arch ${{matrix.arch}} -stability ${{github.event.inputs.stability}}
+      - name: Configure libpng
+        run: cd libpng && cmake -G "Visual Studio 16 2019" -A ${{steps.virtuals.outputs.msarch}} -T ${{steps.virtuals.outputs.msts}} -DCMAKE_SYSTEM_VERSION=${{steps.virtuals.outputs.winsdk}} -DPNG_TESTS=OFF -DPNG_TOOLS=OFF -DCMAKE_INSTALL_PREFIX=%GITHUB_WORKSPACE%\install -DZLIB_LIBRARY=%GITHUB_WORKSPACE%\deps\lib\zlib_a.lib -DZLIB_INCLUDE_DIR=%GITHUB_WORKSPACE%\deps\include .
+      - name: Build libpng
+        run: cd libpng && cmake --build . --config RelWithDebInfo
+      - name: Install libpng
+        run: |
+          cd libpng
+          cmake --install . --config RelWithDebInfo
+          copy RelWithDebInfo\libpng.pdb %GITHUB_WORKSPACE%\install\bin\libpng.pdb
+          copy RelWithDebInfo\libpng_a.pdb %GITHUB_WORKSPACE%\install\lib\libpng_a.pdb
+          move %GITHUB_WORKSPACE%\install\include\libpng %GITHUB_WORKSPACE%\install\include\libpng16
+          del %GITHUB_WORKSPACE%\install\include\png*.h
+          rmdir /s /q %GITHUB_WORKSPACE%\install\lib\libpng
+          rmdir /s /q %GITHUB_WORKSPACE%\install\share
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
+          path: ${{github.workspace}}/install
