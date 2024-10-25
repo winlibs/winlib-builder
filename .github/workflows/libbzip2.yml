@@ -1,0 +1,60 @@
+name: Build libbzip2
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: libbzip2 tag to build
+        required: true
+      php:
+        description: PHP version to build for
+        required: true
+defaults:
+  run:
+    shell: cmd
+jobs:
+  build:
+    strategy:
+      matrix:
+          arch: [x64, x86]
+    runs-on: windows-2022
+    steps:
+      - name: Set git to use LF
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.eol lf
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v4
+        with:
+          path: winlib-builder
+      - name: Checkout libbzip2
+        uses: actions/checkout@v4
+        with:
+          path: libbzip2
+          repository: winlibs/libbzip2
+          ref: ${{github.event.inputs.version}}
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+      - name: Setup MSVC development environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{matrix.arch}}
+          toolset: ${{steps.virtuals.outputs.toolset}}
+      - name: Build libbzip2 release
+        run: cd libbzip2 && nmake /f makefile.msc
+      - name: Install libbzip2 release
+        run: |
+          cd libbzip2
+          xcopy bzlib.h ..\build\include\*
+          xcopy libbz2_a.* ..\build\lib\*
+      - name: Build libbzip2 debug
+        run: cd libbzip2 && nmake /f makefile_debug.msc
+      - name: Install libbzip2 debug
+        run: |
+          cd libbzip2
+          xcopy libbz2_a_debug.* ..\build\lib\*
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
+          path: build
