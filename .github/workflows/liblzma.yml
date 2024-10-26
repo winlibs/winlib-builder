@@ -38,7 +38,7 @@ jobs:
       - name: Install liblzma
         run: |
           cd liblzma\build
-          cmake --install . --config RelWithDebInfo --prefix ..\..\install
+          cmake --install . --config RelWithDebInfo --component liblzma_Development --prefix ..\..\install
           IF EXIST RelWithDebInfo\liblzma_a.pdb xcopy RelWithDebInfo\liblzma_a.pdb ..\..\install\lib\*
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
