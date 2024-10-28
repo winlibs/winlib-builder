@@ -1,4 +1,4 @@
-name: Build libpng
+name: Build libpng <= 1.6.34
 on:
   workflow_dispatch:
     inputs:
