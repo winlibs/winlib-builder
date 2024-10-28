@@ -13,6 +13,7 @@ $deps = @{
     "cyrus-sasl" = "liblmdb", "openssl", "sqlite3";
     "enchant" = "glib";
     "glib" = "libffi", "libintl", "zlib";
+    "libpng" = "zlib";
     "librdkafka" = "libzstd", "openssl", "zlib";
     "libssh2" = "openssl", "zlib";
     "libxml2" = "libiconv";
