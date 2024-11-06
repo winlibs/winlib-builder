@@ -1,0 +1,103 @@
+name: Build openldap_msys
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: openldap tag to build
+        required: true
+      php:
+        description: PHP version to build for
+        required: true
+      stability:
+        description: the series stability
+        required: false
+        default: 'staging'
+defaults:
+  run:
+    shell: cmd
+jobs:
+  build:
+    strategy:
+      matrix:
+          arch: [x64, x86]
+    runs-on: windows-2022
+    steps:
+      - name: Set git to use LF
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.eol lf
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v4
+        with:
+          path: winlib-builder
+      - name: Checkout openldap
+        uses: actions/checkout@v4
+        with:
+          path: openldap
+          repository: winlibs/openldap
+          ref: ${{github.event.inputs.version}}
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+      - name: Fetch dependencies
+        run: powershell winlib-builder/scripts/fetch-deps -lib openldap -version ${{github.event.inputs.php}} -vs ${{steps.virtuals.outputs.vs}} -arch ${{matrix.arch}} -stability ${{github.event.inputs.stability}}
+      - name: Checkout rxspencer
+        uses: actions/checkout@v4
+        with:
+          path: rxspencer
+          repository: garyhouston/rxspencer
+          ref: v3.9.0
+      - name: Setup MSVC development environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{matrix.arch}}
+          toolset: ${{steps.virtuals.outputs.toolset}}
+      - name: Build and install rxspencer
+        run: |
+          cd rxspencer
+          cmake -G "Visual Studio 17 2022" -A ${{steps.virtuals.outputs.msarch}} -T ${{steps.virtuals.outputs.msts}} -DCMAKE_SYSTEM_VERSION=${{steps.virtuals.outputs.winsdk}} -Drxshared=0 -DBUILD_TESTING=OFF -DINSTALL_DOCS=OFF .
+          cmake --build . --config Release
+          cmake --install . --config Release --prefix ..\deps
+          move ..\deps\include\rxspencer\regex.h ..\deps\include\regex.h
+          rmdir ..\deps\include\rxspencer
+          ren ..\deps\lib\rxspencer.lib libregex.lib
+          tree /a /f ..\deps
+      - name: Create build script
+        run: |
+          cd openldap
+          set WORKSPACE=${{github.workspace}}
+          set WORKSPACE=%WORKSPACE:\=/%
+          set WORKSPACE=/%WORKSPACE::=%
+          > winlibs.sh echo export PATH=/usr/local/bin:/usr/bin:/bin:/opt/bin:$PATH
+          >>winlibs.sh echo pacman -S --noconfirm make groff
+          >>winlibs.sh echo ./configure --host=x86_64-w64-mingw32 --disable-slapd --disable-shared --prefix %WORKSPACE%/install --includedir=%WORKSPACE%/install/include/openldap \
+          >>winlibs.sh echo   CC='%WORKSPACE%/winlib-builder/autotools/compile cl -nologo' \
+          >>winlibs.sh echo   AR='%WORKSPACE%/winlib-builder/autotools/ar-lib lib' \
+          >>winlibs.sh echo   NM='dumpbin -symbols' \
+          >>winlibs.sh echo   STRIP=':' \
+          >>winlibs.sh echo   RANLIB=':' \
+          >>winlibs.sh echo   WINDRES='%WORKSPACE%/winlib-builder/autotools/windres' \
+          >>winlibs.sh echo   RC='%WORKSPACE%/winlib-builder/autotools/windres' \
+          >>winlibs.sh echo   CFLAGS='-MD -O2 -Ob1 -Gy -Zc:inline -GF' \
+          >>winlibs.sh echo   LIBS='-lWs2_32'
+          >>winlibs.sh echo make depend
+          >>winlibs.sh echo make
+          >>winlibs.sh echo make install
+      - name: Build openldap
+        run: |
+          cd openldap
+          set CHERE_INVOKING=yes
+          set MSYS2_PATH_TYPE=inherit
+          set MSYS2_ARG_CONV_EXCL=*
+          set INCLUDE=${{github.workspace}}\deps\include;%INCLUDE%
+          set LIB=${{github.workspace}}\deps\lib;%LIB%
+          C:\msys64\usr\bin\bash.exe -lc ./winlibs.sh
+      - name: Patch installation
+        run: |
+          xcopy openldap\libraries\liblber\olber32_a.pdb install\lib\*
+          xcopy openldap\libraries\libldap\oldap32_a.pdb install\lib\*
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
+          path: install
