@@ -47,6 +47,8 @@ jobs:
           cd libbzip2
           xcopy bzlib.h ..\build\include\*
           xcopy libbz2_a.* ..\build\lib\*
+      - name: Clean libbzip2
+        run: cd libbzip2 && nmake /f makefile.msc clean
       - name: Build libbzip2 debug
         run: cd libbzip2 && nmake /f makefile_debug.msc
       - name: Install libbzip2 debug
