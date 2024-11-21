@@ -31,49 +31,53 @@ jobs:
         id: virtuals
         run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
       - name: Fetch dependencies
-        run: cd imagemagick-windows && CloneRepositories.cmd
-      - name: Patch imagemagick
-        run: cd imagemagick-windows\VisualMagick\configure && git apply --ignore-whitespace ..\..\..\winlib-builder\patches\imagemagick.patch
+        run: cd imagemagick-windows && CloneRepositories.IM7.cmd
       - name: Configure imagemagick
         run: |
-          cd imagemagick-windows\VisualMagick\configure
-          msbuild /p:Configuration=Release;Platform=Win32;Platformtoolset=v142 configure.2019.sln
-          if "${{steps.virtuals.outputs.vsnum}}" == "16" (
+          cd imagemagick-windows\configure
+          set subarch=Win32
+          if "${{matrix.arch}}" == "arm64" (
+            set subarch=ARM64
+          )
+          msbuild /p:Configuration=Release;Platform=%subarch%;Platformtoolset=v143 configure.sln
+          if "${{steps.virtuals.outputs.vsnum}}" == "17" (
+              start /wait configure /noWizard /${{matrix.arch}} /noHdri /noOpenCL /deprecated /VS2022
+          ) else if "${{steps.virtuals.outputs.vsnum}}" == "16" (
               start /wait configure /noWizard /${{matrix.arch}} /noHdri /noOpenCL /deprecated /VS2019
           ) else if "${{steps.virtuals.outputs.vsnum}}" == "15" (
               start /wait configure /noWizard /${{matrix.arch}} /noHdri /noOpenCL /deprecated /VS2017
           )
       - name: Build imagemagick
-        run: cd imagemagick-windows\VisualMagick && msbuild /p:Configuration=Release;Platform=${{steps.virtuals.outputs.msarch}};PlatformToolset=${{steps.virtuals.outputs.msts}};WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}} VisualDynamicMT.sln
+        run: cd imagemagick-windows && msbuild /p:Configuration=Release;Platform=${{steps.virtuals.outputs.msarch}};PlatformToolset=${{steps.virtuals.outputs.msts}};WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}} IM7.Dynamic.${{steps.virtuals.outputs.msarch}}.sln
       - name: Install imagemagick
         run: |
-          cd imagemagick-windows\VisualMagick
-          xcopy bin\* ..\..\install\bin\*
-          del ..\..\install\bin\CORE_RL_aom_.pdb
-          del ..\..\install\bin\CORE_RL_brotli_.pdb
-          del ..\..\install\bin\CORE_RL_croco_.pdb
-          del ..\..\install\bin\CORE_RL_ffi_.pdb
-          del ..\..\install\bin\CORE_RL_highway_.pdb
-          del ..\..\install\bin\CORE_RL_libde265_.pdb
-          del ..\..\install\bin\CORE_RL_pixman_.pdb
-          del ..\..\install\bin\CORE_RL_raqm_.pdb
-          del ..\..\install\bin\*fuzzer.pdb
-          xcopy ..\ImageMagick\MagickCore\*.h ..\..\install\include\MagickCore\*
-          del ..\..\install\include\MagickCore\*-private.h
-          xcopy ..\ImageMagick\MagickWand\*.h ..\..\install\include\MagickWand\*
-          del ..\..\install\include\MagickWand\*-private.h
-          xcopy lib\*.lib ..\..\install\lib\*
-          xcopy lib\*.exp ..\..\install\lib\*
-          xcopy lib\*.pdb ..\..\install\lib\*
-          del ..\..\install\lib\CORE_RL_aom_.pdb
-          del ..\..\install\lib\CORE_RL_brotli_.pdb
-          del ..\..\install\lib\CORE_RL_croco_.pdb
-          del ..\..\install\lib\CORE_RL_ffi_.pdb
-          del ..\..\install\lib\CORE_RL_highway_.pdb
-          del ..\..\install\lib\CORE_RL_libde265_.pdb
-          del ..\..\install\lib\CORE_RL_pixman_.pdb
-          del ..\..\install\lib\CORE_RL_raqm_.pdb
-          xcopy ..\ImageMagick\LICENSE ..\..\install\*
+          cd imagemagick-windows
+          xcopy Artifacts\bin\* ..\install\bin\*
+          del ..\install\bin\CORE_RL_aom_.pdb
+          del ..\install\bin\CORE_RL_brotli_.pdb
+          del ..\install\bin\CORE_RL_croco_.pdb
+          del ..\install\bin\CORE_RL_ffi_.pdb
+          del ..\install\bin\CORE_RL_highway_.pdb
+          del ..\install\bin\CORE_RL_libde265_.pdb
+          del ..\install\bin\CORE_RL_pixman_.pdb
+          del ..\install\bin\CORE_RL_raqm_.pdb
+          del ..\install\bin\*fuzzer.pdb
+          xcopy ImageMagick\MagickCore\*.h ..\install\include\MagickCore\*
+          del ..\install\include\MagickCore\*-private.h
+          xcopy ImageMagick\MagickWand\*.h ..\install\include\MagickWand\*
+          del ..\install\include\MagickWand\*-private.h
+          xcopy Artifacts\lib\*.lib ..\install\lib\*
+          xcopy Artifacts\lib\*.exp ..\install\lib\*
+          xcopy Artifacts\lib\*.pdb ..\install\lib\*
+          del ..\install\lib\CORE_RL_aom_.pdb
+          del ..\install\lib\CORE_RL_brotli_.pdb
+          del ..\install\lib\CORE_RL_croco_.pdb
+          del ..\install\lib\CORE_RL_ffi_.pdb
+          del ..\install\lib\CORE_RL_highway_.pdb
+          del ..\install\lib\CORE_RL_libde265_.pdb
+          del ..\install\lib\CORE_RL_pixman_.pdb
+          del ..\install\lib\CORE_RL_raqm_.pdb
+          xcopy ImageMagick\LICENSE ..\install\*
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
