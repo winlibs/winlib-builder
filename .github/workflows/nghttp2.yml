@@ -40,6 +40,7 @@ jobs:
           cd nghttp2
           cmake --install . --config RelWithDebInfo --prefix ..\winlib-builder\build
           copy lib\RelWithDebInfo\nghttp2.pdb ..\winlib-builder\build\bin
+          copy lib\RelWithDebInfo\nghttp2_static.pdb ..\winlib-builder\builder\lib
           del /s /q ..\winlib-builder\build\lib\pkgconfig\*
           del /s /q ..\winlib-builder\build\share\*
       - name: Upload artifacts
