@@ -41,6 +41,8 @@ jobs:
         run: |
           cd libzstd\build\cmake
           cmake --install . --config RelWithDebInfo --prefix ..\..\..\install
+          xcopy lib\RelWithDebInfo\libzstd.pdb ..\..\..\install\bin\*
+          xcopy lib\RelWithDebInfo\libzstd_a.pdb ..\..\..\install\lib\*
           cd ..\..
           copy COPYING ..\install
           copy LICENSE ..\install
