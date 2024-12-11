@@ -1,0 +1,79 @@
+name: Build libxcrypt_msys
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: libxcrypt tag to build
+        required: true
+      php:
+        description: PHP version to build for
+        required: true
+defaults:
+  run:
+    shell: cmd
+jobs:
+  build:
+    strategy:
+      matrix:
+          arch: [x64, x86]
+    runs-on: windows-2022
+    steps:
+      - name: Set git to use LF
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.eol lf
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v4
+        with:
+          path: winlib-builder
+      - name: Checkout libxcrypt
+        uses: actions/checkout@v4
+        with:
+          path: libxcrypt
+          repository: cmb69/libxcrypt
+          ref: ${{github.event.inputs.version}}
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+      - name: Patch libxcrypt
+        run: cd libxcrypt && git apply --ignore-whitespace ..\winlib-builder\patches\libxcrypt.patch
+      - name: Setup MSVC development environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{matrix.arch}}
+          toolset: ${{steps.virtuals.outputs.toolset}}
+      - name: Create build script
+        run: |
+          cd libxcrypt
+          set WORKSPACE=${{github.workspace}}
+          set WORKSPACE=%WORKSPACE:\=/%
+          set WORKSPACE=/%WORKSPACE::=%
+          > winlibs.sh echo export PATH=/usr/local/bin:/usr/bin:/bin:/opt/bin:$PATH
+          >>winlibs.sh echo pacman -S --noconfirm autotools
+          >>winlibs.sh echo autoreconf -f -i
+          >>winlibs.sh echo ./configure --host=x86_64-w64-mingw32 --prefix %WORKSPACE%/install \
+          >>winlibs.sh echo   CC='%WORKSPACE%/winlib-builder/autotools/compile cl -nologo -std:c11 -Zc:__STDC__' \
+          >>winlibs.sh echo   AR='%WORKSPACE%/winlib-builder/autotools/ar-lib lib' \
+          >>winlibs.sh echo   NM='dumpbin -symbols' \
+          >>winlibs.sh echo   STRIP=':' \
+          >>winlibs.sh echo   RANLIB=':' \
+          >>winlibs.sh echo   WINDRES='%WORKSPACE%/winlib-builder/autotools/windres' \
+          >>winlibs.sh echo   RC='%WORKSPACE%/winlib-builder/autotools/windres' \
+          >>winlibs.sh echo   CFLAGS='-MD -Ox -Z7 -D_CRT_DECLARE_NONSTDC_NAMES=1' \
+          >>winlibs.sh echo   LDFLAGS='-debug' \
+          >>winlibs.sh echo   LIBS='-lBcrypt'
+          >>winlibs.sh echo make
+          >>winlibs.sh echo make check
+          >>winlibs.sh echo make install
+      - name: Build libxcrypt
+        run: |
+          cd libxcrypt
+          set CHERE_INVOKING=yes
+          set MSYS2_PATH_TYPE=inherit
+          set MSYS2_ARG_CONV_EXCL=*
+          C:\msys64\usr\bin\bash.exe -lc ./winlibs.sh
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
+          path: install

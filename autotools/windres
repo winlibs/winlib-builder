@@ -1,0 +1,49 @@
+#! /bin/sh
+
+DEFINES=()
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -i)
+      INPUT="`cygpath -w $2`"
+      shift
+      shift
+      ;;
+    --output-format=*)
+      if test "${1#*=}" != coff; then
+        echo "Unsupported output format ${1#*=}"
+        exit 1
+      fi
+      shift
+      ;;
+    -O)
+      if test "$2" != coff; then
+        echo "Unsupported output format $2"
+        exit 1
+      fi
+      shift
+      shift
+      ;;
+    -o)
+      OUTPUT="`cygpath -w $2`"
+      shift
+      shift
+      ;;
+    -D*)
+      DEFINES+=("$1")
+      shift
+      ;;
+    -*)
+      echo "Unsupported option $1"
+      exit 1
+      ;;
+    *)
+    INPUT="`cygpath -w $1`"
+    shift
+    ;;
+  esac
+done
+
+rc.exe ${DEFINES[@]} -fo ${OUTPUT}.res ${INPUT}
+cvtres.exe -machine:${Platform} -out:${OUTPUT} ${OUTPUT}.res
+rm ${OUTPUT}.res
