@@ -36,6 +36,8 @@ jobs:
         run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
       - name: Checkout aom
         run: cd libavif\ext && git clone -b ${{github.event.inputs.aom}} --depth 1 https://aomedia.googlesource.com/aom
+      - name: Checkout libyuf
+        run: cd libavif\ext && git clone --single-branch https://chromium.googlesource.com/libyuv/libyuv && cd libyuv && git checkout a6a2ec65
       - name: Setup NASM
         uses: ilammy/setup-nasm@v1
       - name: Generate top level include
@@ -54,6 +56,10 @@ jobs:
           xcopy RelWithDebInfo\*.lib .
           xcopy RelWithDebInfo\aom.lib .\aom_a.lib*
           xcopy .\aom_a.lib ..\..\..\..\install\lib\
+      - name: Configure libyuv
+        run: cd libavif\ext\libyuv && cmake -G "Visual Studio 17 2022" -A ${{steps.virtuals.outputs.msarch}} -DCMAKE_SYSTEM_VERSION=${{steps.virtuals.outputs.winsdk}} -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded -DCMAKE_PROJECT_TOP_LEVEL_INCLUDES=%GITHUB_WORKSPACE%\libavif\ext\aom\winlibs.cmake ..
+      - name: Build libyuf
+        run: cd libavif\ext\libyuv && cmake --build . --config RelWithDebInfo
       - name: Configure libavif
         run: cd libavif && cmake -G "Visual Studio 17 2022" -A ${{steps.virtuals.outputs.msarch}} -T ${{steps.virtuals.outputs.msts}} -DCMAKE_SYSTEM_VERSION=${{steps.virtuals.outputs.winsdk}} -DAVIF_LIBYUV=LOCAL -DAVIF_CODEC_AOM=LOCAL -DAVIF_ENABLE_WERROR=0 -DBUILD_SHARED_LIBS=0 -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded .
       - name: Build libavif
