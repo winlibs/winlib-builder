@@ -57,9 +57,15 @@ jobs:
           xcopy RelWithDebInfo\aom.lib .\aom_a.lib*
           xcopy .\aom_a.lib ..\..\..\..\install\lib\
       - name: Configure libyuv
-        run: cd libavif\ext\libyuv && cmake -G "Visual Studio 17 2022" -A ${{steps.virtuals.outputs.msarch}} -DCMAKE_SYSTEM_VERSION=${{steps.virtuals.outputs.winsdk}} -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded -DCMAKE_PROJECT_TOP_LEVEL_INCLUDES=%GITHUB_WORKSPACE%\libavif\ext\aom\winlibs.cmake .
+        run: cd libavif\ext\libyuv && md build && cd build && cmake -G "Visual Studio 17 2022" -A ${{steps.virtuals.outputs.msarch}} -DCMAKE_SYSTEM_VERSION=${{steps.virtuals.outputs.winsdk}} -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded -DCMAKE_PROJECT_TOP_LEVEL_INCLUDES=%GITHUB_WORKSPACE%\libavif\ext\aom\winlibs.cmake ..
       - name: Build libyuf
-        run: cd libavif\ext\libyuv && cmake --build . --config RelWithDebInfo
+        run: cd libavif\ext\libyuv\build && cmake --build . --config RelWithDebInfo
+      - name: Install libyuf
+        run: |
+          cd libavif\ext\libyuv\build
+          xcopy RelWithDebInfo\*.lib .
+          xcopy RelWithDebInfo\aom.lib .\yuv_a.lib*
+          xcopy .\yuv_a.lib ..\..\..\..\install\lib\
       - name: Configure libavif
         run: cd libavif && cmake -G "Visual Studio 17 2022" -A ${{steps.virtuals.outputs.msarch}} -T ${{steps.virtuals.outputs.msts}} -DCMAKE_SYSTEM_VERSION=${{steps.virtuals.outputs.winsdk}} -DAVIF_LIBYUV=LOCAL -DAVIF_CODEC_AOM=LOCAL -DAVIF_ENABLE_WERROR=0 -DBUILD_SHARED_LIBS=0 -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=Embedded .
       - name: Build libavif
