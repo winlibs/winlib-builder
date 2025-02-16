@@ -1,25 +1,18 @@
- build/cmake/lib/CMakeLists.txt | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
-
 diff --git a/build/cmake/lib/CMakeLists.txt b/build/cmake/lib/CMakeLists.txt
 index 088c8760..a63b5c81 100644
 --- a/build/cmake/lib/CMakeLists.txt
 +++ b/build/cmake/lib/CMakeLists.txt
-@@ -121,7 +121,7 @@ if (ZSTD_BUILD_SHARED)
-     set_target_properties(
+@@ -122,5 +122,5 @@ if (ZSTD_BUILD_SHARED)
              libzstd_shared
              PROPERTIES
 -            OUTPUT_NAME zstd
 +            OUTPUT_NAME libzstd
              VERSION ${zstd_VERSION_MAJOR}.${zstd_VERSION_MINOR}.${zstd_VERSION_PATCH}
              SOVERSION ${zstd_VERSION_MAJOR})
- endif ()
-@@ -131,7 +131,7 @@ if (ZSTD_BUILD_STATIC)
-             libzstd_static
+@@ -132,5 +132,5 @@ if (ZSTD_BUILD_STATIC)
              PROPERTIES
              POSITION_INDEPENDENT_CODE On
 -            OUTPUT_NAME ${STATIC_LIBRARY_BASE_NAME})
 +            OUTPUT_NAME libzstd_a)
  endif ()
  
- if (UNIX OR MINGW)
