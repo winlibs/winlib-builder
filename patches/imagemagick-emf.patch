@@ -1,0 +1,30 @@
+From 0b81983722b3f4782dd4196dba453810a491388d Mon Sep 17 00:00:00 2001
+From: Shivam Mathur <shivam_jpr@hotmail.com>
+Date: Tue, 25 Mar 2025 16:33:13 +0000
+Subject: [PATCH 1/1] Fix missing min max in GdiplusTypes.h
+
+---
+ coders/emf.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/coders/emf.c b/coders/emf.c
+index 79889dd76..9d8307ee0 100644
+--- a/coders/emf.c
++++ b/coders/emf.c
+@@ -49,6 +49,13 @@
+ #    endif
+ #  else
+ #pragma warning(disable: 4458)
++#    define NOMINMAX
++#    include <algorithm>
++namespace Gdiplus
++{
++  using std::min;
++  using std::max;
++}
+ #    include <gdiplus.h>
+ #pragma warning(default: 4458)
+ #    pragma comment(lib, "gdiplus.lib")
+-- 
+2.49.0
+

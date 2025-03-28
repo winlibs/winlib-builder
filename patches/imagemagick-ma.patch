@@ -1,0 +1,31 @@
+From bb0760e78b4dc60f65b4ea168e68f4b2d5c74f84 Mon Sep 17 00:00:00 2001
+From: Shivam Mathur <shivam_jpr@hotmail.com>
+Date: Wed, 26 Mar 2025 22:33:02 +0000
+Subject: [PATCH 1/1] Revert "Use [[fallthrough]] when building with Visual
+ Studio (this use C++17 for all versions)."
+
+This reverts commit 342a3f99323148872d8815df0e703b8248c09788.
+---
+ MagickCore/method-attribute.h | 6 +-----
+ 1 file changed, 1 insertion(+), 5 deletions(-)
+
+diff --git a/MagickCore/method-attribute.h b/MagickCore/method-attribute.h
+index 0757df8f9..8dcec47d5 100644
+--- a/MagickCore/method-attribute.h
++++ b/MagickCore/method-attribute.h
+@@ -107,11 +107,7 @@ extern "C" {
+ #else
+ #  define magick_alloc_size(x)  /* nothing */
+ #  define magick_alloc_sizes(x,y)  /* nothing */
+-#  if defined(_MSC_VER)
+-#    define magick_fallthrough [[fallthrough]]
+-#  else
+-#    define magick_fallthrough  /* nothing */
+-#  endif
++#  define magick_fallthrough /* nothing */
+ #endif
+ 
+ #if defined(__clang__) || (defined(__GNUC__) && (__GNUC__) > 4)
+-- 
+2.49.0
+
