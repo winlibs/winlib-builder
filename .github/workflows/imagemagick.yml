@@ -5,49 +5,65 @@ on:
       php:
         description: PHP version to build for
         required: true
+      tag:
+        description: ImageMagick tag
+        required: true
 defaults:
   run:
     shell: cmd
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
           arch: [x64, x86]
-    runs-on: windows-2022
+    runs-on: ${{ inputs.php >= '8.4' && 'windows-2022' || 'windows-2019' }}
     steps:
       - name: Checkout winlib-builder
         uses: actions/checkout@v4
         with:
           path: winlib-builder
-      - name: Checkout imagemagick
+      - name: Checkout imagemagick-windows
         uses: actions/checkout@v4
         with:
           path: imagemagick-windows
           repository: ImageMagick/ImageMagick-Windows.git
           ref: main
+      - name: Checkout imagemagick
+        uses: actions/checkout@v4
+        with:
+          path: imagemagick
+          repository: ImageMagick/ImageMagick.git
+          ref: ${{ inputs.tag }}
       - name: Setup msbuild
         uses: microsoft/setup-msbuild@v2
       - name: Compute virtual inputs
         id: virtuals
         run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
       - name: Fetch dependencies
-        run: cd imagemagick-windows && CloneRepositories.cmd
+        run: cd imagemagick-windows && CloneRepositories.IM7.cmd
       - name: Patch imagemagick
-        run: cd imagemagick-windows\VisualMagick\configure && git apply --ignore-whitespace ..\..\..\winlib-builder\patches\imagemagick.patch
+        run: |
+          cd imagemagick-windows\configure && git apply --ignore-whitespace ..\..\winlib-builder\patches\imagemagick.patch
+          if "${{steps.virtuals.outputs.vsnum}}" neq "17" (
+            cd ..\imagemagick && git apply --ignore-whitespace ..\..\winlib-builder\patches\imagemagick-ma.patch
+            git apply --ignore-whitespace ..\..\winlib-builder\patches\imagemagick-emf.patch
+          )
+          if "${{steps.virtuals.outputs.vsnum}}" == "15" (
+            cd ..\Dependencies\heif && git apply --ignore-whitespace ..\..\..\winlib-builder\patches\heif.patch
+          )
       - name: Configure imagemagick
         run: |
-          cd imagemagick-windows\VisualMagick\configure
-          msbuild /p:Configuration=Release;Platform=Win32;Platformtoolset=v142 configure.2019.sln
-          if "${{steps.virtuals.outputs.vsnum}}" == "16" (
-              start /wait configure /noWizard /${{matrix.arch}} /noHdri /noOpenCL /deprecated /VS2019
-          ) else if "${{steps.virtuals.outputs.vsnum}}" == "15" (
-              start /wait configure /noWizard /${{matrix.arch}} /noHdri /noOpenCL /deprecated /VS2017
-          )
+          cd imagemagick-windows\configure
+          msbuild /p:Configuration=Release;Platform=${{inputs.php >= '8.4' && matrix.arch || 'win32' }};PlatformToolset=${{steps.virtuals.outputs.msts}};WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}} ${{inputs.php >= '8.4' && 'configure.sln' || 'configure.2017.sln' }}
+          start /wait configure /noWizard /${{matrix.arch}} /noHdri /noOpenCL /deprecated /VS${{steps.virtuals.outputs.vsyear}}
       - name: Build imagemagick
-        run: cd imagemagick-windows\VisualMagick && msbuild /p:Configuration=Release;Platform=${{steps.virtuals.outputs.msarch}};PlatformToolset=${{steps.virtuals.outputs.msts}};WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}} VisualDynamicMT.sln
+        run: |
+          cd imagemagick-windows
+          msbuild /p:Configuration=Release;Platform=${{matrix.arch}};PlatformToolset=${{steps.virtuals.outputs.msts}};WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}} IM7.Dynamic.${{ matrix.arch }}.sln
       - name: Install imagemagick
         run: |
-          cd imagemagick-windows\VisualMagick
+          cd imagemagick-windows\Artifacts
           xcopy bin\* ..\..\install\bin\*
           del ..\..\install\bin\CORE_RL_aom_.pdb
           del ..\..\install\bin\CORE_RL_brotli_.pdb
