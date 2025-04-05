@@ -1,0 +1,76 @@
+name: Build libiconv_msys
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: libiconv tag to build
+        required: true
+      php:
+        description: PHP version to build for
+        required: true
+defaults:
+  run:
+    shell: cmd
+jobs:
+  build:
+    strategy:
+      matrix:
+          arch: [x64]
+    runs-on: windows-2022
+    steps:
+      - name: Set git to use LF
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.eol lf
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v4
+        with:
+          path: winlib-builder
+      - name: Checkout libiconv
+        uses: actions/checkout@v4
+        with:
+          path: libiconv
+          repository: winlibs/libiconv
+          ref: ${{github.event.inputs.version}}
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+      - name: Setup MSVC development environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{matrix.arch}}
+          toolset: ${{steps.virtuals.outputs.toolset}}
+      - name: Build and install libiconv
+        run: |
+          cd libiconv\source
+          set WORKSPACE=${{github.workspace}}
+          set WORKSPACE=%WORKSPACE:\=/%
+          set WORKSPACE=/%WORKSPACE::=%
+          > winlibs.sh echo export PATH=/usr/local/bin:/usr/bin:/bin:/opt/bin:$PATH
+          >>winlibs.sh echo pacman -S --noconfirm make
+          >>winlibs.sh echo ./configure --host=x86_64-w64-mingw32 --prefix='%WORKSPACE%/install' \
+          >>winlibs.sh echo   CC='%WORKSPACE%/libiconv/source/build-aux/compile cl -nologo' \
+          >>winlibs.sh echo   CFLAGS='-MD -DENABLE_COSTLY_RELOCATABLE=0' \
+          >>winlibs.sh echo   NM='dumpbin -symbols' \
+          >>winlibs.sh echo   STRIP=':' \
+          >>winlibs.sh echo   AR='%WORKSPACE%/libiconv/source/build-aux/ar-lib lib' \
+          >>winlibs.sh echo   RANLIB=':'
+          >>winlibs.sh echo make
+          >>winlibs.sh echo make install
+          type winlibs.sh
+          set CHERE_INVOKING=yes
+          set MSYS2_PATH_TYPE=inherit
+          C:\msys64\usr\bin\bash.exe -lc ./winlibs.sh
+      - name: Adjust installation
+        run: |
+          del install\bin\charset-1.dll
+          del install\include\libcharset.h
+          del install\lib\charset.*
+          del install\lib\*.la
+          lib /out:install\lib\libiconv_a.lib libiconv\source\lib\.libs\*.obj
+          rd /s /q install\share
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
+          path: install
