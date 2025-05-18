@@ -1,0 +1,134 @@
+name: Build librabbitmq-c
+on:
+  workflow_dispatch:
+    inputs:
+      librabbitmq-c-ref:
+        description: librabbitmq-c git reference to build
+        required: true
+      openssl-version:
+        description: OpenSSL Version to build with
+        required: false
+        type: choice
+        options: ['1.1', '3']
+        default: '3'
+jobs:
+  vs16:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2022
+            arch: x64
+            archName: Win64
+            toolset: v142
+            label: vs16
+          - os: windows-2022
+            arch: Win32
+            archName: Win32
+            toolset: v142
+            label: vs16
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          repository: alanxz/rabbitmq-c
+          ref: ${{ inputs.librabbitmq-c-ref }}
+
+      - name: Install OpenSSL (x64 or Win32)
+        run: |          
+          if('${{ inputs.openssl-version }}' -eq '3') {
+            $ver = (choco search openssl --exact --limit-output).split('|')[1]
+            $verUnd = $ver -replace '\.', '_'
+            $archName = '${{ matrix.archName }}'
+            Start-BitsTransfer -Source "https://slproweb.com/download/${archName}OpenSSL-$verUnd.exe" -Destination openssl-installer.exe
+            Start-Process -FilePath openssl-installer.exe -ArgumentList '/SP-','/VERYSILENT','/NORESTART',"/DIR=C:\OpenSSL-$archName" -NoNewWindow -Wait
+          } else {
+            $x86Flag  = if ('${{ matrix.arch }}' -ne 'x64') { '-x86' } else { '' }
+            choco install openssl --version=1.1.1.2100 -y -f $x86Flag --install-arguments="'/DIR=C:\OpenSSL-${{ matrix.archName }}'"
+          }
+
+      - name: Configure with CMake
+        run: |
+          $opensslRoot = 'C:\OpenSSL-${{ matrix.archName }}'
+          mkdir build
+          cd build
+          cmake .. `
+            -G "Visual Studio 17 2022" `
+            -A ${{ matrix.arch }} `
+            -T "${{ matrix.toolset }}" `
+            -DCMAKE_C_FLAGS=" /W4" `
+            -DOPENSSL_ROOT_DIR="$opensslRoot" `
+            -DOPENSSL_INCLUDE_DIR="$opensslRoot\include" `
+            -DCMAKE_BUILD_TYPE=Debug `
+            -DBUILD_SHARED_LIBS=ON `
+            -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/build/install"
+
+      - name: Build & install
+        run: cmake --build build --config Release --target install
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rabbitmq-c.openssl${{ inputs.openssl-version }}-${{ matrix.label }}-${{ matrix.arch }}
+          path: ${{github.workspace}}/build/install
+  vs17:
+    # For VS17, we should only build with OpenSSL 3 as 8.4 is built with that.
+    if: ${{ inputs.openssl-version == '3' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2022
+            arch: x64
+            archName: Win64
+            toolset: v143
+            label: vs17
+          - os: windows-2022
+            arch: Win32
+            archName: Win32
+            toolset: v143
+            label: vs17
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          repository: alanxz/rabbitmq-c
+          ref: ${{ inputs.librabbitmq-c-ref }}
+
+      - name: Install OpenSSL (x64 or Win32)
+        run: |
+          $ver = (choco search openssl --exact --limit-output).split('|')[1]
+          $verUnd = $ver -replace '\.', '_'
+          $archName = '${{ matrix.archName }}'
+          Start-BitsTransfer -Source "https://slproweb.com/download/${archName}OpenSSL-$verUnd.exe" -Destination openssl-installer.exe
+          Start-Process -FilePath openssl-installer.exe -ArgumentList '/SP-','/VERYSILENT','/NORESTART',"/DIR=C:\OpenSSL-$archName" -NoNewWindow -Wait
+
+      - name: Configure with CMake
+        run: |
+          $opensslRoot = 'C:\OpenSSL-${{ matrix.archName }}'
+          mkdir build
+          cd build
+          cmake .. `
+            -G "Visual Studio 17 2022" `
+            -A ${{ matrix.arch }} `
+            -T "${{ matrix.toolset }}" `
+            -DCMAKE_C_FLAGS=" /W4" `
+            -DOPENSSL_ROOT_DIR="$opensslRoot" `
+            -DOPENSSL_INCLUDE_DIR="$opensslRoot\include" `
+            -DCMAKE_BUILD_TYPE=Debug `
+            -DBUILD_SHARED_LIBS=ON `
+            -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/build/install"
+
+      - name: Build & install
+        run: cmake --build build --config Release --target install
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rabbitmq-c.openssl${{ inputs.openssl-version }}-${{ matrix.label }}-${{ matrix.arch }}
+          path: ${{github.workspace}}/build/install
+
