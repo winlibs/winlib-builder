@@ -1,0 +1,74 @@
+name: Build curl_cmake
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: curl tag to build
+        required: true
+      php:
+        description: PHP version to build for
+        required: true
+      stability:
+        description: the series stability
+        required: false
+        default: 'staging'
+defaults:
+  run:
+    shell: cmd
+jobs:
+  build:
+    strategy:
+      matrix:
+          arch: [x64, x86]
+    runs-on: windows-2022
+    steps:
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v4
+        with:
+          path: winlib-builder
+      - name: Checkout curl
+        uses: actions/checkout@v4
+        with:
+          path: curl
+          repository: winlibs/curl
+          ref: ${{github.event.inputs.version}}
+      - name: Patch curl
+        run: cd curl && git apply --ignore-whitespace ..\winlib-builder\patches\curl.patch
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+      - name: Fetch dependencies
+        run: powershell winlib-builder/scripts/fetch-deps -lib curl -version ${{github.event.inputs.php}} -vs ${{steps.virtuals.outputs.vs}} -arch ${{matrix.arch}} -stability ${{github.event.inputs.stability}}
+      - name: Setup MSVC development environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{matrix.arch}}
+          toolset: ${{steps.virtuals.outputs.toolset}}
+      - name: Configure curl
+        run: |
+          cd curl
+          cmake -G "Visual Studio 17 2022" -A ${{steps.virtuals.outputs.msarch}}^
+            -T ${{steps.virtuals.outputs.msts}} -DCMAKE_SYSTEM_VERSION=${{steps.virtuals.outputs.winsdk}}^
+            -DBUILD_SHARED_LIBS=OFF -DBUILD_STATIC_LIBS=ON -DBUILD_STATIC_CURL=ON -DSHARE_LIB_OBJECT=OFF -DBUILD_LIBCURL_DOCS=OFF^
+            -DCURL_USE_LIBPSL=OFF^
+            -DCURL_USE_OPENSSL=ON -DOPENSSL_ROOT_DIR:PATH=%GITHUB_WORKSPACE%\deps^
+            -DZLIB_LIBRARY:PATH=%GITHUB_WORKSPACE%\deps\lib\zlib_a.lib -DZLIB_INCLUDE_DIR:PATH=%GITHUB_WORKSPACE%\deps\include^
+            -DNGHTTP2_INCLUDE_DIR:PATH=%GITHUB_WORKSPACE%\deps\include -DNGHTTP2_LIBRARY:PATH=%GITHUB_WORKSPACE%\deps\lib\nghttp2.lib^
+            -DLIBSSH2_INCLUDE_DIR:PATH=%GITHUB_WORKSPACE%\deps\include\libssh2 -DLIBSSH2_LIBRARY:PATH=%GITHUB_WORKSPACE%\deps\lib\libssh2.lib^
+            .
+      - name: Build curl
+        run: cd curl && cmake --build . --config RelWithDebInfo
+      - name: Install curl
+        run: |
+          cd curl
+          cmake --install . --config RelWithDebInfo --prefix %GITHUB_WORKSPACE%\install
+          copy src\RelWithDebInfo\curl.pdb %GITHUB_WORKSPACE%\install\bin\*
+          copy lib\RelWithDebInfo\libcurl_a.pdb %GITHUB_WORKSPACE%\install\lib\*
+          del %GITHUB_WORKSPACE%\install\bin\curl-config
+          del %GITHUB_WORKSPACE%\install\bin\mk-ca-bundle.pl
+          rd /s /q %GITHUB_WORKSPACE%\install\share
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
+          path: install
