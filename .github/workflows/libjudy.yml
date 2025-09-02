@@ -1,0 +1,98 @@
+name: Build libjudy
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: libjudy version to build (x.y.z)
+        required: true
+      php:
+        description: PHP version to build for
+        required: true
+
+defaults:
+  run:
+    shell: cmd
+
+jobs:
+  build:
+    runs-on: windows-2022
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x64, x86]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+      - name: Prepare directories
+        run: |
+          if not exist downloads mkdir downloads
+          if not exist build mkdir build
+          if not exist install mkdir install
+      - name: Download Judy source tarball
+        run: |
+          set VER=${{github.event.inputs.version}}
+          set URL=https://downloads.sourceforge.net/project/judy/judy/Judy-%VER%/Judy-%VER%.tar.gz
+          echo Downloading %URL%
+          curl -L --fail --retry 5 --retry-delay 5 "%URL%" -o "downloads\Judy-%VER%.tar.gz"
+      - name: Extract source
+        run: |
+          set VER=${{github.event.inputs.version}}
+          tar -xzf "downloads\Judy-%VER%.tar.gz" -C build
+          if not exist "build\Judy-%VER%\src\build.bat" (
+            echo FATAL: build\Judy-%VER%\src\build.bat not found. >&2
+            dir /b build\Judy-%VER%\src
+            exit /b 1
+          )
+      - name: Enable Developer Command Prompt
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.arch }}
+          toolset: ${{ steps.virtuals.outputs.toolset }}
+
+      - name: Build libjudy
+        run: |
+          set VER=${{ github.event.inputs.version }}
+
+          set "SRC=build\Judy-%VER%"
+          if not exist "%SRC%\src\build.bat" (
+            for /d %%D in (build\Judy-*) do (
+              if exist "%%D\src\build.bat" set "SRC=%%D"
+            )
+          )
+          if not exist "%SRC%\src\build.bat" (
+            echo FATAL: Could not find Judy source. >&2
+            dir /b build
+            exit /b 1
+          )
+
+          cd /d "%SRC%\src"
+          call build.bat
+          if errorlevel 1 exit /b 1
+
+          if not exist Judy.lib (
+            echo FATAL: Judy.lib not produced. Contents of src: >&2
+            dir /b
+            exit /b 1
+          )
+
+      - name: Install headers and libraries
+        run: |
+          set VER=${{github.event.inputs.version}}
+          set PREFIX=%CD%\install
+          if not exist "%PREFIX%\include" mkdir "%PREFIX%\include"
+          if not exist "%PREFIX%\lib" mkdir "%PREFIX%\lib"
+          if not exist "%PREFIX%\bin" mkdir "%PREFIX%\bin"
+          copy /Y "build\Judy-%VER%\src\Judy.h" "%PREFIX%\include\Judy.h" >nul
+          copy /Y "build\Judy-%VER%\src\Judy.lib" "%PREFIX%\lib\libJudy.lib" >nul
+          if exist "build\Judy-%VER%\src\Judy.dll" copy /Y "build\Judy-%VER%\src\Judy.dll" "%PREFIX%\bin\Judy.dll" >nul
+          if exist "build\Judy-%VER%\COPYING" copy /Y "build\Judy-%VER%\COPYING" "%PREFIX%\COPYING" >nul
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: libjudy-${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
+          path: install
