@@ -20,17 +20,17 @@ jobs:
     runs-on: ${{ inputs.php >= '8.4' && 'windows-2022' || 'windows-2019' }}
     steps:
       - name: Checkout winlib-builder
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           path: winlib-builder
       - name: Checkout imagemagick-windows
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           path: imagemagick-windows
           repository: ImageMagick/ImageMagick-Windows.git
           ref: main
       - name: Checkout imagemagick
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           path: imagemagick
           repository: ImageMagick/ImageMagick.git
