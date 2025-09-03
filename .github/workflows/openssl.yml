@@ -23,11 +23,11 @@ jobs:
           git config --global core.autocrlf false
           git config --global core.eol lf
       - name: Checkout winlib-builder
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           path: winlib-builder
       - name: Checkout openssl
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           path: openssl
           repository: winlibs/openssl

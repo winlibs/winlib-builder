@@ -19,11 +19,11 @@ jobs:
     runs-on: windows-2022
     steps:
       - name: Checkout winlib-builder
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           path: winlib-builder
       - name: Checkout qdbm
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           path: qdbm
           repository: winlibs/qdbm
