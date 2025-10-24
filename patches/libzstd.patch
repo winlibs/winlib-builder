@@ -1,11 +1,16 @@
- build/cmake/lib/CMakeLists.txt | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
-
 diff --git a/build/cmake/lib/CMakeLists.txt b/build/cmake/lib/CMakeLists.txt
-index 088c8760..a63b5c81 100644
+index 5d514cc..3205b2b 100644
 --- a/build/cmake/lib/CMakeLists.txt
 +++ b/build/cmake/lib/CMakeLists.txt
-@@ -121,7 +121,7 @@ if (ZSTD_BUILD_SHARED)
+@@ -118,6 +118,7 @@ endmacro ()
+ 
+ # Define directories containing the library's public headers
+ set(PUBLIC_INCLUDE_DIRS ${LIBRARY_DIR})
++set(CMAKE_RC_FLAGS "${CMAKE_RC_FLAGS} /I ${LIBRARY_DIR}")
+ 
+ # Split project to static and shared libraries build
+ set(library_targets)
+@@ -204,7 +205,7 @@ if (ZSTD_BUILD_SHARED)
      set_target_properties(
              libzstd_shared
              PROPERTIES
@@ -14,7 +19,7 @@ index 088c8760..a63b5c81 100644
              VERSION ${zstd_VERSION_MAJOR}.${zstd_VERSION_MINOR}.${zstd_VERSION_PATCH}
              SOVERSION ${zstd_VERSION_MAJOR})
  endif ()
-@@ -131,7 +131,7 @@ if (ZSTD_BUILD_STATIC)
+@@ -214,7 +215,7 @@ if (ZSTD_BUILD_STATIC)
              libzstd_static
              PROPERTIES
              POSITION_INDEPENDENT_CODE On
@@ -22,4 +27,4 @@ index 088c8760..a63b5c81 100644
 +            OUTPUT_NAME libzstd_a)
  endif ()
  
- if (UNIX OR MINGW)
+ # pkg-config
