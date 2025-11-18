@@ -51,8 +51,12 @@ jobs:
           move ..\install\share\licenses\librdkafka\LICENSES.txt ..\install
           ren ..\install\LICENSES.txt LICENSE
           del /s /q ..\install\share
+      - name: Normalize version
+        id: normalize_version
+        shell: pwsh
+        run: echo "version=$('${{ github.event.inputs.version }}' -replace '^v')" >> $env:GITHUB_OUTPUT
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: librdkafka-${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
+          name: librdkafka-${{steps.normalize_version.outputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
           path: install
