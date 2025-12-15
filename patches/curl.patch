@@ -1,17 +1,30 @@
-From b324e12c3c31ba855f363987538d696d393fe511 Mon Sep 17 00:00:00 2001
+From 137918812e0ca1fa9f31b84c5eb7119c52e52dcd Mon Sep 17 00:00:00 2001
 From: Shivam Mathur <shivam_jpr@hotmail.com>
-Date: Mon, 15 Dec 2025 13:52:28 +0530
-Subject: [PATCH] patch library name
+Date: Mon, 15 Dec 2025 20:17:06 +0530
+Subject: [PATCH] Curl patch
 
 ---
- CMakeLists.txt | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ CMakeLists.txt | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 4772a621..f1947212 100644
+index 4772a6219..366d5d583 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -181,7 +181,7 @@ else()
+@@ -175,13 +175,19 @@ if(CMAKE_CROSSCOMPILING)
+     "${CMAKE_SYSTEM_NAME}/${CMAKE_SYSTEM_PROCESSOR}")
+ endif()
+ 
+-if(CMAKE_C_COMPILER_TARGET)
++if(WIN32)
++  if(CMAKE_SIZEOF_VOID_P EQUAL 8)
++    set(CURL_OS "\"x86_64-pc-win32\"")
++  else()
++    set(CURL_OS "\"i386-pc-win32\"")
++  endif()
++elseif(CMAKE_C_COMPILER_TARGET)
+   set(CURL_OS "\"${CMAKE_C_COMPILER_TARGET}\"")
+ else()
    set(CURL_OS "\"${CMAKE_SYSTEM_NAME}\"")
  endif()
  
