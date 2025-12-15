@@ -1,25 +1,25 @@
-From ca88bacdbe7dec34587f2e24cd846a86305eea41 Mon Sep 17 00:00:00 2001
+From b324e12c3c31ba855f363987538d696d393fe511 Mon Sep 17 00:00:00 2001
 From: Shivam Mathur <shivam_jpr@hotmail.com>
-Date: Mon, 15 Dec 2025 16:23:50 +0530
-Subject: [PATCH] Update curl patch
+Date: Mon, 15 Dec 2025 13:52:28 +0530
+Subject: [PATCH] patch library name
 
 ---
  CMakeLists.txt | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index c0cc0c57b..fc5a82f49 100644
+index 4772a621..f1947212 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -174,7 +174,7 @@ else()
+@@ -181,7 +181,7 @@ else()
    set(CURL_OS "\"${CMAKE_SYSTEM_NAME}\"")
  endif()
  
 -set(LIB_NAME "libcurl")
 +set(LIB_NAME "libcurl_a")
+ set(EXE_NAME "curl")
  
  set_property(DIRECTORY APPEND PROPERTY INCLUDE_DIRECTORIES "${PROJECT_SOURCE_DIR}/include")
- 
 -- 
 2.50.1 (Apple Git-155)
 
