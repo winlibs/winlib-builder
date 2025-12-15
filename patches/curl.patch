@@ -1,0 +1,16 @@
+ lib/CMakeLists.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/lib/CMakeLists.txt b/lib/CMakeLists.txt
+index c1863b0de..613f2fa5b 100644
+--- a/lib/CMakeLists.txt
++++ b/lib/CMakeLists.txt
+@@ -22,7 +22,7 @@
+ #
+ ###########################################################################
+ set(LIB_NAME "libcurl")
+-set(LIBCURL_OUTPUT_NAME "libcurl" CACHE STRING "Basename of the curl library")
++set(LIBCURL_OUTPUT_NAME "libcurl_a" CACHE STRING "Basename of the curl library")
+ add_definitions("-DBUILDING_LIBCURL")
+ 
+ configure_file("curl_config.h.cmake" "${CMAKE_CURRENT_BINARY_DIR}/curl_config.h")
