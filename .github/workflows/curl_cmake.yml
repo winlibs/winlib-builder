@@ -67,6 +67,12 @@ jobs:
           del %GITHUB_WORKSPACE%\install\bin\curl-config
           del %GITHUB_WORKSPACE%\install\bin\mk-ca-bundle.pl
           rd /s /q %GITHUB_WORKSPACE%\install\share
+      - name: Patch libcurl
+        run: |
+          cd %GITHUB_WORKSPACE%\install\lib
+          ren libcurl_a.lib libcurl_static.lib
+          lib /OUT:libcurl_a.lib libcurl_static.lib secur32.lib iphlpapi.lib
+          del libcurl_static.lib
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
