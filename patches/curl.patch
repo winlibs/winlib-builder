@@ -1,16 +1,25 @@
- lib/CMakeLists.txt | 2 +-
+From b324e12c3c31ba855f363987538d696d393fe511 Mon Sep 17 00:00:00 2001
+From: Shivam Mathur <shivam_jpr@hotmail.com>
+Date: Mon, 15 Dec 2025 13:52:28 +0530
+Subject: [PATCH] patch library name
+
+---
+ CMakeLists.txt | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/lib/CMakeLists.txt b/lib/CMakeLists.txt
-index c1863b0de..613f2fa5b 100644
---- a/lib/CMakeLists.txt
-+++ b/lib/CMakeLists.txt
-@@ -22,7 +22,7 @@
- #
- ###########################################################################
- set(LIB_NAME "libcurl")
--set(LIBCURL_OUTPUT_NAME "libcurl" CACHE STRING "Basename of the curl library")
-+set(LIBCURL_OUTPUT_NAME "libcurl_a" CACHE STRING "Basename of the curl library")
- add_definitions("-DBUILDING_LIBCURL")
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 4772a621..f1947212 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -181,7 +181,7 @@ else()
+   set(CURL_OS "\"${CMAKE_SYSTEM_NAME}\"")
+ endif()
  
- configure_file("curl_config.h.cmake" "${CMAKE_CURRENT_BINARY_DIR}/curl_config.h")
+-set(LIB_NAME "libcurl")
++set(LIB_NAME "libcurl_a")
+ set(EXE_NAME "curl")
+ 
+ set_property(DIRECTORY APPEND PROPERTY INCLUDE_DIRECTORIES "${PROJECT_SOURCE_DIR}/include")
+-- 
+2.50.1 (Apple Git-155)
+
