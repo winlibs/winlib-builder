@@ -51,6 +51,10 @@ jobs:
             -T ${{steps.virtuals.outputs.msts}} -DCMAKE_SYSTEM_VERSION=${{steps.virtuals.outputs.winsdk}}^
             -DBUILD_SHARED_LIBS=OFF -DBUILD_STATIC_LIBS=ON -DBUILD_STATIC_CURL=ON -DSHARE_LIB_OBJECT=OFF -DBUILD_LIBCURL_DOCS=OFF^
             -DCURL_USE_LIBPSL=OFF^
+            -DUSE_WIN32_IDN=ON^
+            -DCURL_WINDOWS_SSPI=ON^
+            -DCURL_DISABLE_SRP=ON^
+            -DCURL_DISABLE_MQTT=ON^
             -DCURL_USE_OPENSSL=ON -DOPENSSL_ROOT_DIR:PATH=%GITHUB_WORKSPACE%\deps^
             -DZLIB_LIBRARY:PATH=%GITHUB_WORKSPACE%\deps\lib\zlib_a.lib -DZLIB_INCLUDE_DIR:PATH=%GITHUB_WORKSPACE%\deps\include^
             -DNGHTTP2_INCLUDE_DIR:PATH=%GITHUB_WORKSPACE%\deps\include -DNGHTTP2_LIBRARY:PATH=%GITHUB_WORKSPACE%\deps\lib\nghttp2.lib^
