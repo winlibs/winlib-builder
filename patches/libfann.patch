@@ -1,0 +1,29 @@
+From 5cd83b9c30984c81a8890aabb405639da87d4f69 Mon Sep 17 00:00:00 2001
+From: lnd3 <linus.cumselius@gmail.com>
+Date: Sun, 31 Aug 2025 14:45:00 +0200
+Subject: [PATCH] Make tests optional.
+
+---
+ CMakeLists.txt | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index abc5a64..c528ea0 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -160,11 +160,15 @@ install (FILES
+  )
+ 
+ ################# compile tests ################
++option(fann_tests_enabled "Enable fann google tests" Off)
+ 
++if (fann_tests_enabled)
+ ADD_SUBDIRECTORY( lib/googletest )
+ 
+ if(COMPILER_SUPPORTS_CXX11)
+   ADD_SUBDIRECTORY( tests )
+ endif()
+ 
++endif()
++
+ ENDIF()
