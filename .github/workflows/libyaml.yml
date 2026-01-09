@@ -53,7 +53,8 @@ jobs:
           cmake --install . --config Release
           Remove-Item -Recurse -Force ${{ github.workspace }}\install\cmake
           Copy-Item ..\License ${{ github.workspace }}\install\License
-          Copy-Item Release\yaml.pdb ${{ github.workspace }}\install\lib\
+          $pdbPath = if (Test-Path Release\yaml.pdb) { "Release\yaml.pdb" } else { "yaml.dir\Release\yaml.pdb" }
+          Copy-Item $pdbPath ${{ github.workspace }}\install\lib\
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v6
