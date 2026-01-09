@@ -1,0 +1,13 @@
+diff --git a/include/yaml.h b/include/yaml.h
+index 03095df..8c1c333 100644
+--- a/include/yaml.h
++++ b/include/yaml.h
+@@ -11,6 +11,8 @@
+ #ifndef YAML_H
+ #define YAML_H
+ 
++#define YAML_DECLARE_STATIC 1
++
+ #ifdef __cplusplus
+ extern "C" {
+ #endif

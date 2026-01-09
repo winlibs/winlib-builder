@@ -32,13 +32,16 @@ jobs:
           ref: ${{ inputs.libyaml }}
           path: libyaml
 
+      - name: Apply patch
+        run: cd libyaml && git apply ..\winlib-builder\patches\libyaml.patch
+
       - name: Compute virtual inputs
         id: virtuals
         shell: powershell
         run: winlib-builder/scripts/compute-virtuals -version ${{ inputs.php }} -arch ${{ matrix.arch }}
 
       - name: Configure with CMake
-        run: cd libyaml && md build && cd build && cmake .. -G "Visual Studio ${{ inputs.php >= '8.0' && '17 2022' || '16 2019' }}" -A ${{ steps.virtuals.outputs.msarch }} -T ${{ steps.virtuals.outputs.msts }} -DCMAKE_SYSTEM_VERSION=${{ steps.virtuals.outputs.winsdk }} -DBUILD_TESTING=OFF -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}\install -DCMAKE_C_FLAGS_RELEASE="/MT /Zi /O2" -DCMAKE_STATIC_LINKER_FLAGS="/DEBUG"
+        run: cd libyaml && md build && cd build && cmake .. -G "Visual Studio ${{ inputs.php >= '8.0' && '17 2022' || '16 2019' }}" -A ${{ steps.virtuals.outputs.msarch }} -T ${{ steps.virtuals.outputs.msts }} -DCMAKE_SYSTEM_VERSION=${{ steps.virtuals.outputs.winsdk }} -DBUILD_TESTING=OFF -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}\install -DCMAKE_C_FLAGS_RELEASE="/MT /Zi /O2"
 
       - name: Build
         run: cd libyaml\build && cmake --build . --config Release
@@ -50,7 +53,7 @@ jobs:
           cmake --install . --config Release
           Remove-Item -Recurse -Force ${{ github.workspace }}\install\cmake
           Copy-Item ..\License ${{ github.workspace }}\install\License
-          Copy-Item Release\*.pdb ${{ github.workspace }}\install\lib\
+          Copy-Item Release\yaml.pdb ${{ github.workspace }}\install\lib\
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v6
