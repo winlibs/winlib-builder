@@ -32,7 +32,7 @@ if (-not $deps) {
 }
 
 $needs = @{}
-$response = Invoke-WebRequest "https://downloads.php.net/~windows/php-sdk/deps/series/packages-$version-$vs-$arch-$stability.txt"
+$response = Invoke-WebRequest -Uri "https://downloads.php.net/~windows/php-sdk/deps/series/packages-$version-$vs-$arch-$stability.txt" -UseBasicParsing
 foreach ($line in $response.Content -split "`r`n") {
     foreach ($dep in $deps) {
         if ($line -match "$dep-(.+)-$vs-$arch.zip") {
@@ -55,7 +55,7 @@ foreach ($dep in $needs.GetEnumerator()) {
 $deps = $deps | Where-Object {$needs.Keys -NotContains $_}
 if ($deps.Count -gt 0) {
     $needs = @{}
-    $response = Invoke-WebRequest "https://downloads.php.net/~windows/pecl/deps/packages.txt"
+    $response = Invoke-WebRequest -Uri "https://downloads.php.net/~windows/pecl/deps/packages.txt" -UseBasicParsing
     foreach ($line in $response.Content -split "`r`n") {
         foreach ($dep in $deps) {
             if ($line -match "$dep-(.+)-$vs-$arch.zip") {
