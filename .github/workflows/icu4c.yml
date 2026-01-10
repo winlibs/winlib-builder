@@ -30,7 +30,9 @@ jobs:
           ref: ${{github.event.inputs.version}}
       - name: Compute virtual inputs
         id: virtuals
-        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+        run: |
+          powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+          powershell -Command "'artifact-name=${{github.event.inputs.version}}' -replace 'icu4c','ICU' | Out-File -Append -FilePath $env:GITHUB_OUTPUT"
       - name: Setup MSVC development environment
         uses: ilammy/msvc-dev-cmd@v1
         with:
@@ -60,5 +62,5 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
+          name: ${{steps.virtuals.outputs.artifact-name}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
           path: build
