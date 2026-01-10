@@ -16,47 +16,43 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-          arch: [x64, x86]
+        arch: [x64, x86]
     runs-on: ${{ inputs.php >= '8.4' && 'windows-2022' || 'windows-2019' }}
     steps:
       - name: Checkout winlib-builder
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           path: winlib-builder
       - name: Checkout imagemagick-windows
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           path: imagemagick-windows
-          repository: ImageMagick/ImageMagick-Windows.git
+          repository: ImageMagick/Windows
           ref: main
-      - name: Checkout imagemagick
-        uses: actions/checkout@v5
-        with:
-          path: imagemagick
-          repository: ImageMagick/ImageMagick.git
-          ref: ${{ inputs.tag }}
       - name: Setup msbuild
         uses: microsoft/setup-msbuild@v2
       - name: Compute virtual inputs
         id: virtuals
         run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
       - name: Fetch dependencies
-        run: cd imagemagick-windows && CloneRepositories.IM7.cmd
+        run: cd imagemagick-windows && clone-repositories-im7.cmd
+      - name: Checkout imagemagick tag
+        run: cd imagemagick-windows\ImageMagick && git fetch origin ${{ inputs.tag }} && git checkout ${{ inputs.tag }}
       - name: Patch imagemagick
         run: |
-          cd imagemagick-windows\configure && git apply --ignore-whitespace ..\..\winlib-builder\patches\imagemagick.patch
+          cd imagemagick-windows\Configure\src
+          git apply --ignore-whitespace ..\..\..\winlib-builder\patches\imagemagick.patch
           if "${{steps.virtuals.outputs.vsnum}}" neq "17" (
-            cd ..\imagemagick && git apply --ignore-whitespace ..\..\winlib-builder\patches\imagemagick-ma.patch
+            cd ..\..\ImageMagick
+            git apply --ignore-whitespace ..\..\winlib-builder\patches\imagemagick-ma.patch
             git apply --ignore-whitespace ..\..\winlib-builder\patches\imagemagick-emf.patch
-          )
-          if "${{steps.virtuals.outputs.vsnum}}" == "15" (
-            cd ..\Dependencies\heif && git apply --ignore-whitespace ..\..\..\winlib-builder\patches\heif.patch
+            git apply --ignore-whitespace ..\..\winlib-builder\patches\imagemagick-msvc.patch
           )
       - name: Configure imagemagick
         run: |
-          cd imagemagick-windows\configure
-          msbuild /p:Configuration=Release;Platform=${{inputs.php >= '8.4' && matrix.arch || 'win32' }};PlatformToolset=${{steps.virtuals.outputs.msts}};WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}} ${{inputs.php >= '8.4' && 'configure.sln' || 'configure.2017.sln' }}
-          start /wait configure /noWizard /${{matrix.arch}} /noHdri /noOpenCL /deprecated /VS${{steps.virtuals.outputs.vsyear}}
+          cd imagemagick-windows\Configure
+          msbuild /p:Configuration=Release;Platform=${{matrix.arch}};PlatformToolset=${{steps.virtuals.outputs.msts}};WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}} Configure.sln
+          Artifacts\Release\${{matrix.arch}}\bin\Configure.Release.${{matrix.arch}} /noWizard /${{matrix.arch}} /noHdri /noOpenCL /deprecated /VS${{steps.virtuals.outputs.vsyear}}
       - name: Build imagemagick
         run: |
           cd imagemagick-windows
@@ -91,7 +87,7 @@ jobs:
           del ..\..\install\lib\CORE_RL_raqm_.pdb
           xcopy ..\ImageMagick\LICENSE ..\..\install\*
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
-          name: ImageMagick-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
+          name: ImageMagick-${{inputs.tag}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
           path: install

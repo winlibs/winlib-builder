@@ -1,50 +1,42 @@
- Configure/CommandLineInfo.cpp | 4 ++--
- Configure/ConfigureWizard.cpp | 3 ---
- Configure/ProjectFile.cpp     | 2 --
- 3 files changed, 2 insertions(+), 7 deletions(-)
-
-diff --git a/Configure/CommandLineInfo.cpp b/Configure/CommandLineInfo.cpp
-index 6839bd8..38239ef 100644
---- a/Configure/CommandLineInfo.cpp
-+++ b/Configure/CommandLineInfo.cpp
-@@ -155,8 +155,8 @@ void CommandLineInfo::ParseParam(const wchar_t* pszParam, BOOL bFlag, BOOL bLast
-     _noWizard=true;
-   else if (_wcsicmp(pszParam, L"LimitedPolicy") == 0)
-     _policyConfig=PolicyConfig::LIMITED;
--  else if (_wcsicmp(pszParam, L"openCL") == 0)
--    _useOpenCL=true;
+diff --git a/src/CommandLineInfo.cpp b/src/CommandLineInfo.cpp
+index a20cbe1..0f9ab5b 100644
+--- a/src/CommandLineInfo.cpp
++++ b/src/CommandLineInfo.cpp
+@@ -56,6 +56,8 @@ void CommandLineInfo::ParseParam(const wchar_t* pszParam, BOOL bFlag, BOOL bLast
+     _options->useHDRI=FALSE;
+   else if (_wcsicmp(pszParam, L"noOpenMP") == 0)
+     _options->useOpenMP=FALSE;
 +  else if (_wcsicmp(pszParam, L"noOpenCL") == 0)
-+    _useOpenCL=false;
-   else if (_wcsicmp(pszParam, L"OpenPolicy") == 0)
-     _policyConfig=PolicyConfig::OPEN;
-   else if (_wcsicmp(pszParam, L"Q8") == 0)
-diff --git a/Configure/ConfigureWizard.cpp b/Configure/ConfigureWizard.cpp
-index 841ba09..927f298 100644
---- a/Configure/ConfigureWizard.cpp
-+++ b/Configure/ConfigureWizard.cpp
-@@ -51,9 +51,6 @@ const wstring ConfigureWizard::channelMaskDepth() const
-   if (!_isImageMagick7)
++    _options->useOpenCL=FALSE;
+   else if (_wcsicmp(pszParam, L"noWizard") == 0)
+     showWizard=false;
+   else if (_wcsicmp(pszParam, L"limitedPolicy") == 0)
+diff --git a/src/Options.cpp b/src/Options.cpp
+index e1019eb..5c96ccb 100644
+--- a/src/Options.cpp
++++ b/src/Options.cpp
+@@ -65,10 +65,7 @@ const wstring Options::channelMaskDepth() const
+   if (!isImageMagick7)
      return(L"");
  
--  if ((visualStudioVersion() >= VisualStudioVersion::VS2022) && (platform() != Platform::X86))
+-  if ((visualStudioVersion >= VisualStudioVersion::VS2022) && (architecture != Architecture::x86))
 -    return(L"64");
 -  else
-     return(L"32");
+-    return(L"32");
++  return(L"32");
  }
  
-diff --git a/Configure/ProjectFile.cpp b/Configure/ProjectFile.cpp
-index bd4b57a..1aaf471 100644
---- a/Configure/ProjectFile.cpp
-+++ b/Configure/ProjectFile.cpp
-@@ -728,8 +728,6 @@ void ProjectFile::writeItemDefinitionGroup(wofstream &file,const bool debug,cons
-     file << "      <WarningLevel>TurnOffAllWarnings</WarningLevel>" << endl;
-   else
-     file << "      <WarningLevel>Level" << _project->warningLevel() << "</WarningLevel>" << endl;
--  if (_project->treatWarningAsError())
--    file << "      <TreatWarningAsError>true</TreatWarningAsError>" << endl;
-   file << "      <SuppressStartupBanner>true</SuppressStartupBanner>" << endl;
-   if (_project->compiler() == Compiler::CPP)
-     file << "      <CompileAs>CompileAsCpp</CompileAs>" << endl;
--- 
-2.49.0
-
+ const wstring Options::platform() const
+diff --git a/src/Project.cpp b/src/Project.cpp
+index 60137fb..717622c 100644
+--- a/src/Project.cpp
++++ b/src/Project.cpp
+@@ -33,7 +33,7 @@ const wstring Project::characterSet() const
+ 
+ Compiler Project::compiler() const
+ {
+-  return(_config.isMagickProject() && _options.visualStudioVersion >= VisualStudioVersion::VS2022
++  return(_config.isMagickProject() && true
+     ? Compiler::CPP
+     : Compiler::Default);
+ }
