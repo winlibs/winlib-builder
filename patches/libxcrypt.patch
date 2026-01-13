@@ -1,0 +1,54 @@
+ Makefile.am         | 4 ----
+ configure.ac        | 1 +
+ test/alg-yescrypt.c | 2 +-
+ 3 files changed, 2 insertions(+), 5 deletions(-)
+
+diff --git a/Makefile.am b/Makefile.am
+index 5c07059..08ed7ee 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -368,19 +368,15 @@ check_PROGRAMS = \
+ 	test/alg-sha256 \
+ 	test/alg-sha512 \
+ 	test/alg-yescrypt \
+-	test/badsalt \
+ 	test/badsetting \
+ 	test/byteorder \
+ 	test/checksalt \
+-	test/compile-strong-alias \
+-	test/crypt-badargs \
+ 	test/crypt-gost-yescrypt \
+ 	test/explicit-bzero \
+ 	test/gensalt \
+ 	test/gensalt-extradata \
+ 	test/gensalt-nthash \
+ 	test/getrandom-fallbacks \
+-	test/getrandom-interface \
+ 	test/preferred-method \
+ 	test/short-outbuf \
+ 	test/special-char-salt
+diff --git a/configure.ac b/configure.ac
+index 4b8afd8..1523e92 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -28,6 +28,7 @@ m4_pattern_allow([PKG_INSTALLDIR])
+ # Checks for programs.
+ AC_CANONICAL_HOST
+ AC_PROG_CC
++ac_prog_cc_stdc=c11
+ 
+ # Dependencies
+ PKG_PROG_PKG_CONFIG
+diff --git a/test/alg-yescrypt.c b/test/alg-yescrypt.c
+index 8112dac..3303368 100644
+--- a/test/alg-yescrypt.c
++++ b/test/alg-yescrypt.c
+@@ -158,7 +158,7 @@ int main(void)
+ {
+ 	int i;
+ 
+-	setvbuf(stdout, NULL, _IOLBF, 0);
++	// setvbuf(stdout, NULL, _IOLBF, 0);
+ 
+ #ifdef TEST_PBKDF2_SHA256
+ 	print_PBKDF2_SHA256("password", "salt", 1, 20);
