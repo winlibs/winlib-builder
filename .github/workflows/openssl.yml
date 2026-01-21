@@ -59,6 +59,7 @@ jobs:
           nmake install
           xcopy C:\usr\local\ssl\bin ..\install\bin\*
           xcopy /e C:\usr\local\ssl\include ..\install\include\*
+          if not exist ..\install\include\openssl\applink.c xcopy ms\applink.c ..\install\include\openssl\*
           xcopy /s /e C:\usr\local\ssl\lib ..\install\lib\*
           xcopy apps\openssl.cnf ..\install\*
       - name: Upload artifacts
