@@ -40,8 +40,12 @@ jobs:
           cd build
           cmake --install . --config RelWithDebInfo --prefix ..\install
           xcopy RelWithDebInfo\brotli*.pdb ..\install\bin\*
+      - name: Normalize version
+        id: normalize_version
+        shell: pwsh
+        run: echo "version=$('${{ github.event.inputs.version }}' -replace '^v')" >> $env:GITHUB_OUTPUT
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
+          name: brotli-${{steps.normalize_version.outputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
           path: install
