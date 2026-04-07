@@ -9,7 +9,7 @@ param (
 $ErrorActionPreference = "Stop"
 
 $deps = @{
-    "curl" = "libssh2", "nghttp2", "openssl", "zlib";
+    "curl" = "brotli", "libssh2", "libzstd", "nghttp2", "openssl", "zlib";
     "cyrus-sasl" = "liblmdb", "openssl", "sqlite3";
     "enchant" = "glib";
     "glib" = "libffi", "libintl", "zlib";
