@@ -78,7 +78,7 @@ jobs:
         run: |
           cd %GITHUB_WORKSPACE%\install\lib
           ren libcurl_a.lib libcurl_static.lib
-          lib /OUT:libcurl_a.lib libcurl_static.lib secur32.lib iphlpapi.lib
+          lib /OUT:libcurl_a.lib libcurl_static.lib secur32.lib iphlpapi.lib %GITHUB_WORKSPACE%\deps\lib\brotlidec.lib %GITHUB_WORKSPACE%\deps\lib\brotlicommon.lib %GITHUB_WORKSPACE%\deps\lib\libzstd.lib
           if errorlevel 1 exit /b 1
           del libcurl_static.lib
       - name: Bundle artifact dependencies
