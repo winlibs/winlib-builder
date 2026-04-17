@@ -1,0 +1,106 @@
+name: Build fbclient
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Firebird tag to repackage
+        required: true
+      php:
+        description: PHP version to build for
+        required: true
+defaults:
+  run:
+    shell: cmd
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x64, x86]
+    runs-on: windows-2022
+    steps:
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v6
+        with:
+          path: winlib-builder
+
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{ github.event.inputs.php }} -arch ${{ matrix.arch }}
+
+      - name: Compute package metadata
+        id: package
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $version = '${{ github.event.inputs.version }}'.TrimStart('v', 'V')
+          $suffix = if ('${{ matrix.arch }}' -eq 'x86') { 'Win32.zip' } else { 'x64.zip' }
+          $release = gh release view '${{ github.event.inputs.version }}' -R FirebirdSQL/firebird --json assets | ConvertFrom-Json
+          $asset = $release.assets | Where-Object { $_.name -like "Firebird-*-$suffix" } | Select-Object -First 1
+
+          if (-not $asset) {
+              throw "Could not find official Firebird asset matching $suffix for tag ${{ github.event.inputs.version }}"
+          }
+
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "asset=$($asset.name)" >> $env:GITHUB_OUTPUT
+
+      - name: Download official Firebird package
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $downloadRoot = Join-Path $env:RUNNER_TEMP 'firebird-release'
+          New-Item -Path $downloadRoot -ItemType Directory -Force | Out-Null
+          $zipPath = Join-Path $downloadRoot '${{ steps.package.outputs.asset }}'
+
+          if (Test-Path $zipPath) {
+              Remove-Item -Path $zipPath -Force
+          }
+
+          gh release download '${{ github.event.inputs.version }}' -R FirebirdSQL/firebird -p '${{ steps.package.outputs.asset }}' -D $downloadRoot
+
+          if (-not (Test-Path $zipPath)) {
+              throw "Downloaded Firebird package not found at $zipPath"
+          }
+
+      - name: Package artifacts
+        shell: pwsh
+        run: |
+          $downloadRoot = Join-Path $env:RUNNER_TEMP 'firebird-release'
+          $zipPath = Join-Path $downloadRoot '${{ steps.package.outputs.asset }}'
+          $extractRoot = Join-Path $downloadRoot 'extracted'
+          $installRoot = Join-Path $env:GITHUB_WORKSPACE 'install'
+
+          if (Test-Path $extractRoot) {
+              Remove-Item -Path $extractRoot -Recurse -Force
+          }
+          if (Test-Path $installRoot) {
+              Remove-Item -Path $installRoot -Recurse -Force
+          }
+
+          Expand-Archive -Path $zipPath -DestinationPath $extractRoot
+
+          $includeSource = Join-Path $extractRoot 'include'
+          $importLib = Join-Path $extractRoot 'lib\fbclient_ms.lib'
+          if (-not (Test-Path $includeSource)) {
+              throw "Official Firebird package is missing include files at $includeSource"
+          }
+          if (-not (Test-Path $importLib)) {
+              throw "Official Firebird package is missing fbclient_ms.lib at $importLib"
+          }
+
+          $includeRoot = Join-Path $installRoot 'include\interbase'
+          $libRoot = Join-Path $installRoot 'lib'
+          New-Item -Path $includeRoot -ItemType Directory -Force | Out-Null
+          New-Item -Path $libRoot -ItemType Directory -Force | Out-Null
+
+          Copy-Item -Path (Join-Path $includeSource '*') -Destination $includeRoot -Recurse
+          Copy-Item -Path $importLib -Destination (Join-Path $libRoot 'fbclient_ms.lib')
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: fbclient-${{ steps.package.outputs.version }}-${{ steps.virtuals.outputs.vs }}-${{ matrix.arch }}
+          path: install
