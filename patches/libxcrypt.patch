@@ -1,9 +1,16 @@
- Makefile.am         | 4 ----
- test/alg-yescrypt.c | 2 +-
- 2 files changed, 1 insertion(+), 5 deletions(-)
+ Makefile.am                 |  9 ---------
+ configure.ac                |  9 ++++++++-
+ lib/alg-sha256.c            | 24 ++++++++++++------------
+ lib/alg-sm3.c               | 12 ++++++------
+ lib/crypt-port.h            |  4 +++-
+ lib/crypt-scrypt.c          | 12 ++++++------
+ lib/util-get-random-bytes.c | 14 ++++++++++++++
+ lib/util-xbzero.c           |  8 +++++++-
+ test/alg-yescrypt.c         |  2 +-
+ 9 files changed, 57 insertions(+), 37 deletions(-)
 
 diff --git a/Makefile.am b/Makefile.am
-index 548d44a..7e7dafb 100644
+index 548d44a..9a2c370 100644
 --- a/Makefile.am
 +++ b/Makefile.am
 @@ -378,12 +378,9 @@ check_PROGRAMS = \
@@ -27,6 +34,319 @@ index 548d44a..7e7dafb 100644
  	test/preferred-method \
  	test/short-outbuf \
  	test/special-char-salt
+@@ -499,7 +495,6 @@ test/symbols-static.log test/symbols-static.trs: test/TestCommon.pm
+ 
+ COMMON_TEST_OBJECTS = libcrypt.la
+ 
+-test_badsalt_LDADD = $(COMMON_TEST_OBJECTS)
+ test_badsetting_LDADD = $(COMMON_TEST_OBJECTS)
+ test_gensalt_bcrypt_x_LDADD = $(COMMON_TEST_OBJECTS)
+ test_gensalt_nested_call_LDADD = $(COMMON_TEST_OBJECTS)
+@@ -508,7 +503,6 @@ test_gensalt_extradata_LDADD = $(COMMON_TEST_OBJECTS)
+ test_checksalt_LDADD = $(COMMON_TEST_OBJECTS)
+ test_des_obsolete_LDADD = $(COMMON_TEST_OBJECTS)
+ test_des_obsolete_r_LDADD = $(COMMON_TEST_OBJECTS)
+-test_crypt_badargs_LDADD = $(COMMON_TEST_OBJECTS)
+ test_crypt_nested_call_LDADD = $(COMMON_TEST_OBJECTS)
+ test_crypt_too_long_phrase_LDADD = $(COMMON_TEST_OBJECTS)
+ test_preferred_method_LDADD = $(COMMON_TEST_OBJECTS)
+@@ -626,9 +620,6 @@ test_crypt_sm3_yescrypt_LDADD = \
+ 
+ test_explicit_bzero_LDADD = \
+ 	lib/libcrypt_la-util-xbzero.lo
+-test_getrandom_interface_LDADD = \
+-	lib/libcrypt_la-util-get-random-bytes.lo \
+-	lib/libcrypt_la-util-xbzero.lo
+ test_getrandom_fallbacks_LDADD = \
+ 	lib/libcrypt_la-util-get-random-bytes.lo \
+ 	lib/libcrypt_la-util-xbzero.lo
+diff --git a/configure.ac b/configure.ac
+index ddc5650..e65889c 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -32,6 +32,7 @@ AS_IF([test x"$PKG_CONFIG" != xfalse],
+ # Checks for programs.
+ AC_CANONICAL_HOST
+ AC_PROG_CC
++ac_prog_cc_stdc=c11
+ 
+ # C99 language and library features are used unconditionally.
+ # Don't even try to build with an older compiler.
+@@ -150,7 +151,13 @@ fi
+ zw_C_ALIGNAS
+ zw_C_ALIGNOF
+ zw_C_MAX_ALIGN_T
+-zw_C_ENDIANNESS
++#zw_C_ENDIANNESS
++AC_DEFINE_UNQUOTED([ENDIANNESS_IS_BIG], [0],
++  [Define as an @%:@if expression that is true when compiling for a big-endian CPU.])
++AC_DEFINE_UNQUOTED([ENDIANNESS_IS_LITTLE], [1],
++  [Define as an @%:@if expression that is true when compiling for a little-endian CPU.])
++AC_DEFINE_UNQUOTED([ENDIANNESS_IS_PDP], [0],
++  [Define as an @%:@if expression that is true when compiling for a PDP-endian CPU.])
+ zw_C_STATIC_ASSERT
+ zw_PROG_LD_WRAP
+ AX_CHECK_VSCRIPT
+diff --git a/lib/alg-sha256.c b/lib/alg-sha256.c
+index f718831..ab13c6b 100644
+--- a/lib/alg-sha256.c
++++ b/lib/alg-sha256.c
+@@ -102,9 +102,9 @@ static const uint32_t Krnd[64] = {
+  * the 512-bit input block to produce a new state.
+  */
+ static void
+-SHA256_Transform(uint32_t state[static restrict 8],
+-    const uint8_t block[static restrict 64],
+-    uint32_t W[static restrict 64], uint32_t S[static restrict 8])
++SHA256_Transform(uint32_t state[8],
++    const uint8_t block[64],
++    uint32_t W[64], uint32_t S[8])
+ {
+ 	int i;
+ 
+@@ -175,7 +175,7 @@ static const uint8_t PAD[64] = {
+ 
+ /* Add padding and terminating bit-count. */
+ static void
+-SHA256_Pad(SHA256_CTX * ctx, uint32_t tmp32[static restrict 72])
++SHA256_Pad(SHA256_CTX * ctx, uint32_t tmp32[72])
+ {
+ 	size_t r;
+ 
+@@ -229,7 +229,7 @@ SHA256_Init(SHA256_CTX * ctx)
+  */
+ static void
+ _SHA256_Update(SHA256_CTX * ctx, const void * in, size_t len,
+-    uint32_t tmp32[static restrict 72])
++    uint32_t tmp32[72])
+ {
+ 	uint32_t r;
+ 	const uint8_t * src = in;
+@@ -287,7 +287,7 @@ SHA256_Update(SHA256_CTX * ctx, const void * in, size_t len)
+  */
+ static void
+ _SHA256_Final(uint8_t digest[32], SHA256_CTX * ctx,
+-    uint32_t tmp32[static restrict 72])
++    uint32_t tmp32[72])
+ {
+ 
+ 	/* Add padding. */
+@@ -345,8 +345,8 @@ SHA256_Buf(const void * in, size_t len, uint8_t digest[32])
+  */
+ static void
+ _HMAC_SHA256_Init(HMAC_SHA256_CTX * ctx, const void * _K, size_t Klen,
+-    uint32_t tmp32[static restrict 72], uint8_t pad[static restrict 64],
+-    uint8_t khash[static restrict 32])
++    uint32_t tmp32[72], uint8_t pad[64],
++    uint8_t khash[32])
+ {
+ 	const uint8_t * K = _K;
+ 	size_t i;
+@@ -398,7 +398,7 @@ HMAC_SHA256_Init(HMAC_SHA256_CTX * ctx, const void * _K, size_t Klen)
+  */
+ static void
+ _HMAC_SHA256_Update(HMAC_SHA256_CTX * ctx, const void * in, size_t len,
+-    uint32_t tmp32[static restrict 72])
++    uint32_t tmp32[72])
+ {
+ 
+ 	/* Feed data to the inner SHA256 operation. */
+@@ -425,7 +425,7 @@ HMAC_SHA256_Update(HMAC_SHA256_CTX * ctx, const void * in, size_t len)
+  */
+ static void
+ _HMAC_SHA256_Final(uint8_t digest[32], HMAC_SHA256_CTX * ctx,
+-    uint32_t tmp32[static restrict 72], uint8_t ihash[static restrict 32])
++    uint32_t tmp32[72], uint8_t ihash[32])
+ {
+ 
+ 	/* Finish the inner SHA256 operation. */
+@@ -481,8 +481,8 @@ HMAC_SHA256_Buf(const void * K, size_t Klen, const void * in, size_t len,
+ 
+ /* Add padding and terminating bit-count, but don't invoke Transform yet. */
+ static int
+-SHA256_Pad_Almost(SHA256_CTX * ctx, uint8_t len[static restrict 8],
+-    uint32_t tmp32[static restrict 72])
++SHA256_Pad_Almost(SHA256_CTX * ctx, uint8_t len[8],
++    uint32_t tmp32[72])
+ {
+ 	uint32_t r;
+ 
+diff --git a/lib/alg-sm3.c b/lib/alg-sm3.c
+index e910d86..2181178 100644
+--- a/lib/alg-sm3.c
++++ b/lib/alg-sm3.c
+@@ -95,9 +95,9 @@ sm3_be32dec_vect(uint32_t * dst, const uint8_t * src, size_t len)
+ }
+ 
+ static void
+-sm3_transform(uint32_t state[static restrict 8],
+-              const uint8_t block[static restrict 64],
+-              uint32_t W[static restrict 64])
++sm3_transform(uint32_t state[8],
++              const uint8_t block[64],
++              uint32_t W[64])
+ {
+   register uint32_t A, B, C, D, E, F, G, H;
+   uint32_t W00, W01, W02, W03, W04, W05, W06, W07,
+@@ -288,7 +288,7 @@ sm3_init(sm3_ctx * ctx)
+  */
+ static void
+ _sm3_update(sm3_ctx * ctx, const void * in, size_t len,
+-            uint32_t tmp32[static restrict 72])
++            uint32_t tmp32[72])
+ {
+   uint32_t r;
+   const uint8_t * src = in;
+@@ -351,7 +351,7 @@ static const uint8_t PAD[64] =
+ 
+ /* Add padding and terminating bit-count. */
+ static void
+-sm3_pad(sm3_ctx * ctx, uint32_t tmp32[static restrict 72])
++sm3_pad(sm3_ctx * ctx, uint32_t tmp32[72])
+ {
+   size_t r;
+ 
+@@ -387,7 +387,7 @@ sm3_pad(sm3_ctx * ctx, uint32_t tmp32[static restrict 72])
+  */
+ static void
+ _sm3_final(uint8_t digest[32], sm3_ctx * ctx,
+-           uint32_t tmp32[static restrict 72])
++           uint32_t tmp32[72])
+ {
+ 
+   /* Add padding. */
+diff --git a/lib/crypt-port.h b/lib/crypt-port.h
+index 23c7efa..fe5c5bb 100644
+--- a/lib/crypt-port.h
++++ b/lib/crypt-port.h
+@@ -83,6 +83,8 @@
+ /* Functions that should not be inlined.  */
+ #if defined __GNUC__ && __GNUC__ >= 3
+ # define NO_INLINE __attribute__ ((__noinline__))
++#elif defined(_MSC_VER)
++# define NO_INLINE __declspec(noinline)
+ #else
+ # error "Don't know how to prevent function inlining"
+ #endif
+@@ -244,7 +246,7 @@ extern size_t strcpy_or_abort (void *dst, size_t d_size, const void *src);
+ 
+ /* A construct with the same syntactic role as the expansion of symver_set,
+    but which does nothing.  */
+-#define symver_nop() __asm__ ("")
++#define symver_nop()
+ 
+ /* The macros for versioned symbols work differently in this library
+    than they do in glibc.  They are mostly auto-generated
+diff --git a/lib/crypt-scrypt.c b/lib/crypt-scrypt.c
+index 7375c20..f1b811f 100644
+--- a/lib/crypt-scrypt.c
++++ b/lib/crypt-scrypt.c
+@@ -62,7 +62,7 @@ verify_salt (const char *setting, size_t set_size)
+ }
+ 
+ static uint8_t *
+-encode64_uint32 (uint8_t * dst, ssize_t dstlen,
++encode64_uint32 (uint8_t * dst, ptrdiff_t dstlen,
+                  uint32_t src, uint32_t srcbits)
+ {
+   uint32_t bit;
+@@ -84,7 +84,7 @@ encode64_uint32 (uint8_t * dst, ssize_t dstlen,
+ }
+ 
+ static uint8_t *
+-encode64 (uint8_t * dst, ssize_t dstlen,
++encode64 (uint8_t * dst, ptrdiff_t dstlen,
+           const uint8_t * src, size_t srclen)
+ {
+   size_t i;
+@@ -186,7 +186,7 @@ gensalt_scrypt_rn (unsigned long count,
+      large enough to hold the maximum size of the generated salt.  */
+   uint8_t outbuf[CRYPT_GENSALT_OUTPUT_SIZE];
+   uint8_t *out_p = outbuf + 4;
+-  ssize_t out_s = CRYPT_GENSALT_OUTPUT_SIZE - (out_p - outbuf);
++  ptrdiff_t out_s = CRYPT_GENSALT_OUTPUT_SIZE - (out_p - outbuf);
+ 
+   /* Valid cost parameters are from 6 to 11.  The default is 7.
+      Any cost parameter below 6 is not to be considered strong
+@@ -214,7 +214,7 @@ gensalt_scrypt_rn (unsigned long count,
+   uint32_t r = 32;
+   uint64_t N = 1ULL << (count + 7); // 6 -> 8192, 7 -> 16384, ... 11 -> 262144
+ 
+-  if (out_s > (ssize_t) BASE64_LEN (30))
++  if (out_s > (ptrdiff_t) BASE64_LEN (30))
+     {
+       outbuf[0] = '$';
+       outbuf[1] = '7';
+@@ -225,13 +225,13 @@ gensalt_scrypt_rn (unsigned long count,
+       out_s -= (out_p - outbuf);
+     }
+ 
+-  if (out_p && out_s > (ssize_t) BASE64_LEN (30))
++  if (out_p && out_s > (ptrdiff_t) BASE64_LEN (30))
+     {
+       out_p = encode64_uint32 (out_p, out_s, p, 30);
+       out_s -= (out_p - outbuf);
+     }
+ 
+-  if (out_p && out_s > (ssize_t) BASE64_LEN (nrbytes))
++  if (out_p && out_s > (ptrdiff_t) BASE64_LEN (nrbytes))
+     {
+       out_p = encode64 (out_p, out_s, rbytes, nrbytes);
+     }
+diff --git a/lib/util-get-random-bytes.c b/lib/util-get-random-bytes.c
+index b8becd9..6d67fee 100644
+--- a/lib/util-get-random-bytes.c
++++ b/lib/util-get-random-bytes.c
+@@ -31,6 +31,10 @@
+ #ifdef HAVE_SYS_STAT_H
+ #include <sys/stat.h>
+ #endif
++#ifdef _MSC_VER
++#include <Windows.h>
++#include <bcrypt.h>
++#endif
+ 
+ /* If we have O_CLOEXEC, we use it, but if we don't, we don't worry
+    about it.  */
+@@ -146,6 +150,16 @@ get_random_bytes(void *buf, size_t buflen)
+         }
+     }
+ #endif
++#ifdef _MSC_VER
++  BCRYPT_ALG_HANDLE algo;
++  if (!BCRYPT_SUCCESS(BCryptOpenAlgorithmProvider(&algo, BCRYPT_RNG_ALGORITHM, NULL, 0)))
++    return false;
++  if (!BCRYPT_SUCCESS(BCryptGenRandom(algo, buf, (ULONG) buflen, 0)))
++    return false;
++  if (!BCRYPT_SUCCESS(BCryptCloseAlgorithmProvider(algo, 0)))
++    return false;
++  return true;
++#endif
+ 
+   /* if we get here, we're just completely hosed */
+   errno = ENOSYS;
+diff --git a/lib/util-xbzero.c b/lib/util-xbzero.c
+index 39687fa..c7d307b 100644
+--- a/lib/util-xbzero.c
++++ b/lib/util-xbzero.c
+@@ -34,10 +34,16 @@
+    after the memset call, declared to read the memory that the memset
+    writes.  */
+ 
++#ifdef _MSC_VER
++# define OBSERVE_MEM(s) ((void) (s))
++#else
++# define OBSERVE_MEM(s) asm volatile ("" : : "g" (s) : "memory")
++#endif
++
+ NO_INLINE void
+ explicit_bzero (void *s, size_t len)
+ {
+   s = memset (s, 0, len);
+-  asm volatile ("" : : "g" (s) : "memory");
++  OBSERVE_MEM (s);
+ }
+ #endif
 diff --git a/test/alg-yescrypt.c b/test/alg-yescrypt.c
 index baa141d..a24a4a9 100644
 --- a/test/alg-yescrypt.c
