@@ -58,6 +58,7 @@ jobs:
           >>winlibs.sh echo pacman -S --noconfirm autotools
           >>winlibs.sh echo autoreconf -f -i
           >>winlibs.sh echo ./configure --host=%HOST_TRIPLET% --prefix %WORKSPACE%/install \
+          >>winlibs.sh echo   --enable-hashes=all \
           >>winlibs.sh echo   CC='%WORKSPACE%/winlib-builder/autotools/compile cl -nologo -std:c11' \
           >>winlibs.sh echo   AR='%WORKSPACE%/winlib-builder/autotools/ar-lib lib' \
           >>winlibs.sh echo   NM='llvm-nm' \
@@ -67,6 +68,8 @@ jobs:
           >>winlibs.sh echo   RC='%WORKSPACE%/winlib-builder/autotools/windres' \
           >>winlibs.sh echo   CFLAGS='-MD -Ox -Z7 -D_CRT_DECLARE_NONSTDC_NAMES=1 -D_CRT_SECURE_NO_WARNINGS=1' \
           >>winlibs.sh echo   LIBS='-lBcrypt'
+          >>winlibs.sh echo grep -Eq '^#define INCLUDE_sm3crypt[[:space:]]+1$' crypt-hashes.h
+          >>winlibs.sh echo grep -Eq '^#define INCLUDE_sm3_yescrypt[[:space:]]+1$' crypt-hashes.h
           >>winlibs.sh echo make
           >>winlibs.sh echo make check VERBOSE=1
           >>winlibs.sh echo make install
