@@ -23,11 +23,11 @@ jobs:
           git config --global core.autocrlf false
           git config --global core.eol lf
       - name: Checkout winlib-builder
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: winlib-builder
       - name: Checkout libxcrypt
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: libxcrypt
           repository: winlibs/libxcrypt
@@ -48,22 +48,27 @@ jobs:
           set WORKSPACE=${{github.workspace}}
           set WORKSPACE=%WORKSPACE:\=/%
           set WORKSPACE=/%WORKSPACE::=%
-          > winlibs.sh echo export PATH=/usr/local/bin:/usr/bin:/bin:/opt/bin:$PATH
+          if "${{matrix.arch}}" == "x86" (
+            set HOST_TRIPLET=i686-w64-mingw32
+          ) else (
+            set HOST_TRIPLET=x86_64-w64-mingw32
+          )
+          > winlibs.sh echo set -ex
+          >>winlibs.sh echo export PATH=/usr/local/bin:/usr/bin:/bin:/opt/bin:$PATH
           >>winlibs.sh echo pacman -S --noconfirm autotools
           >>winlibs.sh echo autoreconf -f -i
-          >>winlibs.sh echo ./configure --host=x86_64-w64-mingw32 --prefix %WORKSPACE%/install \
-          >>winlibs.sh echo   CC='%WORKSPACE%/winlib-builder/autotools/compile cl -nologo -std:c11 -Zc:__STDC__' \
+          >>winlibs.sh echo ./configure --host=%HOST_TRIPLET% --prefix %WORKSPACE%/install \
+          >>winlibs.sh echo   CC='%WORKSPACE%/winlib-builder/autotools/compile cl -nologo -std:c11' \
           >>winlibs.sh echo   AR='%WORKSPACE%/winlib-builder/autotools/ar-lib lib' \
-          >>winlibs.sh echo   NM='dumpbin -symbols' \
+          >>winlibs.sh echo   NM='llvm-nm' \
           >>winlibs.sh echo   STRIP=':' \
           >>winlibs.sh echo   RANLIB=':' \
           >>winlibs.sh echo   WINDRES='%WORKSPACE%/winlib-builder/autotools/windres' \
           >>winlibs.sh echo   RC='%WORKSPACE%/winlib-builder/autotools/windres' \
-          >>winlibs.sh echo   CFLAGS='-MD -Ox -Z7 -D_CRT_DECLARE_NONSTDC_NAMES=1' \
-          >>winlibs.sh echo   LDFLAGS='-debug' \
+          >>winlibs.sh echo   CFLAGS='-MD -Ox -Z7 -D_CRT_DECLARE_NONSTDC_NAMES=1 -D_CRT_SECURE_NO_WARNINGS=1' \
           >>winlibs.sh echo   LIBS='-lBcrypt'
           >>winlibs.sh echo make
-          >>winlibs.sh echo make check
+          >>winlibs.sh echo make check VERBOSE=1
           >>winlibs.sh echo make install
       - name: Build libxcrypt
         run: |
@@ -72,8 +77,20 @@ jobs:
           set MSYS2_PATH_TYPE=inherit
           set MSYS2_ARG_CONV_EXCL=*
           C:\msys64\usr\bin\bash.exe -lc ./winlibs.sh
+      - name: Upload failure logs
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}-logs
+          if-no-files-found: ignore
+          path: |
+            libxcrypt/config.log
+            libxcrypt/test-suite.log
+            libxcrypt/winlibs.sh
+            libxcrypt/test/*.log
+            libxcrypt/test/*.trs
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
           path: install
