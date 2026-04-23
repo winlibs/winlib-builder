@@ -1,0 +1,115 @@
+name: Build apache
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: apache/httpd ref to build
+        required: true
+      php:
+        description: PHP version to build for
+        required: true
+env:
+  APR_ICONV_VERSION: 1.2.2
+  APACHE_VERSION: ${{ github.event.inputs.version }}
+  PHP_VERSION: ${{ github.event.inputs.php }}
+  VCPKG_BINARY_SOURCES: clear;x-gha,readwrite
+defaults:
+  run:
+    shell: cmd
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x64, x86]
+    runs-on: windows-2022
+    timeout-minutes: 90
+    steps:
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v5
+        with:
+          path: winlib-builder
+
+      - name: Checkout apache/httpd
+        uses: actions/checkout@v5
+        with:
+          path: httpd
+          repository: apache/httpd
+          ref: ${{ env.APACHE_VERSION }}
+
+      - name: Determine apache build profile
+        id: httpd_profile
+        run: pwsh -File winlib-builder/scripts/apache/determine-build-profile.ps1
+
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{ env.PHP_VERSION }} -arch ${{ matrix.arch }}
+
+      - name: Setup MSVC development environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.arch }}
+          toolset: ${{ steps.virtuals.outputs.toolset }}
+
+      - name: Install Apache build dependencies
+        run: >-
+          pwsh -File winlib-builder/scripts/apache/install-build-dependencies.ps1
+          -Arch "${{ matrix.arch }}"
+          -PcrePackage "${{ steps.httpd_profile.outputs.pcre_package }}"
+
+      - name: Prepare source-built dependencies
+        id: deps
+        run: >-
+          pwsh -File winlib-builder/scripts/apache/prepare-source-built-dependencies.ps1
+          -Arch "${{ matrix.arch }}"
+          -PcreLibPath "${{ steps.httpd_profile.outputs.pcre_lib_path }}"
+          -AprIconvVersion "${{ env.APR_ICONV_VERSION }}"
+
+      - name: Configure apache/httpd
+        run: |
+          cmake -S httpd -B build -G "Visual Studio 17 2022" -A ${{ steps.virtuals.outputs.msarch }} ^
+            -T ${{ steps.virtuals.outputs.msts }} ^
+            -DCMAKE_SYSTEM_VERSION=${{ steps.virtuals.outputs.winsdk }} ^
+            -DCMAKE_INSTALL_PREFIX=%GITHUB_WORKSPACE%\apache-install ^
+            -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake ^
+            -DAPR_INCLUDE_DIR="${{ steps.deps.outputs.deps_root }}/include" ^
+            "-DAPR_LIBRARIES=${{ steps.deps.outputs.deps_root }}/lib/libapr-1.lib;${{ steps.deps.outputs.deps_root }}/lib/libaprutil-1.lib" ^
+            -DCMAKE_DISABLE_FIND_PACKAGE_OpenSSL=${{ steps.httpd_profile.outputs.disable_openssl }} ^
+            -DPCRE_INCLUDE_DIR="${{ steps.deps.outputs.deps_root }}/include" ^
+            -DPCRE_LIBRARIES="${{ steps.deps.outputs.deps_root }}/${{ steps.httpd_profile.outputs.pcre_lib_path }}" ^
+            -DPCRE_CFLAGS="${{ steps.httpd_profile.outputs.pcre_flags }}" ^
+            -DNGHTTP2_INCLUDE_DIR="${{ steps.deps.outputs.deps_root }}/include" ^
+            -DNGHTTP2_LIBRARIES="${{ steps.deps.outputs.deps_root }}/lib/nghttp2.lib" ^
+            -DBROTLI_INCLUDE_DIR="${{ steps.deps.outputs.deps_root }}/include" ^
+            "-DBROTLI_LIBRARIES=${{ steps.deps.outputs.deps_root }}/lib/brotlienc.lib;${{ steps.deps.outputs.deps_root }}/lib/brotlicommon.lib" ^
+            -DCURL_INCLUDE_DIR="${{ steps.deps.outputs.deps_root }}/include" ^
+            -DCURL_LIBRARIES="${{ steps.deps.outputs.curl_library }}" ^
+            -DJANSSON_INCLUDE_DIR="${{ steps.deps.outputs.deps_root }}/include" ^
+            -DJANSSON_LIBRARIES="${{ steps.deps.outputs.deps_root }}/lib/jansson.lib" ^
+            -DLUA_INCLUDE_DIR="${{ steps.deps.outputs.deps_root }}/include" ^
+            -DLUA_LIBRARY="${{ steps.deps.outputs.lua_library }}" ^
+            -DLUA_LIBRARIES="${{ steps.deps.outputs.lua_library }}" ^
+            -DENABLE_MODULES=i ^
+            -DINSTALL_MANUAL=ON ^
+            -DINSTALL_PDB=ON
+
+      - name: Build apache/httpd
+        run: cmake --build build --config Release
+
+      - name: Install apache/httpd
+        run: cmake --install build --config Release
+
+      - name: Package apache
+        run: >-
+          pwsh -File winlib-builder/scripts/apache/package.ps1
+          -Arch "${{ matrix.arch }}"
+          -DepsRoot "${{ steps.deps.outputs.deps_root }}"
+          -StaticRoot "${{ steps.deps.outputs.static_root }}"
+          -ApriconvRoot "${{ steps.deps.outputs.apriconv_root }}"
+          -AprExportsRoot "${{ github.workspace }}/apache-apr-exports"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: apache-${{ env.APACHE_VERSION }}-${{ steps.virtuals.outputs.vs }}-${{ matrix.arch }}
+          path: install
