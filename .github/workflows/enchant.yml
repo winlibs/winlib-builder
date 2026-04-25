@@ -54,7 +54,7 @@ jobs:
           xcopy %prefix%\Release\libenchant2.pdb ..\install\bin\*
           xcopy %prefix%\Release\libenchant2_hunspell.dll ..\install\bin\*
           xcopy %prefix%\Release\libenchant2_hunspell.pdb ..\install\bin\*
-          xcopy src\enchant.h ..\install\include\*
+          xcopy lib\enchant.h ..\install\include\*
           xcopy %prefix%\Release\libenchant2.lib ..\install\lib\*
           xcopy %prefix%\Release\libenchant2_hunspell.lib ..\install\lib\*
       - name: Upload artifacts
