@@ -55,6 +55,8 @@ jobs:
             -DCURL_USE_LIBPSL=OFF^
             -DUSE_WIN32_IDN=ON^
             -DCURL_WINDOWS_SSPI=ON^
+            -DCURL_ENABLE_NTLM=ON^
+            -DCURL_ENABLE_SMB=ON^
             -DCURL_DISABLE_SRP=ON^
             -DCURL_DISABLE_MQTT=ON^
             -DCURL_USE_OPENSSL=ON -DOPENSSL_ROOT_DIR:PATH=%GITHUB_WORKSPACE%\deps^
