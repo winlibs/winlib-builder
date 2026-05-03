@@ -12,6 +12,12 @@ on:
         description: the series stability
         required: false
         default: 'staging'
+      workflow_run_ids:
+        description: Comma-separated winlib-builder workflow run IDs to download dependency artifacts from
+        required: false
+permissions:
+  actions: read
+  contents: read
 defaults:
   run:
     shell: cmd
@@ -36,7 +42,9 @@ jobs:
         id: virtuals
         run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
       - name: Fetch dependencies
-        run: powershell winlib-builder/scripts/fetch-deps -lib net-snmp -version ${{github.event.inputs.php}} -vs ${{steps.virtuals.outputs.vs}} -arch ${{matrix.arch}} -stability ${{github.event.inputs.stability}}
+        run: powershell winlib-builder/scripts/fetch-deps -lib net-snmp -version ${{github.event.inputs.php}} -vs ${{steps.virtuals.outputs.vs}} -arch ${{matrix.arch}} -stability ${{github.event.inputs.stability}} -workflow_run_ids:'${{github.event.inputs.workflow_run_ids}}'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Setup MSVC development environment
         uses: ilammy/msvc-dev-cmd@v1
         with:
