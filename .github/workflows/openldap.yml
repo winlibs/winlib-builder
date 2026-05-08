@@ -111,7 +111,7 @@ jobs:
           xcopy openldap\libraries\libldap\oldap32_a.pdb install\lib\*
       - name: Verify ldap.conf path
         run: |
-          powershell -NoProfile -Command "$ErrorActionPreference = 'Stop'; $header = Get-Content -Raw 'openldap\include\ldap_config.h'; if ($header.IndexOf('c:\openldap\sysconf', [StringComparison]::OrdinalIgnoreCase) -lt 0) { throw 'openldap\include\ldap_config.h does not contain c:\openldap\sysconf' }; $lib = [Text.Encoding]::ASCII.GetString([IO.File]::ReadAllBytes('install\lib\oldap32_a.lib')); if ($lib.IndexOf('c:\openldap\sysconf\ldap.conf', [StringComparison]::OrdinalIgnoreCase) -lt 0) { throw 'oldap32_a.lib does not contain c:\openldap\sysconf\ldap.conf' }"
+          powershell -NoProfile -Command "$ErrorActionPreference = 'Stop'; $header = Get-Content -Raw 'openldap\include\ldap_config.h'; if ($header.IndexOf('c:\\openldap\\sysconf', [StringComparison]::OrdinalIgnoreCase) -lt 0) { throw 'openldap\include\ldap_config.h does not contain c:\\openldap\\sysconf' }; $lib = [Text.Encoding]::ASCII.GetString([IO.File]::ReadAllBytes('install\lib\oldap32_a.lib')); if ($lib.IndexOf('c:\openldap\sysconf\ldap.conf', [StringComparison]::OrdinalIgnoreCase) -lt 0) { throw 'oldap32_a.lib does not contain c:\openldap\sysconf\ldap.conf' }"
       - name: Upload failure logs
         if: failure()
         uses: actions/upload-artifact@v4
