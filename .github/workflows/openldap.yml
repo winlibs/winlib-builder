@@ -83,7 +83,7 @@ jobs:
           )
           > winlibs.sh echo export PATH=/usr/local/bin:/usr/bin:/bin:/opt/bin:$PATH
           >>winlibs.sh echo pacman -S --noconfirm make groff
-          >>winlibs.sh echo ./configure --host=%HOST_TRIPLET% --disable-slapd --disable-shared --prefix %WORKSPACE%/install --includedir=%WORKSPACE%/install/include/openldap --sysconfdir=/c/openldap/sysconf --with-subdir=no \
+          >>winlibs.sh echo ./configure --host=%HOST_TRIPLET% --disable-slapd --disable-shared --prefix='${pcfiledir}/../..' --includedir='${prefix}/include/openldap' --sysconfdir=/c/openldap/sysconf --with-subdir=no \
           >>winlibs.sh echo   CC='%WORKSPACE%/winlib-builder/autotools/compile cl -nologo' \
           >>winlibs.sh echo   AR='%WORKSPACE%/winlib-builder/autotools/ar-lib lib' \
           >>winlibs.sh echo   NM='dumpbin -symbols' \
@@ -95,7 +95,7 @@ jobs:
           >>winlibs.sh echo   LIBS='-lWs2_32'
           >>winlibs.sh echo make depend
           >>winlibs.sh echo make
-          >>winlibs.sh echo make install
+          >>winlibs.sh echo make install prefix=%WORKSPACE%/install exec_prefix=%WORKSPACE%/install includedir=%WORKSPACE%/install/include/openldap libdir=%WORKSPACE%/install/lib
       - name: Build openldap
         run: |
           cd openldap
@@ -112,6 +112,9 @@ jobs:
       - name: Verify ldap.conf path
         run: |
           powershell -NoProfile -Command "$ErrorActionPreference = 'Stop'; $header = Get-Content -Raw 'openldap\include\ldap_config.h'; if ($header.IndexOf('c:\\openldap\\sysconf', [StringComparison]::OrdinalIgnoreCase) -lt 0) { throw 'openldap\include\ldap_config.h does not contain c:\\openldap\\sysconf' }; $lib = [Text.Encoding]::ASCII.GetString([IO.File]::ReadAllBytes('install\lib\oldap32_a.lib')); if ($lib.IndexOf('c:\openldap\sysconf\ldap.conf', [StringComparison]::OrdinalIgnoreCase) -lt 0) { throw 'oldap32_a.lib does not contain c:\openldap\sysconf\ldap.conf' }"
+      - name: Verify pkg-config files
+        run: |
+          powershell -NoProfile -Command "$ErrorActionPreference = 'Stop'; Get-ChildItem 'install\lib\pkgconfig\*.pc' | ForEach-Object { $text = Get-Content -Raw $_.FullName; if ($text.IndexOf('/winlib-builder/', [StringComparison]::OrdinalIgnoreCase) -ge 0) { throw ($_.Name + ' contains the runner workspace path') }; if ($text.IndexOf('prefix=${pcfiledir}/../..', [StringComparison]::Ordinal) -lt 0) { throw ($_.Name + ' does not use a relocatable prefix') } }"
       - name: Upload failure logs
         if: failure()
         uses: actions/upload-artifact@v4
