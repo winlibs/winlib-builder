@@ -39,7 +39,7 @@ jobs:
         run: |
           cd libffi
           xcopy include\ffi.h ..\install\include\*
-          perl -pi -e "s/#define LIBFFI_H/#define LIBFFI_H\n#define FFI_BUILDING/" ..\install\include\ffi.h
+          perl -pi -e "s/#define LIBFFI_H/#define LIBFFI_H\n#define FFI_STATIC_BUILD\n#define FFI_BUILDING/" ..\install\include\ffi.h
           xcopy src\x86\ffitarget.h ..\install\include\*
           xcopy fficonfig.h ..\install\include\*
           if "${{matrix.arch}}" == "x64" (
