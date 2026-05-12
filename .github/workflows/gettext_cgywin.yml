@@ -1,0 +1,136 @@
+name: Build gettext with Cygwin
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: gettext tag to build
+        required: true
+      php:
+        description: PHP version to build for
+        required: true
+defaults:
+  run:
+    shell: cmd
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x64, x86]
+    runs-on: windows-2022
+    steps:
+      - name: Disable Git CRLF conversion
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.eol lf
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v5
+        with:
+          path: winlib-builder
+      - name: Checkout gettext
+        uses: actions/checkout@v5
+        with:
+          path: gettext
+          repository: winlibs/gettext
+          ref: ${{github.event.inputs.version}}
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{matrix.arch}}
+          sdk: ${{steps.virtuals.outputs.winsdk}}
+          toolset: ${{steps.virtuals.outputs.toolset}}
+      - name: Setup Cygwin
+        run: |
+          curl -fsSL https://cygwin.com/setup-x86_64.exe -o setup-x86_64.exe
+          setup-x86_64.exe -q -n -N -R C:\cygwin64 -l C:\cygwin-packages -s https://mirrors.kernel.org/sourceware/cygwin/ -P make,binutils,mingw64-i686-binutils,mingw64-i686-gcc-core,mingw64-x86_64-binutils,mingw64-x86_64-gcc-core
+      - name: Build gettext
+        shell: pwsh
+        env:
+          HOST_TRIPLET: ${{matrix.arch == 'x64' && 'x86_64-w64-mingw32' || 'i686-w64-mingw32'}}
+        run: |
+          $script = @'
+          win_to_cygpath() {
+            local raw="$1"
+            local path
+            path="$(cygpath -u "$raw")"
+            case "$path" in
+              /[A-Za-z]/*)
+                local drive
+                drive="$(printf '%s' "${path:1:1}" | tr '[:upper:]' '[:lower:]')"
+                path="/cygdrive/$drive${path:2}"
+                ;;
+            esac
+            printf '%s\n' "$path"
+          }
+          workspace="$(win_to_cygpath "$GITHUB_WORKSPACE")"
+          runtime="$workspace/gettext/gettext-runtime"
+          src="$runtime/intl"
+          prefix="$workspace/install"
+          cl_path="$(win_to_cygpath "$(cmd /c where cl.exe | tr -d '\r' | head -n 1)")"
+          tool_dir="$(dirname "$cl_path")"
+          export PATH="$tool_dir:/usr/bin:$PATH"
+          static_pdb="$(cygpath -w "$prefix/lib/libintl_a.pdb" | sed 's/\\/\\\\/g')"
+          mkdir -p "$prefix/lib"
+          cd "$runtime"
+          ./configure \
+            --host="$HOST_TRIPLET" \
+            --prefix="$prefix" \
+            --enable-shared \
+            --enable-static \
+            CC="$runtime/../build-aux/compile cl -nologo" \
+            CFLAGS="-MD -O2 -Zi -FS /Fd$static_pdb" \
+            CXX="$runtime/../build-aux/compile cl -nologo" \
+            CXXFLAGS="-MD -O2 -Zi -FS /Fd$static_pdb" \
+            CPPFLAGS="-D_WIN32_WINNT=0x0601" \
+            LDFLAGS="-Wl,-DEBUG" \
+            LD="link.exe" \
+            NM="dumpbin.exe -symbols" \
+            STRIP=":" \
+            AR="$workspace/winlib-builder/autotools/ar-lib lib.exe" \
+            RANLIB=":" || { cat config.log; exit 1; }
+          touch aclocal.m4 configure config.h.in Makefile.in
+          touch intl/aclocal.m4 intl/configure intl/config.h.in intl/Makefile.in intl/gnulib-lib/Makefile.in
+          perl -0pi -e 's/ -version-info \$\(LTV_CURRENT\):\$\(LTV_REVISION\):\$\(LTV_AGE\) \\\n/ -avoid-version \\\n/' intl/Makefile
+          make -C intl -j2
+          make -C intl install
+          '@
+          $scriptPath = Join-Path $env:GITHUB_WORKSPACE 'build-gettext.sh'
+          [System.IO.File]::WriteAllText($scriptPath, $script.Replace("`r`n", "`n"), [System.Text.Encoding]::ASCII)
+          $cygwinScriptPath = & C:\cygwin64\bin\cygpath.exe -u $scriptPath
+          & C:\cygwin64\bin\bash.exe --noprofile --norc -eo pipefail $cygwinScriptPath
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
+      - name: Normalize gettext install
+        shell: pwsh
+        env:
+          LIB_MACHINE: ${{matrix.arch == 'x64' && 'X64' || 'X86'}}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force -Path install/bin, install/include, install/lib | Out-Null
+          Copy-Item 'install/bin/intl-8.dll' 'install/bin/libintl.dll' -Force
+          Copy-Item 'gettext/gettext-runtime/intl/.libs/intl-8.pdb' 'install/bin/libintl.pdb' -Force
+          Copy-Item 'install/lib/intl.lib' 'install/lib/libintl_a.lib' -Force
+
+          $symbols = Get-Content 'gettext/gettext-runtime/intl/.libs/intl.expsym' |
+            Where-Object { $_ -and $_ -notmatch '^\s*(LIBRARY|NAME|EXPORTS)\b' -and $_ -notmatch '^\s*;' } |
+            ForEach-Object { "  $_" }
+          $def = @('LIBRARY libintl.dll', 'EXPORTS') + $symbols
+          Set-Content -Path 'install/lib/libintl.def' -Value $def -Encoding ASCII
+
+          & lib.exe /nologo /machine:$env:LIB_MACHINE /def:install/lib/libintl.def /name:libintl.dll /out:install/lib/libintl.lib
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Remove-Item -Force -ErrorAction SilentlyContinue 'install/bin/intl*.dll', 'install/lib/intl*.lib', 'install/lib/libintl.def', 'install/lib/libintl.exp', 'install/lib/libintl.la'
+
+          $required = @('bin/libintl.dll', 'bin/libintl.pdb', 'include/libintl.h', 'lib/libintl.lib', 'lib/libintl_a.lib', 'lib/libintl_a.pdb')
+          foreach ($file in $required) {
+            if (!(Test-Path "install/$file")) { throw "Missing install/$file" }
+          }
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
+          path: install
