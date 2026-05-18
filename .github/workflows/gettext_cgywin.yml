@@ -17,7 +17,7 @@ jobs:
       fail-fast: false
       matrix:
         arch: [x64, x86]
-    runs-on: windows-2022
+    runs-on: ${{ (inputs.php == '8.6' || inputs.php == 'master') && 'windows-2025-vs2026' || 'windows-2022' }}
     steps:
       - name: Disable Git CRLF conversion
         run: |

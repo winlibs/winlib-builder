@@ -26,7 +26,7 @@ jobs:
     strategy:
       matrix:
           arch: [x64, x86]
-    runs-on: windows-2022
+    runs-on: ${{ (inputs.php == '8.6' || inputs.php == 'master') && 'windows-2025-vs2026' || 'windows-2022' }}
     steps:
       - name: Set git to use LF
         run: |
@@ -63,7 +63,7 @@ jobs:
       - name: Build and install rxspencer
         run: |
           cd rxspencer
-          cmake -G "Visual Studio 17 2022" -A ${{steps.virtuals.outputs.msarch}} -T ${{steps.virtuals.outputs.msts}} -DCMAKE_SYSTEM_VERSION=${{steps.virtuals.outputs.winsdk}} -Drxshared=0 -DBUILD_TESTING=OFF -DINSTALL_DOCS=OFF .
+          cmake -G "Visual Studio ${{steps.virtuals.outputs.vsnum}} ${{steps.virtuals.outputs.vsyear}}" -A ${{steps.virtuals.outputs.msarch}} -T ${{steps.virtuals.outputs.msts}} -DCMAKE_SYSTEM_VERSION=${{steps.virtuals.outputs.winsdk}} -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -Drxshared=0 -DBUILD_TESTING=OFF -DINSTALL_DOCS=OFF .
           cmake --build . --config Release
           cmake --install . --config Release --prefix ..\deps
           move ..\deps\include\rxspencer\regex.h ..\deps\include\regex.h
@@ -91,8 +91,9 @@ jobs:
           >>winlibs.sh echo   RANLIB=':' \
           >>winlibs.sh echo   WINDRES='%WORKSPACE%/winlib-builder/autotools/windres' \
           >>winlibs.sh echo   RC='%WORKSPACE%/winlib-builder/autotools/windres' \
-          >>winlibs.sh echo   CFLAGS='-MD -O2 -Ob1 -Gy -Zc:inline -GF' \
-          >>winlibs.sh echo   LIBS='-lWs2_32'
+          >>winlibs.sh echo   CFLAGS='-MD -O2 -Ob1 -Gy -Zc:inline -GF -I%WORKSPACE%/deps/include' \
+          >>winlibs.sh echo   LDFLAGS='-L%WORKSPACE%/deps/lib' \
+          >>winlibs.sh echo   LIBS='libregex.lib -lWs2_32'
           >>winlibs.sh echo make depend
           >>winlibs.sh echo make
           >>winlibs.sh echo make install prefix=%WORKSPACE%/install exec_prefix=%WORKSPACE%/install includedir=%WORKSPACE%/install/include/openldap libdir=%WORKSPACE%/install/lib

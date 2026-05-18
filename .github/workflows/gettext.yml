@@ -13,6 +13,7 @@ defaults:
     shell: cmd
 jobs:
   build:
+    if: ${{ inputs.php != '8.6' && inputs.php != 'master' }}
     strategy:
       matrix:
           arch: [x64, x86]
