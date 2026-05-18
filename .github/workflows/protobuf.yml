@@ -17,7 +17,7 @@ jobs:
       fail-fast: false
       matrix:
         arch: [x64, x86]
-    runs-on: windows-2022
+    runs-on: ${{ (inputs.php == '8.6' || inputs.php == 'master') && 'windows-2025-vs2026' || 'windows-2022' }}
 
     steps:
       - name: Checkout winlib-builder
@@ -38,7 +38,7 @@ jobs:
         run: powershell winlib-builder/scripts/compute-virtuals -version ${{ inputs.php }} -arch ${{ matrix.arch }}
 
       - name: Configure with CMake
-        run: cd protobuf && md build && cd build && cmake .. -G "Visual Studio 17 2022" -A ${{ steps.virtuals.outputs.msarch }} -T ${{ steps.virtuals.outputs.msts }} -DCMAKE_SYSTEM_VERSION=${{ steps.virtuals.outputs.winsdk }} -Dprotobuf_BUILD_TESTS=OFF -Dprotobuf_WITH_ZLIB=OFF -Dprotobuf_MSVC_STATIC_RUNTIME=OFF -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}\install
+        run: cd protobuf && md build && cd build && cmake .. -G "Visual Studio ${{steps.virtuals.outputs.vsnum}} ${{steps.virtuals.outputs.vsyear}}" -A ${{ steps.virtuals.outputs.msarch }} -T ${{ steps.virtuals.outputs.msts }} -DCMAKE_SYSTEM_VERSION=${{ steps.virtuals.outputs.winsdk }} -Dprotobuf_BUILD_TESTS=OFF -Dprotobuf_WITH_ZLIB=OFF -Dprotobuf_MSVC_STATIC_RUNTIME=OFF -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}\install
 
       - name: Build
         run: cd protobuf\build && cmake --build . --config Release
