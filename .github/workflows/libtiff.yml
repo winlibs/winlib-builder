@@ -1,0 +1,52 @@
+name: Build libtiff
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: libtiff tag to build
+        required: true
+      php:
+        description: PHP version to build for
+        required: true
+      stability:
+        description: the series stability
+        required: false
+        default: 'staging'
+defaults:
+  run:
+    shell: cmd
+jobs:
+  build:
+    strategy:
+      matrix:
+          arch: [x64, x86]
+    runs-on: windows-2022
+    steps:
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v4
+        with:
+          path: winlib-builder
+      - name: Download libtiff
+        run: |
+          curl -Lo libtiff.zip https://gitlab.com/libtiff/libtiff/-/archive/${{github.event.inputs.version}}/libtiff-${{github.event.inputs.version}}.zip
+          7z x libtiff.zip
+          ren libtiff-${{github.event.inputs.version}} libtiff
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+      - name: Fetch dependencies
+        run: powershell winlib-builder/scripts/fetch-deps -lib libtiff -version ${{github.event.inputs.php}} -vs ${{steps.virtuals.outputs.vs}} -arch ${{matrix.arch}} -stability ${{github.event.inputs.stability}}
+      - name: Configure libtiff
+        run: cd libtiff && cmake -G "Visual Studio 17 2022" -A ${{steps.virtuals.outputs.msarch}} -T ${{steps.virtuals.outputs.msts}} -DCMAKE_SYSTEM_VERSION=${{steps.virtuals.outputs.winsdk}} -DZLIB_LIBRARY=%GITHUB_WORKSPACE%\deps\lib\zlib_a.lib -DZLIB_INCLUDE_DIR=%GITHUB_WORKSPACE%\deps\include -Dzlib=ON -Dtiff-tools=OFF -Dtiff-tests=OFF -Dtiff-contrib=OFF -Dtiff-docs=OFF -Dcxx=OFF --install-prefix %GITHUB_WORKSPACE%\install .
+      - name: Build libtiff
+        run: cd libtiff && cmake --build . --config RelWithDebInfo
+      - name: Install libtiff
+        run: |
+          cd libtiff
+          cmake --install . --config RelWithDebInfo
+          copy libtiff\RelWithDebInfo\tiff.pdb %GITHUB_WORKSPACE%\install\bin\*
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
+          path: ${{github.workspace}}/install
