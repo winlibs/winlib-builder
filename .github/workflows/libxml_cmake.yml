@@ -72,10 +72,7 @@ jobs:
           toolset: ${{steps.virtuals.outputs.toolset}}
       - name: Configure shared libxml2
         run: |
-          cd libxml2
-          md build-shared
-          cd build-shared
-          cmake -G "Visual Studio ${{steps.virtuals.outputs.vsnum}} ${{steps.virtuals.outputs.vsyear}}" -A ${{steps.virtuals.outputs.msarch}}^
+          cmake -S libxml2 -B libxml2\build-shared -G "Visual Studio ${{steps.virtuals.outputs.vsnum}} ${{steps.virtuals.outputs.vsyear}}" -A ${{steps.virtuals.outputs.msarch}}^
             -T ${{steps.virtuals.outputs.msts}} -DCMAKE_SYSTEM_VERSION=${{steps.virtuals.outputs.winsdk}}^
             -DCMAKE_INSTALL_PREFIX=%GITHUB_WORKSPACE%\install^
             -DBUILD_SHARED_LIBS=ON^
@@ -83,44 +80,36 @@ jobs:
             -DLIBXML2_WITH_TESTS=OFF^
             -DLIBXML2_WITH_PYTHON=OFF^
             -DLIBXML2_WITH_ICONV=ON^
-            -DIconv_INCLUDE_DIR:PATH=%GITHUB_WORKSPACE%\deps\include^
-            -DIconv_LIBRARY:FILEPATH=%GITHUB_WORKSPACE%\deps\lib\libiconv.lib^
+            -DCMAKE_INCLUDE_PATH:PATH=%GITHUB_WORKSPACE%\deps\include^
+            -DCMAKE_LIBRARY_PATH:PATH=%GITHUB_WORKSPACE%\deps\lib^
             -DLIBXML2_WITH_HTTP=OFF^
             -DLIBXML2_WITH_LEGACY=OFF^
             -DLIBXML2_WITH_SCHEMATRON=OFF^
-            -DLIBXML2_WITH_ZLIB=OFF^
-            ..
+            -DLIBXML2_WITH_ZLIB=OFF
       - name: Build shared libxml2
-        run: cd libxml2\build-shared && cmake --build . --config RelWithDebInfo
+        run: cmake --build libxml2\build-shared --config RelWithDebInfo
       - name: Install shared libxml2
-        run: cd libxml2\build-shared && cmake --install . --config RelWithDebInfo
+        run: cmake --install libxml2\build-shared --config RelWithDebInfo
       - name: Configure static libxml2
         run: |
-          cd libxml2
-          md build-static
-          cd build-static
-          cmake -G "Visual Studio ${{steps.virtuals.outputs.vsnum}} ${{steps.virtuals.outputs.vsyear}}" -A ${{steps.virtuals.outputs.msarch}}^
+          cmake -S libxml2 -B libxml2\build-static -G "Visual Studio ${{steps.virtuals.outputs.vsnum}} ${{steps.virtuals.outputs.vsyear}}" -A ${{steps.virtuals.outputs.msarch}}^
             -T ${{steps.virtuals.outputs.msts}} -DCMAKE_SYSTEM_VERSION=${{steps.virtuals.outputs.winsdk}}^
             -DBUILD_SHARED_LIBS=OFF^
             -DLIBXML2_WITH_PROGRAMS=OFF^
             -DLIBXML2_WITH_TESTS=OFF^
             -DLIBXML2_WITH_PYTHON=OFF^
             -DLIBXML2_WITH_ICONV=ON^
-            -DIconv_INCLUDE_DIR:PATH=%GITHUB_WORKSPACE%\deps\include^
-            -DIconv_LIBRARY:FILEPATH=%GITHUB_WORKSPACE%\deps\lib\libiconv.lib^
+            -DCMAKE_INCLUDE_PATH:PATH=%GITHUB_WORKSPACE%\deps\include^
+            -DCMAKE_LIBRARY_PATH:PATH=%GITHUB_WORKSPACE%\deps\lib^
             -DLIBXML2_WITH_HTTP=OFF^
             -DLIBXML2_WITH_LEGACY=OFF^
             -DLIBXML2_WITH_SCHEMATRON=OFF^
-            -DLIBXML2_WITH_ZLIB=OFF^
-            ..
+            -DLIBXML2_WITH_ZLIB=OFF
       - name: Build static libxml2
-        run: cd libxml2\build-static && cmake --build . --config RelWithDebInfo --target LibXml2
+        run: cmake --build libxml2\build-static --config RelWithDebInfo --target LibXml2
       - name: Configure static-for-DLL libxml2
         run: |
-          cd libxml2
-          md build-static-for-dll
-          cd build-static-for-dll
-          cmake -G "Visual Studio ${{steps.virtuals.outputs.vsnum}} ${{steps.virtuals.outputs.vsyear}}" -A ${{steps.virtuals.outputs.msarch}}^
+          cmake -S libxml2 -B libxml2\build-static-for-dll -G "Visual Studio ${{steps.virtuals.outputs.vsnum}} ${{steps.virtuals.outputs.vsyear}}" -A ${{steps.virtuals.outputs.msarch}}^
             -T ${{steps.virtuals.outputs.msts}} -DCMAKE_SYSTEM_VERSION=${{steps.virtuals.outputs.winsdk}}^
             -DCMAKE_C_FLAGS="/D LIBXML_STATIC_FOR_DLL"^
             -DBUILD_SHARED_LIBS=OFF^
@@ -128,15 +117,14 @@ jobs:
             -DLIBXML2_WITH_TESTS=OFF^
             -DLIBXML2_WITH_PYTHON=OFF^
             -DLIBXML2_WITH_ICONV=ON^
-            -DIconv_INCLUDE_DIR:PATH=%GITHUB_WORKSPACE%\deps\include^
-            -DIconv_LIBRARY:FILEPATH=%GITHUB_WORKSPACE%\deps\lib\libiconv.lib^
+            -DCMAKE_INCLUDE_PATH:PATH=%GITHUB_WORKSPACE%\deps\include^
+            -DCMAKE_LIBRARY_PATH:PATH=%GITHUB_WORKSPACE%\deps\lib^
             -DLIBXML2_WITH_HTTP=OFF^
             -DLIBXML2_WITH_LEGACY=OFF^
             -DLIBXML2_WITH_SCHEMATRON=OFF^
-            -DLIBXML2_WITH_ZLIB=OFF^
-            ..
+            -DLIBXML2_WITH_ZLIB=OFF
       - name: Build static-for-DLL libxml2
-        run: cd libxml2\build-static-for-dll && cmake --build . --config RelWithDebInfo --target LibXml2
+        run: cmake --build libxml2\build-static-for-dll --config RelWithDebInfo --target LibXml2
       - name: Package PHP-compatible layout
         run: |
           copy libxml2\build-static\RelWithDebInfo\libxml2s.lib install\lib\libxml2_a.lib
