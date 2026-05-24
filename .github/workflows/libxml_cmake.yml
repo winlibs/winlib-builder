@@ -72,7 +72,7 @@ jobs:
           toolset: ${{steps.virtuals.outputs.toolset}}
       - name: Configure shared libxml2
         run: |
-          cmake -S libxml2 -B libxml2\build-shared -G "Visual Studio ${{steps.virtuals.outputs.vsnum}} ${{steps.virtuals.outputs.vsyear}}" -A ${{steps.virtuals.outputs.msarch}}^
+          cmake -S libxml2 -B libxml2\build-shared -G "Visual Studio ${{steps.virtuals.outputs.vsinst}}" -A ${{steps.virtuals.outputs.msarch}}^
             -T ${{steps.virtuals.outputs.msts}} -DCMAKE_SYSTEM_VERSION=${{steps.virtuals.outputs.winsdk}}^
             -DCMAKE_INSTALL_PREFIX=%GITHUB_WORKSPACE%\install^
             -DBUILD_SHARED_LIBS=ON^
@@ -92,7 +92,7 @@ jobs:
         run: cmake --install libxml2\build-shared --config RelWithDebInfo
       - name: Configure static libxml2
         run: |
-          cmake -S libxml2 -B libxml2\build-static -G "Visual Studio ${{steps.virtuals.outputs.vsnum}} ${{steps.virtuals.outputs.vsyear}}" -A ${{steps.virtuals.outputs.msarch}}^
+          cmake -S libxml2 -B libxml2\build-static -G "Visual Studio ${{steps.virtuals.outputs.vsinst}}" -A ${{steps.virtuals.outputs.msarch}}^
             -T ${{steps.virtuals.outputs.msts}} -DCMAKE_SYSTEM_VERSION=${{steps.virtuals.outputs.winsdk}}^
             -DBUILD_SHARED_LIBS=OFF^
             -DLIBXML2_WITH_PROGRAMS=OFF^
@@ -109,7 +109,7 @@ jobs:
         run: cmake --build libxml2\build-static --config RelWithDebInfo --target LibXml2
       - name: Configure static-for-DLL libxml2
         run: |
-          cmake -S libxml2 -B libxml2\build-static-for-dll -G "Visual Studio ${{steps.virtuals.outputs.vsnum}} ${{steps.virtuals.outputs.vsyear}}" -A ${{steps.virtuals.outputs.msarch}}^
+          cmake -S libxml2 -B libxml2\build-static-for-dll -G "Visual Studio ${{steps.virtuals.outputs.vsinst}}" -A ${{steps.virtuals.outputs.msarch}}^
             -T ${{steps.virtuals.outputs.msts}} -DCMAKE_SYSTEM_VERSION=${{steps.virtuals.outputs.winsdk}}^
             -DCMAKE_C_FLAGS="/D LIBXML_STATIC_FOR_DLL"^
             -DBUILD_SHARED_LIBS=OFF^

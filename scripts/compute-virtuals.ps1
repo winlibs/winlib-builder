@@ -31,6 +31,13 @@ $years = @{
 }
 $vsyear = $years.$vs
 
+$vsinst = "$vsnum $vsyear"
+if ($env:ImageOS -eq "win22") {
+    $vsinst = "17 2022"
+} elseif ($env:ImageOS -like "win25*") {
+    $vsinst = "18 2026"
+}
+
 $toolsets = @{
     "vc14" = "14.0"
 }
@@ -89,6 +96,7 @@ if (-not $msarch) {
   Write-Output "vs=$vs"
   Write-Output "vsnum=$vsnum"
   Write-Output "vsyear=$vsyear"
+  Write-Output "vsinst=$vsinst"
   Write-Output "toolset=$toolset"
   Write-Output "msts=$msts"
   Write-Output "msarch=$msarch"

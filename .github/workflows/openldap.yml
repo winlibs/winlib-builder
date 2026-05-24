@@ -63,7 +63,7 @@ jobs:
       - name: Build and install rxspencer
         run: |
           cd rxspencer
-          cmake -G "Visual Studio ${{steps.virtuals.outputs.vsnum}} ${{steps.virtuals.outputs.vsyear}}" -A ${{steps.virtuals.outputs.msarch}} -T ${{steps.virtuals.outputs.msts}} -DCMAKE_SYSTEM_VERSION=${{steps.virtuals.outputs.winsdk}} -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -Drxshared=0 -DBUILD_TESTING=OFF -DINSTALL_DOCS=OFF .
+          cmake -G "Visual Studio ${{steps.virtuals.outputs.vsinst}}" -A ${{steps.virtuals.outputs.msarch}} -T ${{steps.virtuals.outputs.msts}} -DCMAKE_SYSTEM_VERSION=${{steps.virtuals.outputs.winsdk}} -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -Drxshared=0 -DBUILD_TESTING=OFF -DINSTALL_DOCS=OFF .
           cmake --build . --config Release
           cmake --install . --config Release --prefix ..\deps
           move ..\deps\include\rxspencer\regex.h ..\deps\include\regex.h
