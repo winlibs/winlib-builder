@@ -1,4 +1,5 @@
 name: Build imagemagick
+run-name: "Build ImageMagick-${{ inputs.tag }} for PHP ${{ inputs.php }}"
 on:
   workflow_dispatch:
     inputs:

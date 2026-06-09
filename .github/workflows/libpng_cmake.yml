@@ -1,4 +1,5 @@
-name: Build libpng > 1.6.34
+name: Build libpng > 1.6.34 with cmake
+run-name: "Build ${{ inputs.version }} for PHP ${{ inputs.php }}"
 on:
   workflow_dispatch:
     inputs:

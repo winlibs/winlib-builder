@@ -1,4 +1,5 @@
 name: Build librdkafka
+run-name: "Build librdkafka-${{ inputs.version }} for PHP ${{ inputs.php }}"
 on:
   workflow_dispatch:
     inputs:

@@ -1,4 +1,5 @@
 name: Build libyaml
+run-name: "Build libyaml-${{ inputs.libyaml }} for PHP ${{ inputs.php }}"
 on:
   workflow_dispatch:
     inputs:

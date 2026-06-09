@@ -1,4 +1,5 @@
 name: Build apache
+run-name: "Build apache-${{ inputs.version }} for PHP ${{ inputs.php }}"
 on:
   workflow_dispatch:
     inputs:

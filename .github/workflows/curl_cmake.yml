@@ -1,4 +1,5 @@
-name: Build curl_cmake
+name: Build curl with cmake
+run-name: "Build ${{ inputs.version }} for PHP ${{ inputs.php }}"
 on:
   workflow_dispatch:
     inputs:

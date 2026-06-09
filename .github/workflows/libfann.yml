@@ -1,4 +1,5 @@
 name: Build libfann
+run-name: "Build libfann-2.2.0 for PHP ${{ inputs.php }}"
 on:
   workflow_dispatch:
     inputs:

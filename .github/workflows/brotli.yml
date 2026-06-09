@@ -1,4 +1,5 @@
 name: Build brotli
+run-name: "Build brotli-${{ inputs.version }} for PHP ${{ inputs.php }}"
 on:
   workflow_dispatch:
     inputs:

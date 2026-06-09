@@ -1,4 +1,5 @@
 name: Build libjudy
+run-name: "Build libjudy-${{ inputs.version }} for PHP ${{ inputs.php }}"
 
 on:
   workflow_dispatch:

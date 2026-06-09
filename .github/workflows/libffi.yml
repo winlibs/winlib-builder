@@ -1,4 +1,5 @@
 name: Build libffi
+run-name: "Build ${{ inputs.version }} for PHP ${{ inputs.php }}"
 on:
   workflow_dispatch:
     inputs:

@@ -1,4 +1,5 @@
 name: Build libmemcached
+run-name: "Build libmemcached-${{ inputs.version }} for PHP ${{ inputs.php }}"
 on:
   workflow_dispatch:
     inputs:

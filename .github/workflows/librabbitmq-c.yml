@@ -1,4 +1,5 @@
 name: Build librabbitmq-c
+run-name: "Build librabbitmq-${{ inputs['librabbitmq-c-ref'] }} for PHP ${{ inputs.php }}"
 on:
   workflow_dispatch:
     inputs:
