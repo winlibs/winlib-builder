@@ -35,14 +35,13 @@ jobs:
       - name: Patch libzstd
         run: cd libzstd && git apply --ignore-whitespace ..\winlib-builder\patches\libzstd.patch
       - name: Configure libzstd
-        run: cd libzstd\build\cmake && cmake -G "Visual Studio ${{steps.virtuals.outputs.vsinst}}" -A ${{steps.virtuals.outputs.msarch}} -T ${{steps.virtuals.outputs.msts}} -DCMAKE_SYSTEM_VERSION=${{steps.virtuals.outputs.winsdk}} -DZSTD_BUILD_PROGRAMS=OFF -DCMAKE_RC_FLAGS=-I${{github.workspace}}\libzstd\lib .
+        run: cd libzstd\build\cmake && cmake -G "Visual Studio ${{steps.virtuals.outputs.vsinst}}" -A ${{steps.virtuals.outputs.msarch}} -T ${{steps.virtuals.outputs.msts}} -DCMAKE_SYSTEM_VERSION=${{steps.virtuals.outputs.winsdk}} -DZSTD_BUILD_PROGRAMS=OFF -DZSTD_BUILD_SHARED=OFF -DZSTD_BUILD_STATIC=ON -DCMAKE_RC_FLAGS=-I${{github.workspace}}\libzstd\lib .
       - name: Build libzstd
         run: cd libzstd\build\cmake && cmake --build . --config RelWithDebInfo
       - name: Install libzstd
         run: |
           cd libzstd\build\cmake
           cmake --install . --config RelWithDebInfo --prefix ..\..\..\install
-          xcopy lib\RelWithDebInfo\libzstd.pdb ..\..\..\install\bin\*
           xcopy lib\RelWithDebInfo\libzstd_a.pdb ..\..\..\install\lib\*
           cd ..\..
           copy COPYING ..\install

@@ -72,6 +72,8 @@ jobs:
             -DCURL_DISABLE_MQTT=ON^
             -DCURL_USE_OPENSSL=ON^
             -DCURL_ZSTD=ON^
+            -DZSTD_USE_STATIC_LIBS=ON^
+            -DZSTD_LIBRARY:FILEPATH=%GITHUB_WORKSPACE%\deps\lib\libzstd_a.lib^
             .
       - name: Build curl
         run: cd curl && cmake --build . --config RelWithDebInfo
@@ -88,7 +90,7 @@ jobs:
         run: |
           cd %GITHUB_WORKSPACE%\install\lib
           ren libcurl_a.lib libcurl_static.lib
-          lib /OUT:libcurl_a.lib libcurl_static.lib secur32.lib iphlpapi.lib
+          lib /OUT:libcurl_a.lib libcurl_static.lib %GITHUB_WORKSPACE%\deps\lib\libzstd_a.lib secur32.lib iphlpapi.lib
           if errorlevel 1 exit /b 1
           del libcurl_static.lib
       - name: Bundle artifact dependencies
