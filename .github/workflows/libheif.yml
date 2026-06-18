@@ -1,0 +1,99 @@
+name: Build libheif
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: libheif tag to build
+        required: true
+      php:
+        description: PHP version to build for
+        required: true
+      libde265:
+        description: libde265 version to build
+        required: true
+      kvazaar:
+        description: kvazaar version to build
+        required: true
+defaults:
+  run:
+    shell: cmd
+jobs:
+  build:
+    strategy:
+      matrix:
+          arch: [x64, x86]
+    runs-on: windows-2022
+    steps:
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v4
+        with:
+          path: winlib-builder
+      - name: Checkout libheif
+        uses: actions/checkout@v4
+        with:
+          path: libheif
+          repository: strukturag/libheif
+          ref: ${{github.event.inputs.version}}
+      - name: Checkout libde265
+        uses: actions/checkout@v4
+        with:
+          path: libde265
+          repository: strukturag/libde265
+          ref: ${{github.event.inputs.libde265}}
+      - name: Checkout kvazaar
+        uses: actions/checkout@v4
+        with:
+          path: kvazaar
+          repository: ultravideo/kvazaar
+          ref: ${{github.event.inputs.kvazaar}}
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+      - name: Configure libde265
+        run: |
+          cd libde265
+          md build
+          cd build
+          cmake -G "Visual Studio 17 2022" -A ${{steps.virtuals.outputs.msarch}} -DCMAKE_SYSTEM_VERSION=${{steps.virtuals.outputs.winsdk}} -DBUILD_SHARED_LIBS=OFF -DENABLE_SDL=OFF -DENABLE_DECODER=OFF --install-prefix ${{github.workspace}}\install ..
+      - name: Build libde265
+        run: cd libde265\build && cmake --build . --config RelWithDebInfo
+      - name: Install libde265
+        run: |
+          cd libde265\build
+          cmake --install . --config RelWithDebInfo
+          copy libde265\RelWithDebInfo\libde265.pdb ..\..\install\lib\*
+      - name: Configure kvazaar
+        run: |
+          cd kvazaar
+          md build
+          cd build
+          cmake -G "Visual Studio 17 2022" -A ${{steps.virtuals.outputs.msarch}} -DCMAKE_SYSTEM_VERSION=${{steps.virtuals.outputs.winsdk}} -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTS=OFF --install-prefix ${{github.workspace}}\install ..
+      - name: Build kvazaar
+        run: cd kvazaar\build && cmake --build . --config RelWithDebInfo
+      - name: Install kvazaar
+        run: |
+          cd kvazaar\build
+          cmake --install . --config RelWithDebInfo
+          copy RelWithDebInfo\libkvazaar.pdb ..\..\install\lib\*
+          del ..\..\install\bin\kvazaar.exe
+          rd /s /q ..\..\install\share
+      - name: Configure libheif
+        run: |
+          cd libheif
+          md build
+          cd build
+          set CFLAGS=-DLIBDE265_STATIC_BUILD -DKVZ_STATIC_LIB
+          set CXXFLAGS=-DLIBDE265_STATIC_BUILD -DKVZ_STATIC_LIB
+          cmake -G "Visual Studio 17 2022" -A ${{steps.virtuals.outputs.msarch}} -T ${{steps.virtuals.outputs.msts}} -DCMAKE_SYSTEM_VERSION=${{steps.virtuals.outputs.winsdk}} -DBUILD_SHARED_LIBS=OFF -DCMAKE_LIBRARY_PATH=${{github.workspace}}\install\lib -DCMAKE_INCLUDE_PATH=${{github.workspace}}\install\include -DWITH_LIBDE265=1 -DWITH_KVAZAAR=1 -DWITH_EXAMPLES=OFF -DWITH_GDK_PIXBUF=OFF --install-prefix ${{github.workspace}}\install ..
+      - name: Build libheif
+        run: cd libheif\build && cmake --build . --config RelWithDebInfo
+      - name: Install libheif
+        run: |
+          cd libheif\build
+          cmake --install . --config RelWithDebInfo
+          copy libheif\RelWithDebInfo\heif.pdb ..\..\install\lib\*
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
+          path: install
