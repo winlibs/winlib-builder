@@ -42,9 +42,9 @@ jobs:
           cmake --install . --config RelWithDebInfo --prefix ..\build
           del /s /q ..\build\lib\pkgconfig\*
           ren ..\build\bin\tidyexe.exe tidy.exe
-          ren ..\build\lib\tidys.lib tidy_a.lib
-          copy RelWithDebInfo\tidy.pdb ..\build\bin\tidy.pdb
-          copy RelWithDebInfo\tidys.pdb ..\build\lib\tidy_a.pdb
+          dir ..\build\lib\tidy_a.lib
+          copy /y RelWithDebInfo\tidy.pdb ..\build\bin\tidy.pdb
+          copy /y RelWithDebInfo\tidy_a.pdb ..\build\lib\tidy_a.pdb
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
