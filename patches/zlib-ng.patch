@@ -1,0 +1,27 @@
+ CMakeLists.txt | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 5b0e36f..7b7449b 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1436,13 +1436,17 @@ if(WIN32)
+     # Static library
+     if(NOT DEFINED BUILD_SHARED_LIBS)
+         if(MSVC)
+-            set_target_properties(zlib-ng-static PROPERTIES OUTPUT_NAME zlibstatic${SUFFIX})
++            set_target_properties(zlib-ng-static PROPERTIES
++                OUTPUT_NAME zlib_a${SUFFIX}
++                COMPILE_PDB_NAME zlib_a${SUFFIX})
+         else()
+             set_target_properties(zlib-ng-static PROPERTIES OUTPUT_NAME z${SUFFIX})
+         endif()
+     elseif(NOT BUILD_SHARED_LIBS)
+         if(MSVC)
+-            set_target_properties(zlib-ng PROPERTIES OUTPUT_NAME zlibstatic${SUFFIX})
++            set_target_properties(zlib-ng PROPERTIES
++                OUTPUT_NAME zlib_a${SUFFIX}
++                COMPILE_PDB_NAME zlib_a${SUFFIX})
+         else()
+             set_target_properties(zlib-ng PROPERTIES OUTPUT_NAME z${SUFFIX})
+         endif()

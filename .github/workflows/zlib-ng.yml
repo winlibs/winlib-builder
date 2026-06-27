@@ -1,0 +1,60 @@
+name: Build zlib-ng
+run-name: "Build zlib-ng ${{ inputs.version || '2.3.3' }} for PHP ${{ inputs.php || 'all' }}"
+on:
+  push:
+    branches:
+      - feature/zlib-ng
+  workflow_dispatch:
+    inputs:
+      version:
+        description: zlib-ng tag to build
+        required: true
+      php:
+        description: PHP version to build for
+        required: true
+defaults:
+  run:
+    shell: cmd
+jobs:
+  build:
+    strategy:
+      matrix:
+          arch: [x64, x86]
+          php: ${{ github.event_name == 'workflow_dispatch' && fromJSON(format('["{0}"]', inputs.php)) || fromJSON('["8.2", "8.4", "8.6"]') }}
+    runs-on: ${{ (matrix.php == '8.6' || matrix.php == 'master') && 'windows-2025-vs2026' || 'windows-2022' }}
+    steps:
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v5
+        with:
+          path: winlib-builder
+      - name: Checkout zlib-ng
+        uses: actions/checkout@v5
+        with:
+          path: zlib-ng
+          repository: zlib-ng/zlib-ng
+          ref: ${{ inputs.version || '2.3.3' }}
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{matrix.php}} -arch ${{matrix.arch}}
+      - name: Patch zlib-ng
+        run: cd zlib-ng && git apply --ignore-whitespace ..\winlib-builder\patches\zlib-ng.patch
+      - name: Configure zlib-ng
+        run: cmake -S zlib-ng -B zlib-ng\build -G "Visual Studio ${{steps.virtuals.outputs.vsinst}}" -A ${{steps.virtuals.outputs.msarch}} -T ${{steps.virtuals.outputs.msts}} -DCMAKE_SYSTEM_VERSION=${{steps.virtuals.outputs.winsdk}} -DZLIB_COMPAT=ON -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=OFF -DWITH_GTEST=OFF -DWITH_BENCHMARKS=OFF -DWITH_RUNTIME_CPU_DETECTION=ON -DCMAKE_INSTALL_PREFIX=%GITHUB_WORKSPACE%\install
+      - name: Build zlib-ng
+        run: cmake --build zlib-ng\build --config RelWithDebInfo
+      - name: Install zlib-ng
+        run: |
+          cmake --install zlib-ng\build --config RelWithDebInfo
+          copy zlib-ng\zutil.h install\include\zutil.h
+          for /r zlib-ng\build %%f in (*.pdb) do if /i "%%~nxf"=="zlib_a.pdb" copy "%%f" install\lib\*
+          if not exist install\lib\zlib_a.pdb (
+              echo zlib_a.pdb not found
+              exit /b 1
+          )
+          if exist install\lib\cmake rmdir /s /q install\lib\cmake
+          if exist install\lib\pkgconfig rmdir /s /q install\lib\pkgconfig
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: zlib-${{inputs.version || '2.3.3'}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
+          path: install
