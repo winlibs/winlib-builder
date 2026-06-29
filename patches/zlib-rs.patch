@@ -1,0 +1,16 @@
+diff --git a/libz-rs-sys/src/lib.rs b/libz-rs-sys/src/lib.rs
+index f793da8..ad222d0 100644
+--- a/libz-rs-sys/src/lib.rs
++++ b/libz-rs-sys/src/lib.rs
+@@ -28,5 +28,10 @@
+ //! [`pointer::as_ref`]: https://doc.rust-lang.org/core/primitive.pointer.html#method.as_ref
+ //! [`pointer::as_mut`]: https://doc.rust-lang.org/core/primitive.pointer.html#method.as_mut
+-
++#[cfg(all(windows, target_env = "msvc"))]
++#[used]
++#[link_section = ".drectve"]
++static ZLIB_RS_MSVC_DEFAULT_LIBS: [u8; 131] =
++    *b" /DEFAULTLIB:ntdll.lib /DEFAULTLIB:userenv.lib /DEFAULTLIB:ws2_32.lib /DEFAULTLIB:ucrt.lib /DEFAULTLIB:legacy_stdio_definitions.lib";
++
+ #[cfg(feature = "gz")]
+ mod gz;

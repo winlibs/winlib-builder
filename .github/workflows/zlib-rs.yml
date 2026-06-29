@@ -1,0 +1,106 @@
+name: Build zlib-rs
+run-name: "Build zlib-rs ${{ inputs.version || 'v0.6.4' }} for PHP ${{ inputs.php || '8.2' }}"
+on:
+  push:
+    branches:
+      - feature/zlib-rs
+  workflow_dispatch:
+    inputs:
+      version:
+        description: zlib-rs tag to build
+        required: true
+        default: v0.6.4
+      php:
+        description: PHP version to build for
+        required: true
+defaults:
+  run:
+    shell: pwsh
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+          arch: [x64, x86]
+    runs-on: ${{ ((inputs.php || '8.2') == '8.6' || (inputs.php || '8.2') == 'master') && 'windows-2025-vs2026' || 'windows-2022' }}
+    steps:
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v5
+        with:
+          path: winlib-builder
+      - name: Checkout zlib-rs
+        uses: actions/checkout@v5
+        with:
+          path: zlib-rs
+          repository: trifectatechfoundation/zlib-rs
+          ref: ${{ inputs.version || 'v0.6.4' }}
+      - name: Apply patch
+        run: cd zlib-rs && git apply --ignore-whitespace ..\winlib-builder\patches\zlib-rs.patch
+      - name: Normalize zlib-rs version
+        id: zlib-rs
+        run: |
+          $version = '${{ inputs.version || 'v0.6.4' }}' -replace '^v', ''
+          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals.ps1 -version ${{inputs.php || '8.2'}} -arch ${{matrix.arch}}
+      - name: Setup MSVC development environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{matrix.arch}}
+          toolset: ${{steps.virtuals.outputs.toolset}}
+          sdk: ${{steps.virtuals.outputs.winsdk}}
+      - name: Set Rust target
+        run: '"RUST_TARGET=${{ matrix.arch == ''x64'' && ''x86_64-pc-windows-msvc'' || ''i686-pc-windows-msvc'' }}" | Out-File -FilePath $env:GITHUB_ENV -Append'
+      - name: Setup Rust
+        run: |
+          choco install rustup.install -y --no-progress
+          "$env:USERPROFILE\.cargo\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
+          $env:PATH = "$env:USERPROFILE\.cargo\bin;$env:PATH"
+
+          rustup toolchain install nightly --profile minimal --no-self-update
+          rustup target add --toolchain nightly $env:RUST_TARGET
+          rustc +nightly --version
+          cargo +nightly --version
+      - name: Build zlib-rs
+        run: |
+          $env:RUSTFLAGS = '-Cllvm-args=-enable-dfa-jump-thread -l dylib=ntdll -l dylib=userenv -l dylib=ws2_32'
+          cargo +nightly build `
+            --manifest-path zlib-rs\libz-rs-sys-cdylib\Cargo.toml `
+            --profile relwithdebinfo `
+            --target $env:RUST_TARGET `
+            --target-dir zlib-rs\target `
+            --no-default-features `
+            --features 'c-allocator,std,gz,gzprintf'
+      - name: Install zlib-rs
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          New-Item -ItemType Directory -Force -Path install\include, install\lib | Out-Null
+          Copy-Item zlib-rs\libz-rs-sys\include\zconf.h install\include\
+          Copy-Item zlib-rs\libz-rs-sys\include\zlib.h install\include\
+
+          $targetRoot = Join-Path (Join-Path zlib-rs\target $env:RUST_TARGET) relwithdebinfo
+          Copy-Item (Join-Path $targetRoot z_rs.lib) install\lib\zlib_a.lib
+          Copy-Item (Join-Path $targetRoot z_rs.pdb) install\lib\zlib_a.pdb
+
+          $files = @(
+            'install\include\zconf.h',
+            'install\include\zlib.h',
+            'install\lib\zlib_a.lib',
+            'install\lib\zlib_a.pdb'
+          )
+          foreach ($file in $files) {
+            if (-not (Test-Path $file)) {
+              throw "Missing required file: $file"
+            }
+          }
+
+          Get-ChildItem install -Recurse -File | Sort-Object FullName | ForEach-Object {
+            "{0} {1}" -f $_.Length, $_.FullName
+          }
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: zlib-${{steps.zlib-rs.outputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
+          path: install
