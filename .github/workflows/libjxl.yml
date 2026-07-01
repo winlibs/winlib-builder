@@ -1,0 +1,81 @@
+name: Build libjxl
+run-name: "Build ${{ inputs.version }} for PHP ${{ inputs.php }}"
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: libjxl tag to build
+        required: true
+      php:
+        description: PHP version to build for
+        required: true
+defaults:
+  run:
+    shell: cmd
+jobs:
+  build:
+    strategy:
+      matrix:
+        arch: [x64, x86]
+    runs-on: ${{ (inputs.php == '8.6' || inputs.php == 'master') && 'windows-2025-vs2026' || 'windows-2022' }}
+    steps:
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v5
+        with:
+          path: winlib-builder
+      - name: Checkout libjxl
+        uses: actions/checkout@v5
+        with:
+          path: libjxl
+          repository: winlibs/libjxl
+          ref: ${{ github.event.inputs.version }}
+          submodules: recursive
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{ github.event.inputs.php }} -arch ${{ matrix.arch }}
+      - name: Configure libjxl
+        run: >-
+          cmake -S libjxl -B libjxl\build
+          -G "Visual Studio ${{ steps.virtuals.outputs.vsinst }}"
+          -A ${{ steps.virtuals.outputs.msarch }}
+          -T ${{ steps.virtuals.outputs.msts }}
+          -DCMAKE_SYSTEM_VERSION=${{ steps.virtuals.outputs.winsdk }}
+          -DCMAKE_INSTALL_PREFIX="%GITHUB_WORKSPACE%\install"
+          -DBUILD_SHARED_LIBS=ON
+          -DBUILD_TESTING=OFF
+          -DJPEGXL_ENABLE_BENCHMARK=OFF
+          -DJPEGXL_ENABLE_DEVTOOLS=OFF
+          -DJPEGXL_ENABLE_DOXYGEN=OFF
+          -DJPEGXL_ENABLE_EXAMPLES=OFF
+          -DJPEGXL_ENABLE_FUZZERS=OFF
+          -DJPEGXL_ENABLE_JNI=OFF
+          -DJPEGXL_ENABLE_MANPAGES=OFF
+          -DJPEGXL_ENABLE_OPENEXR=OFF
+          -DJPEGXL_ENABLE_PLUGINS=OFF
+          -DJPEGXL_ENABLE_SJPEG=OFF
+          -DJPEGXL_ENABLE_TCMALLOC=OFF
+          -DJPEGXL_ENABLE_TOOLS=OFF
+          -DJPEGXL_ENABLE_VIEWERS=OFF
+          -DJPEGXL_WARNINGS_AS_ERRORS=OFF
+      - name: Build libjxl
+        run: cmake --build libjxl\build --config RelWithDebInfo
+      - name: Install libjxl
+        run: |
+          cmake --install libjxl\build --config RelWithDebInfo
+          if exist libjxl\build\lib\RelWithDebInfo\*.pdb xcopy libjxl\build\lib\RelWithDebInfo\*.pdb install\lib\*
+          if exist install\lib\pkgconfig rmdir /s /q install\lib\pkgconfig
+      - name: Verify libjxl artifacts
+        run: |
+          if not exist install\include\jxl\decode.h exit /b 1
+          if not exist install\include\jxl\encode.h exit /b 1
+          if not exist install\bin\jxl.dll exit /b 1
+          if not exist install\bin\jxl_cms.dll exit /b 1
+          if not exist install\bin\jxl_threads.dll exit /b 1
+          if not exist install\lib\jxl.lib exit /b 1
+          if not exist install\lib\jxl_cms.lib exit /b 1
+          if not exist install\lib\jxl_threads.lib exit /b 1
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.event.inputs.version }}-${{ steps.virtuals.outputs.vs }}-${{ matrix.arch }}
+          path: install
