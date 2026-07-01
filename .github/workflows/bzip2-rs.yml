@@ -1,0 +1,606 @@
+name: Build bzip2-rs
+run-name: "Build ${{ inputs.version }} for PHP ${{ inputs['php-version'] }}"
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: bzip2-rs tag to build
+        required: true
+      php-version:
+        description: PHP version to build for
+        required: true
+defaults:
+  run:
+    shell: pwsh
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x64, x86]
+        attempt: [1, 2, 3]
+    runs-on: ${{ (inputs['php-version'] == '8.6' || inputs['php-version'] == 'master') && 'windows-2025-vs2026' || 'windows-2022' }}
+    steps:
+      - name: Set git to use LF
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.eol lf
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v5
+        with:
+          path: winlib-builder
+      - name: Checkout bzip2-rs
+        uses: actions/checkout@v5
+        with:
+          path: bzip2-rs
+          repository: trifectatechfoundation/bzip2-rs
+          ref: ${{ inputs.version }}
+      - name: Normalize bzip2-rs version
+        id: bzip2-rs
+        run: |
+          $version = '${{ inputs.version }}' -replace '^v', ''
+          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals.ps1 -version ${{ inputs['php-version'] }} -arch ${{ matrix.arch }}
+      - name: Setup MSVC development environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.arch }}
+          toolset: ${{ steps.virtuals.outputs.toolset }}
+          sdk: ${{ steps.virtuals.outputs.winsdk }}
+      - name: Set Rust target
+        run: '"RUST_TARGET=${{ matrix.arch == ''x64'' && ''x86_64-pc-windows-msvc'' || ''i686-pc-windows-msvc'' }}" | Out-File -FilePath $env:GITHUB_ENV -Append'
+      - name: Setup Rust
+        run: |
+          choco install rustup.install -y --no-progress
+          "$env:USERPROFILE\.cargo\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
+          $env:PATH = "$env:USERPROFILE\.cargo\bin;$env:PATH"
+
+          rustup toolchain install stable --profile minimal --no-self-update
+          rustup target add --toolchain stable $env:RUST_TARGET
+          rustc +stable --version
+          cargo +stable --version
+      - name: Create PHP SDK staticlib crate
+        id: staticlib
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+
+          $cargoToml = Get-Content bzip2-rs\Cargo.toml -Raw
+          if ($cargoToml -notmatch '(?s)\[dependencies\.libbz2-rs-sys\].*?version\s*=\s*"([^"]+)"') {
+            throw 'Could not find libbz2-rs-sys dependency version in bzip2-rs\Cargo.toml'
+          }
+          $libbz2RsSysVersion = $Matches[1]
+          "libbz2_rs_sys_version=$libbz2RsSysVersion" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+          New-Item -ItemType Directory -Force -Path php-sdk-libbz2-rs-staticlib\src | Out-Null
+          @"
+          [package]
+          name = "php-sdk-libbz2-rs-staticlib"
+          version = "0.1.0"
+          edition = "2021"
+          publish = false
+
+          [lib]
+          name = "bz2_rs"
+          crate-type = ["staticlib"]
+          test = false
+          bench = false
+
+          [features]
+          default = ["stdio"]
+          stdio = ["libbz2-rs-sys/stdio"]
+
+          [dependencies]
+          libbz2-rs-sys = { version = "$libbz2RsSysVersion", default-features = false, features = ["c-allocator", "custom-prefix"] }
+          libc = "0.2"
+
+          [profile.dev]
+          panic = "abort"
+          debug = true
+
+          [profile.release]
+          panic = "abort"
+          lto = "thin"
+          codegen-units = 1
+
+          [profile.relwithdebinfo]
+          inherits = "release"
+          debug = true
+          panic = "abort"
+          lto = "thin"
+          codegen-units = 1
+          "@ | Set-Content -Path php-sdk-libbz2-rs-staticlib\Cargo.toml -Encoding ascii
+
+          @'
+          #![no_std]
+
+          extern crate libbz2_rs_sys;
+
+          use core::panic::PanicInfo;
+
+          pub use libbz2_rs_sys::*;
+
+          struct StderrWriter;
+
+          impl core::fmt::Write for StderrWriter {
+              fn write_str(&mut self, value: &str) -> core::fmt::Result {
+                  unsafe {
+                      libc::write(2, value.as_ptr().cast(), value.len() as _);
+                  }
+
+                  Ok(())
+              }
+          }
+
+          #[panic_handler]
+          fn panic_handler(info: &PanicInfo) -> ! {
+              use core::fmt::Write;
+
+              let _ = StderrWriter.write_str("libbzip2-rs: internal error:\n");
+              let _ = StderrWriter.write_fmt(format_args!("{}", info.message()));
+
+              unsafe {
+                  libc::exit(3);
+              }
+          }
+          '@ | Set-Content -Path php-sdk-libbz2-rs-staticlib\src\lib.rs -Encoding ascii
+      - name: Create MSVC bzip2 API wrapper
+        run: |
+          $ErrorActionPreference = 'Stop'
+
+          New-Item -ItemType Directory -Force -Path php-sdk-libbz2-rs-wrapper | Out-Null
+          @'
+          #include "bzlib.h"
+
+          #ifdef _WIN32
+          #define BZIP2_RS_CALL __cdecl
+          #else
+          #define BZIP2_RS_CALL
+          #endif
+
+          extern int BZIP2_RS_CALL bzip2_rs_BZ2_bzCompressInit(bz_stream *strm, int blockSize100k, int verbosity, int workFactor);
+          extern int BZIP2_RS_CALL bzip2_rs_BZ2_bzCompress(bz_stream *strm, int action);
+          extern int BZIP2_RS_CALL bzip2_rs_BZ2_bzCompressEnd(bz_stream *strm);
+          extern int BZIP2_RS_CALL bzip2_rs_BZ2_bzDecompressInit(bz_stream *strm, int verbosity, int small);
+          extern int BZIP2_RS_CALL bzip2_rs_BZ2_bzDecompress(bz_stream *strm);
+          extern int BZIP2_RS_CALL bzip2_rs_BZ2_bzDecompressEnd(bz_stream *strm);
+          extern BZFILE * BZIP2_RS_CALL bzip2_rs_BZ2_bzReadOpen(int *bzerror, FILE *f, int verbosity, int small, void *unused, int nUnused);
+          extern void BZIP2_RS_CALL bzip2_rs_BZ2_bzReadClose(int *bzerror, BZFILE *b);
+          extern void BZIP2_RS_CALL bzip2_rs_BZ2_bzReadGetUnused(int *bzerror, BZFILE *b, void **unused, int *nUnused);
+          extern int BZIP2_RS_CALL bzip2_rs_BZ2_bzRead(int *bzerror, BZFILE *b, void *buf, int len);
+          extern BZFILE * BZIP2_RS_CALL bzip2_rs_BZ2_bzWriteOpen(int *bzerror, FILE *f, int blockSize100k, int verbosity, int workFactor);
+          extern void BZIP2_RS_CALL bzip2_rs_BZ2_bzWrite(int *bzerror, BZFILE *b, void *buf, int len);
+          extern void BZIP2_RS_CALL bzip2_rs_BZ2_bzWriteClose(int *bzerror, BZFILE *b, int abandon, unsigned int *nbytes_in, unsigned int *nbytes_out);
+          extern void BZIP2_RS_CALL bzip2_rs_BZ2_bzWriteClose64(int *bzerror, BZFILE *b, int abandon, unsigned int *nbytes_in_lo32, unsigned int *nbytes_in_hi32, unsigned int *nbytes_out_lo32, unsigned int *nbytes_out_hi32);
+          extern int BZIP2_RS_CALL bzip2_rs_BZ2_bzBuffToBuffCompress(char *dest, unsigned int *destLen, char *source, unsigned int sourceLen, int blockSize100k, int verbosity, int workFactor);
+          extern int BZIP2_RS_CALL bzip2_rs_BZ2_bzBuffToBuffDecompress(char *dest, unsigned int *destLen, char *source, unsigned int sourceLen, int small, int verbosity);
+          extern const char * BZIP2_RS_CALL bzip2_rs_BZ2_bzlibVersion(void);
+          extern BZFILE * BZIP2_RS_CALL bzip2_rs_BZ2_bzopen(const char *path, const char *mode);
+          extern BZFILE * BZIP2_RS_CALL bzip2_rs_BZ2_bzdopen(int fd, const char *mode);
+          extern int BZIP2_RS_CALL bzip2_rs_BZ2_bzread(BZFILE *b, void *buf, int len);
+          extern int BZIP2_RS_CALL bzip2_rs_BZ2_bzwrite(BZFILE *b, void *buf, int len);
+          extern int BZIP2_RS_CALL bzip2_rs_BZ2_bzflush(BZFILE *b);
+          extern void BZIP2_RS_CALL bzip2_rs_BZ2_bzclose(BZFILE *b);
+          extern const char * BZIP2_RS_CALL bzip2_rs_BZ2_bzerror(BZFILE *b, int *errnum);
+
+          int BZ_API(BZ2_bzCompressInit)(bz_stream *strm, int blockSize100k, int verbosity, int workFactor)
+          {
+              return bzip2_rs_BZ2_bzCompressInit(strm, blockSize100k, verbosity, workFactor);
+          }
+
+          int BZ_API(BZ2_bzCompress)(bz_stream *strm, int action)
+          {
+              return bzip2_rs_BZ2_bzCompress(strm, action);
+          }
+
+          int BZ_API(BZ2_bzCompressEnd)(bz_stream *strm)
+          {
+              return bzip2_rs_BZ2_bzCompressEnd(strm);
+          }
+
+          int BZ_API(BZ2_bzDecompressInit)(bz_stream *strm, int verbosity, int small)
+          {
+              return bzip2_rs_BZ2_bzDecompressInit(strm, verbosity, small);
+          }
+
+          int BZ_API(BZ2_bzDecompress)(bz_stream *strm)
+          {
+              return bzip2_rs_BZ2_bzDecompress(strm);
+          }
+
+          int BZ_API(BZ2_bzDecompressEnd)(bz_stream *strm)
+          {
+              return bzip2_rs_BZ2_bzDecompressEnd(strm);
+          }
+
+          BZFILE * BZ_API(BZ2_bzReadOpen)(int *bzerror, FILE *f, int verbosity, int small, void *unused, int nUnused)
+          {
+              return bzip2_rs_BZ2_bzReadOpen(bzerror, f, verbosity, small, unused, nUnused);
+          }
+
+          void BZ_API(BZ2_bzReadClose)(int *bzerror, BZFILE *b)
+          {
+              bzip2_rs_BZ2_bzReadClose(bzerror, b);
+          }
+
+          void BZ_API(BZ2_bzReadGetUnused)(int *bzerror, BZFILE *b, void **unused, int *nUnused)
+          {
+              bzip2_rs_BZ2_bzReadGetUnused(bzerror, b, unused, nUnused);
+          }
+
+          int BZ_API(BZ2_bzRead)(int *bzerror, BZFILE *b, void *buf, int len)
+          {
+              return bzip2_rs_BZ2_bzRead(bzerror, b, buf, len);
+          }
+
+          BZFILE * BZ_API(BZ2_bzWriteOpen)(int *bzerror, FILE *f, int blockSize100k, int verbosity, int workFactor)
+          {
+              return bzip2_rs_BZ2_bzWriteOpen(bzerror, f, blockSize100k, verbosity, workFactor);
+          }
+
+          void BZ_API(BZ2_bzWrite)(int *bzerror, BZFILE *b, void *buf, int len)
+          {
+              bzip2_rs_BZ2_bzWrite(bzerror, b, buf, len);
+          }
+
+          void BZ_API(BZ2_bzWriteClose)(int *bzerror, BZFILE *b, int abandon, unsigned int *nbytes_in, unsigned int *nbytes_out)
+          {
+              bzip2_rs_BZ2_bzWriteClose(bzerror, b, abandon, nbytes_in, nbytes_out);
+          }
+
+          void BZ_API(BZ2_bzWriteClose64)(int *bzerror, BZFILE *b, int abandon, unsigned int *nbytes_in_lo32, unsigned int *nbytes_in_hi32, unsigned int *nbytes_out_lo32, unsigned int *nbytes_out_hi32)
+          {
+              bzip2_rs_BZ2_bzWriteClose64(bzerror, b, abandon, nbytes_in_lo32, nbytes_in_hi32, nbytes_out_lo32, nbytes_out_hi32);
+          }
+
+          int BZ_API(BZ2_bzBuffToBuffCompress)(char *dest, unsigned int *destLen, char *source, unsigned int sourceLen, int blockSize100k, int verbosity, int workFactor)
+          {
+              return bzip2_rs_BZ2_bzBuffToBuffCompress(dest, destLen, source, sourceLen, blockSize100k, verbosity, workFactor);
+          }
+
+          int BZ_API(BZ2_bzBuffToBuffDecompress)(char *dest, unsigned int *destLen, char *source, unsigned int sourceLen, int small, int verbosity)
+          {
+              return bzip2_rs_BZ2_bzBuffToBuffDecompress(dest, destLen, source, sourceLen, small, verbosity);
+          }
+
+          const char * BZ_API(BZ2_bzlibVersion)(void)
+          {
+              return bzip2_rs_BZ2_bzlibVersion();
+          }
+
+          BZFILE * BZ_API(BZ2_bzopen)(const char *path, const char *mode)
+          {
+              return bzip2_rs_BZ2_bzopen(path, mode);
+          }
+
+          BZFILE * BZ_API(BZ2_bzdopen)(int fd, const char *mode)
+          {
+              return bzip2_rs_BZ2_bzdopen(fd, mode);
+          }
+
+          int BZ_API(BZ2_bzread)(BZFILE *b, void *buf, int len)
+          {
+              return bzip2_rs_BZ2_bzread(b, buf, len);
+          }
+
+          int BZ_API(BZ2_bzwrite)(BZFILE *b, void *buf, int len)
+          {
+              return bzip2_rs_BZ2_bzwrite(b, buf, len);
+          }
+
+          int BZ_API(BZ2_bzflush)(BZFILE *b)
+          {
+              return bzip2_rs_BZ2_bzflush(b);
+          }
+
+          void BZ_API(BZ2_bzclose)(BZFILE *b)
+          {
+              bzip2_rs_BZ2_bzclose(b);
+          }
+
+          const char * BZ_API(BZ2_bzerror)(BZFILE *b, int *errnum)
+          {
+              return bzip2_rs_BZ2_bzerror(b, errnum);
+          }
+          '@ | Set-Content -Path php-sdk-libbz2-rs-wrapper\bz2_wrapper.c -Encoding ascii
+      - name: Build bzip2-rs static libraries
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          $env:LIBBZ2_RS_SYS_PREFIX = 'bzip2_rs_'
+          $env:RUSTFLAGS = '-Cdebuginfo=2'
+
+          cargo +stable build `
+            --manifest-path php-sdk-libbz2-rs-staticlib\Cargo.toml `
+            --profile relwithdebinfo `
+            --target $env:RUST_TARGET `
+            --target-dir bzip2-rs\target
+
+          cargo +stable build `
+            --manifest-path php-sdk-libbz2-rs-staticlib\Cargo.toml `
+            --profile dev `
+            --target $env:RUST_TARGET `
+            --target-dir bzip2-rs\target
+      - name: Install bzip2-rs
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+
+          New-Item -ItemType Directory -Force -Path install\include, install\lib | Out-Null
+          Copy-Item bzip2-rs\bzip2-sys\bzip2-1.0.8\bzlib.h install\include\
+
+          $releaseRoot = Join-Path (Join-Path bzip2-rs\target $env:RUST_TARGET) relwithdebinfo
+          $debugRoot = Join-Path (Join-Path bzip2-rs\target $env:RUST_TARGET) debug
+
+          function Build-WrappedLibrary {
+            param(
+              [Parameter(Mandatory)] [string] $Root,
+              [Parameter(Mandatory)] [string] $Runtime,
+              [Parameter(Mandatory)] [string[]] $OptimizeFlags,
+              [Parameter(Mandatory)] [string] $ObjectDirectory,
+              [Parameter(Mandatory)] [string] $LibraryDestination,
+              [Parameter(Mandatory)] [string] $PdbDestination
+            )
+
+            $rustLibrary = Join-Path $Root bz2_rs.lib
+            if (-not (Test-Path $rustLibrary)) {
+              throw "Missing built Rust static library: $rustLibrary"
+            }
+
+            New-Item -ItemType Directory -Force -Path $ObjectDirectory | Out-Null
+            $wrapperObject = Join-Path $ObjectDirectory bz2_wrapper.obj
+            $clArgs = @(
+              '/nologo',
+              '/c',
+              '/Iinstall\include',
+              $Runtime
+            ) + $OptimizeFlags + @(
+              '/Zi',
+              "/Fd$PdbDestination",
+              "/Fo$wrapperObject",
+              'php-sdk-libbz2-rs-wrapper\bz2_wrapper.c'
+            )
+
+            & cl.exe @clArgs
+            if ($LASTEXITCODE -ne 0) {
+              throw "cl.exe failed building $wrapperObject"
+            }
+
+            & lib.exe /nologo "/OUT:$LibraryDestination" $wrapperObject $rustLibrary
+            if ($LASTEXITCODE -ne 0) {
+              throw "lib.exe failed building $LibraryDestination"
+            }
+
+            foreach ($file in @($LibraryDestination, $PdbDestination)) {
+              if (-not (Test-Path $file)) {
+                throw "Missing required file: $file"
+              }
+            }
+          }
+
+          Build-WrappedLibrary `
+            -Root $releaseRoot `
+            -Runtime '/MD' `
+            -OptimizeFlags @('/O2') `
+            -ObjectDirectory wrapper\release `
+            -LibraryDestination install\lib\libbz2_a.lib `
+            -PdbDestination install\lib\libbz2_a.pdb
+          Build-WrappedLibrary `
+            -Root $debugRoot `
+            -Runtime '/MDd' `
+            -OptimizeFlags @('/Od') `
+            -ObjectDirectory wrapper\debug `
+            -LibraryDestination install\lib\libbz2_a_debug.lib `
+            -PdbDestination install\lib\libbz2_a_debug.pdb
+
+          $files = @(
+            'install\include\bzlib.h',
+            'install\lib\libbz2_a.lib',
+            'install\lib\libbz2_a.pdb',
+            'install\lib\libbz2_a_debug.lib',
+            'install\lib\libbz2_a_debug.pdb'
+          )
+          foreach ($file in $files) {
+            if (-not (Test-Path $file)) {
+              throw "Missing required file: $file"
+            }
+          }
+
+          Get-ChildItem install -Recurse -File | Sort-Object FullName | ForEach-Object {
+            "{0} {1}" -f $_.Length, $_.FullName
+          }
+      - name: Compare PHP SDK artifact layout
+        if: matrix.arch == 'x64' && matrix.attempt == 1
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+
+          Invoke-WebRequest `
+            -Uri https://downloads.php.net/~windows/php-sdk/deps/vs17/x64/libbzip2-1.0.8-1-vs17-x64.zip `
+            -OutFile reference.zip
+          Expand-Archive reference.zip -DestinationPath reference
+
+          $actual = Get-ChildItem install -Recurse -File |
+            ForEach-Object { $_.FullName.Substring((Resolve-Path install).Path.Length + 1).Replace('\', '/') } |
+            Sort-Object
+          $expected = Get-ChildItem reference -Recurse -File |
+            ForEach-Object { $_.FullName.Substring((Resolve-Path reference).Path.Length + 1).Replace('\', '/') } |
+            Sort-Object
+
+          $diff = Compare-Object $expected $actual
+          if ($diff) {
+            $diff | Format-Table | Out-String | Write-Host
+            throw 'bzip2-rs artifact file list does not match the PHP SDK reference package'
+          }
+
+          $referenceHeader = Get-FileHash reference\include\bzlib.h -Algorithm SHA256
+          $actualHeader = Get-FileHash install\include\bzlib.h -Algorithm SHA256
+          if ($referenceHeader.Hash -ne $actualHeader.Hash) {
+            Write-Host "reference bzlib.h SHA256: $($referenceHeader.Hash)"
+            Write-Host "actual bzlib.h SHA256:    $($actualHeader.Hash)"
+            throw 'bzip2-rs bzlib.h does not match the PHP SDK reference package'
+          }
+      - name: Validate BZ2 symbols
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+
+          $expected = @(
+            'BZ2_bzCompressInit',
+            'BZ2_bzCompress',
+            'BZ2_bzCompressEnd',
+            'BZ2_bzDecompressInit',
+            'BZ2_bzDecompress',
+            'BZ2_bzDecompressEnd',
+            'BZ2_bzReadOpen',
+            'BZ2_bzReadClose',
+            'BZ2_bzReadGetUnused',
+            'BZ2_bzRead',
+            'BZ2_bzWriteOpen',
+            'BZ2_bzWrite',
+            'BZ2_bzWriteClose',
+            'BZ2_bzWriteClose64',
+            'BZ2_bzBuffToBuffCompress',
+            'BZ2_bzBuffToBuffDecompress',
+            'BZ2_bzlibVersion',
+            'BZ2_bzopen',
+            'BZ2_bzdopen',
+            'BZ2_bzread',
+            'BZ2_bzwrite',
+            'BZ2_bzflush',
+            'BZ2_bzclose',
+            'BZ2_bzerror'
+          )
+
+          foreach ($library in @('install\lib\libbz2_a.lib', 'install\lib\libbz2_a_debug.lib')) {
+            $symbols = & dumpbin /nologo /symbols $library | Out-String
+            foreach ($symbol in $expected) {
+              if ($symbols -notmatch "(^|[^A-Za-z0-9_])_?$([regex]::Escape($symbol))(@\d+)?([^A-Za-z0-9_]|$)") {
+                throw "Missing $symbol in $library"
+              }
+            }
+          }
+      - name: Run C link smoke tests
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+
+          @'
+          #include <stdio.h>
+          #include <string.h>
+          #include <bzlib.h>
+
+          static int test_buffer_api(void)
+          {
+              char source[] = "hello from php-sdk bzip2-rs";
+              char compressed[256];
+              char decompressed[256];
+              unsigned int compressed_len = sizeof(compressed);
+              unsigned int decompressed_len = sizeof(decompressed);
+              int result;
+
+              result = BZ2_bzBuffToBuffCompress(
+                  compressed,
+                  &compressed_len,
+                  source,
+                  (unsigned int)strlen(source),
+                  9,
+                  0,
+                  30
+              );
+              if (result != BZ_OK) {
+                  return 1;
+              }
+
+              result = BZ2_bzBuffToBuffDecompress(
+                  decompressed,
+                  &decompressed_len,
+                  compressed,
+                  compressed_len,
+                  0,
+                  0
+              );
+              if (result != BZ_OK) {
+                  return 2;
+              }
+
+              if (decompressed_len != strlen(source)) {
+                  return 3;
+              }
+
+              return memcmp(source, decompressed, decompressed_len) == 0 ? 0 : 4;
+          }
+
+          static int test_stdio_api(void)
+          {
+              const char source[] = "stdio api check";
+              char output[64] = {0};
+              FILE *file;
+              BZFILE *bzfile;
+              int bzerror = BZ_OK;
+              int read;
+
+              file = fopen("smoke.bz2", "wb");
+              if (!file) {
+                  return 10;
+              }
+              bzfile = BZ2_bzWriteOpen(&bzerror, file, 9, 0, 30);
+              if (!bzfile || bzerror != BZ_OK) {
+                  fclose(file);
+                  return 11;
+              }
+              BZ2_bzWrite(&bzerror, bzfile, (void *)source, (int)strlen(source));
+              if (bzerror != BZ_OK) {
+                  BZ2_bzWriteClose(&bzerror, bzfile, 1, NULL, NULL);
+                  fclose(file);
+                  return 12;
+              }
+              BZ2_bzWriteClose(&bzerror, bzfile, 0, NULL, NULL);
+              fclose(file);
+              if (bzerror != BZ_OK) {
+                  return 13;
+              }
+
+              file = fopen("smoke.bz2", "rb");
+              if (!file) {
+                  return 14;
+              }
+              bzfile = BZ2_bzReadOpen(&bzerror, file, 0, 0, NULL, 0);
+              if (!bzfile || bzerror != BZ_OK) {
+                  fclose(file);
+                  return 15;
+              }
+              read = BZ2_bzRead(&bzerror, bzfile, output, sizeof(output));
+              BZ2_bzReadClose(&bzerror, bzfile);
+              fclose(file);
+
+              if (read != (int)strlen(source)) {
+                  return 16;
+              }
+
+              return memcmp(source, output, read) == 0 ? 0 : 17;
+          }
+
+          int main(void)
+          {
+              int result = test_buffer_api();
+              if (result) {
+                  return result;
+              }
+
+              return test_stdio_api();
+          }
+          '@ | Set-Content -Path smoke.c -Encoding ascii
+
+          cl /nologo /MD /Iinstall\include smoke.c install\lib\libbz2_a.lib /Fe:smoke_release.exe
+          .\smoke_release.exe
+
+          cl /nologo /MDd /Zi /Iinstall\include smoke.c install\lib\libbz2_a_debug.lib /Fe:smoke_debug.exe
+          .\smoke_debug.exe
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: libbzip2-1.0.8-1-${{ steps.virtuals.outputs.vs }}-${{ matrix.arch }}-run${{ matrix.attempt }}
+          path: install
