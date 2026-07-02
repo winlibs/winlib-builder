@@ -18,6 +18,7 @@ $deps = @{
     "libpng" = "zlib";
     "librdkafka" = "libzstd", "openssl", "zlib";
     "libssh2" = "openssl", "zlib";
+    "libtiff" = "zlib", "libjpeg-turbo", "libwebp", "libzstd", "liblzma";
     "libxml2" = "libiconv";
     "libxslt" = "libiconv", "libxml2";
     "libzip" = "libbzip2", "zlib";

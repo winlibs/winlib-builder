@@ -1,0 +1,123 @@
+name: Build libtiff
+run-name: "Build ${{ inputs.version }} for PHP ${{ inputs.php }}"
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: libtiff tag to build
+        required: true
+        default: libtiff-4.7.2rc2
+      php:
+        description: PHP version to build for
+        required: true
+        default: '8.6'
+      stability:
+        description: the series stability
+        required: false
+        default: staging
+      workflow_run_ids:
+        description: Comma-separated winlib-builder workflow run IDs to download dependency artifacts from
+        required: false
+permissions:
+  actions: read
+  contents: read
+defaults:
+  run:
+    shell: cmd
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x64, x86]
+    runs-on: ${{ (inputs.php == '8.6' || inputs.php == 'master') && 'windows-2025-vs2026' || 'windows-2022' }}
+    steps:
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v5
+        with:
+          path: winlib-builder
+      - name: Checkout libtiff
+        uses: actions/checkout@v5
+        with:
+          path: libtiff
+          repository: winlibs/libtiff
+          ref: ${{ inputs.version }}
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{ inputs.php }} -arch ${{ matrix.arch }}
+      - name: Setup CMake
+        uses: jwlawson/actions-setup-cmake@v2
+        with:
+          cmake-version: '3.31.x'
+      - name: Setup MSVC environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.arch }}
+          toolset: ${{ steps.virtuals.outputs.toolset }}
+      - name: Fetch dependencies
+        run: powershell winlib-builder/scripts/fetch-deps -lib libtiff -version ${{ inputs.php }} -vs ${{ steps.virtuals.outputs.vs }} -arch ${{ matrix.arch }} -stability ${{ inputs.stability }} -workflow_run_ids:'${{ inputs.workflow_run_ids }}'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Normalize CMake paths
+        run: echo CMAKE_WORKSPACE=%GITHUB_WORKSPACE:\=/%>>"%GITHUB_ENV%"
+      - name: Configure libtiff
+        run: >-
+          cmake -S libtiff -B libtiff\build
+          -G Ninja
+          -DCMAKE_BUILD_TYPE=RelWithDebInfo
+          -DCMAKE_INSTALL_PREFIX="%CMAKE_WORKSPACE%/install"
+          -DCMAKE_PREFIX_PATH="%CMAKE_WORKSPACE%/deps"
+          -DBUILD_SHARED_LIBS=ON
+          -Dtiff-static=OFF
+          -Dtiff-tools=OFF
+          -Dtiff-tests=OFF
+          -Dtiff-contrib=OFF
+          -Dtiff-docs=OFF
+          -Dtiff-cxx=OFF
+          -Dtiff-opengl=OFF
+          -Dzlib=ON
+          -DZLIB_INCLUDE_DIR="%CMAKE_WORKSPACE%/deps/include"
+          -DZLIB_LIBRARY="%CMAKE_WORKSPACE%/deps/lib/zlib_a.lib"
+          -Djpeg=ON
+          -Dold-jpeg=ON
+          -DJPEG_INCLUDE_DIR="%CMAKE_WORKSPACE%/deps/include"
+          -DJPEG_LIBRARY="%CMAKE_WORKSPACE%/deps/lib/libjpeg_a.lib"
+          -Dwebp=ON
+          -DWebP_INCLUDE_DIR="%CMAKE_WORKSPACE%/deps/include"
+          -DWebP_LIBRARY="%CMAKE_WORKSPACE%/deps/lib/libwebp_a.lib"
+          -Dzstd=ON
+          -DZSTD_INCLUDE_DIR="%CMAKE_WORKSPACE%/deps/include"
+          -DZSTD_LIBRARY="%CMAKE_WORKSPACE%/deps/lib/libzstd_a.lib"
+          -Dlzma=ON
+          -DLIBLZMA_INCLUDE_DIR="%CMAKE_WORKSPACE%/deps/include"
+          -DLIBLZMA_LIBRARY="%CMAKE_WORKSPACE%/deps/lib/liblzma_a.lib"
+          -Dlibdeflate=OFF
+          -Djbig=OFF
+          -Dlerc=OFF
+      - name: Build and install libtiff
+        run: |
+          cmake --build libtiff\build --config RelWithDebInfo
+          cmake --install libtiff\build --config RelWithDebInfo
+          copy /Y libtiff\LICENSE.md install\
+          if exist libtiff\build\libtiff\*.pdb copy /Y libtiff\build\libtiff\*.pdb install\lib\
+          if exist install\lib\pkgconfig rmdir /s /q install\lib\pkgconfig
+      - name: Verify libtiff codecs
+        run: |
+          if not exist install\include\tiff.h exit /b 1
+          if not exist install\include\tiffio.h exit /b 1
+          if not exist install\bin\tiff.dll exit /b 1
+          if not exist install\lib\tiff.lib exit /b 1
+          if not exist install\lib\cmake\tiff\tiff-config.cmake exit /b 1
+          if not exist install\LICENSE.md exit /b 1
+          cl /nologo /W3 /Iinstall\include winlib-builder\.github\ci\check-libtiff.c /link /LIBPATH:install\lib tiff.lib /OUT:check-libtiff.exe
+          set PATH=%GITHUB_WORKSPACE%\install\bin;%PATH%
+          check-libtiff.exe
+      - name: Normalize version
+        id: version
+        shell: pwsh
+        run: echo "value=$('${{ inputs.version }}' -replace '^v' -replace '^libtiff-')" >> $env:GITHUB_OUTPUT
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: libtiff-${{ steps.version.outputs.value }}-${{ steps.virtuals.outputs.vs }}-${{ matrix.arch }}
+          path: install
