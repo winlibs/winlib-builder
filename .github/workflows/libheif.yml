@@ -90,7 +90,7 @@ jobs:
         run: python -m pip install meson
       - name: Build libde265
         run: |
-          cmake -S libde265 -B libde265\build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="%GITHUB_WORKSPACE%\deps" -DBUILD_SHARED_LIBS=OFF -DENABLE_SDL=OFF -DENABLE_DECODER=ON -DENABLE_ENCODER=OFF -DENABLE_SHERLOCK265=OFF -DENABLE_INTERNAL_DEVELOPMENT_TOOLS=OFF -DWITH_FUZZERS=OFF
+          cmake -S libde265 -B libde265\build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="%GITHUB_WORKSPACE%\deps" -DBUILD_SHARED_LIBS=OFF -DFORCE_FULL_VISIBILITY=ON -DENABLE_SDL=OFF -DENABLE_DECODER=ON -DENABLE_ENCODER=OFF -DENABLE_SHERLOCK265=OFF -DENABLE_INTERNAL_DEVELOPMENT_TOOLS=OFF -DWITH_FUZZERS=OFF
           cmake --build libde265\build --config Release
           cmake --install libde265\build --config Release
       - name: Build x265
