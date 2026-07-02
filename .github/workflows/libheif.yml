@@ -154,7 +154,7 @@ jobs:
           -DWITH_DAV1D=ON
           -DWITH_DAV1D_PLUGIN=OFF
           -DDAV1D_INCLUDE_DIR="%CMAKE_WORKSPACE%/deps/include"
-          -DDAV1D_LIBRARY="%CMAKE_WORKSPACE%/deps/lib/dav1d.lib"
+          -DDAV1D_LIBRARY="%CMAKE_WORKSPACE%/deps/lib/libdav1d.a"
           -DWITH_JPEG_DECODER=ON
           -DWITH_JPEG_DECODER_PLUGIN=OFF
           -DWITH_JPEG_ENCODER=ON
