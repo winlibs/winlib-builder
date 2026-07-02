@@ -59,7 +59,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Normalize CMake paths
-        run: echo CMAKE_WORKSPACE=%GITHUB_WORKSPACE:\=/%>>"%GITHUB_ENV%"
+        run: |
+          echo CMAKE_WORKSPACE=%GITHUB_WORKSPACE:\=/%>>"%GITHUB_ENV%"
+          echo CL=/DLZMA_API_STATIC>>"%GITHUB_ENV%"
       - name: Configure libtiff
         run: >-
           cmake -S libtiff -B libtiff\build
@@ -67,7 +69,6 @@ jobs:
           -DCMAKE_BUILD_TYPE=RelWithDebInfo
           -DCMAKE_INSTALL_PREFIX="%CMAKE_WORKSPACE%/install"
           -DCMAKE_PREFIX_PATH="%CMAKE_WORKSPACE%/deps"
-          -DCMAKE_C_FLAGS=/DLZMA_API_STATIC
           -DBUILD_SHARED_LIBS=ON
           -Dtiff-static=OFF
           -Dtiff-tools=OFF
