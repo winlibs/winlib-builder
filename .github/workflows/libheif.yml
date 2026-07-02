@@ -118,9 +118,9 @@ jobs:
           copy /Y deps\lib\jpeg-static.lib deps\lib\jpeg.lib
       - name: Normalize CMake paths
         run: echo CMAKE_WORKSPACE=%GITHUB_WORKSPACE:\=/%>>"%GITHUB_ENV%"
-      - name: Configure libheif
+      - name: Configure shared libheif
         run: >-
-          cmake -S libheif -B libheif\build
+          cmake -S libheif -B libheif\build-shared
           -G Ninja
           -DCMAKE_BUILD_TYPE=RelWithDebInfo
           -DCMAKE_INSTALL_PREFIX="%GITHUB_WORKSPACE%\install"
@@ -177,19 +177,94 @@ jobs:
           -DWITH_LIBSHARPYUV=OFF
           -DWITH_HEADER_COMPRESSION=OFF
           -DCMAKE_DISABLE_FIND_PACKAGE_PNG=TRUE
+      - name: Configure static libheif
+        run: >-
+          cmake -S libheif -B libheif\build-static
+          -G Ninja
+          -DCMAKE_BUILD_TYPE=RelWithDebInfo
+          -DCMAKE_PREFIX_PATH="%GITHUB_WORKSPACE%\deps"
+          -DCMAKE_INCLUDE_PATH="%GITHUB_WORKSPACE%\deps\include"
+          -DCMAKE_LIBRARY_PATH="%GITHUB_WORKSPACE%\deps\lib"
+          "-DCMAKE_CXX_FLAGS=/DLIBDE265_STATIC_BUILD /DLIBHEIF_STATIC_BUILD"
+          -DBUILD_SHARED_LIBS=OFF
+          -DBUILD_TESTING=OFF
+          -DBUILD_DOCUMENTATION=OFF
+          -DBUILD_DEVELOPMENT_TOOLS=OFF
+          -DENABLE_PLUGIN_LOADING=OFF
+          -DENABLE_EXPERIMENTAL_FEATURES=OFF
+          -DWITH_EXAMPLES=OFF
+          -DWITH_GDK_PIXBUF=OFF
+          -DWITH_FUZZERS=OFF
+          -DWITH_LIBDE265=ON
+          -DWITH_LIBDE265_PLUGIN=OFF
+          -DLIBDE265_INCLUDE_DIR="%CMAKE_WORKSPACE%/deps/include"
+          -DLIBDE265_LIBRARY="%CMAKE_WORKSPACE%/deps/lib/libde265.lib"
+          -DWITH_X265=ON
+          -DWITH_X265_PLUGIN=OFF
+          -DX265_INCLUDE_DIR="%CMAKE_WORKSPACE%/deps/include"
+          -DX265_LIBRARY="%CMAKE_WORKSPACE%/deps/lib/x265.lib"
+          -DWITH_AOM_DECODER=ON
+          -DWITH_AOM_DECODER_PLUGIN=OFF
+          -DWITH_AOM_ENCODER=ON
+          -DWITH_AOM_ENCODER_PLUGIN=OFF
+          -DAOM_INCLUDE_DIR="%CMAKE_WORKSPACE%/deps/include"
+          -DAOM_LIBRARY="%CMAKE_WORKSPACE%/deps/lib/aom.lib"
+          -DWITH_DAV1D=ON
+          -DWITH_DAV1D_PLUGIN=OFF
+          -DDAV1D_INCLUDE_DIR="%CMAKE_WORKSPACE%/deps/include"
+          -DDAV1D_LIBRARY="%CMAKE_WORKSPACE%/deps/lib/libdav1d.a"
+          -DWITH_JPEG_DECODER=ON
+          -DWITH_JPEG_DECODER_PLUGIN=OFF
+          -DWITH_JPEG_ENCODER=ON
+          -DWITH_JPEG_ENCODER_PLUGIN=OFF
+          -DJPEG_INCLUDE_DIR="%CMAKE_WORKSPACE%/deps/include"
+          -DJPEG_LIBRARY="%CMAKE_WORKSPACE%/deps/lib/jpeg.lib"
+          -DWITH_UNCOMPRESSED_CODEC=ON
+          -DWITH_SvtEnc=OFF
+          -DWITH_RAV1E=OFF
+          -DWITH_KVAZAAR=OFF
+          -DWITH_X264=OFF
+          -DWITH_OpenH264_DECODER=OFF
+          -DWITH_OpenJPEG_DECODER=OFF
+          -DWITH_OpenJPEG_ENCODER=OFF
+          -DWITH_OPENJPH_ENCODER=OFF
+          -DWITH_FFMPEG_DECODER=OFF
+          -DWITH_UVG266=OFF
+          -DWITH_VVDEC=OFF
+          -DWITH_VVENC=OFF
+          -DWITH_LIBSHARPYUV=OFF
+          -DWITH_HEADER_COMPRESSION=OFF
+          -DCMAKE_DISABLE_FIND_PACKAGE_PNG=TRUE
       - name: Build and install libheif
         run: |
-          cmake --build libheif\build --config RelWithDebInfo
-          cmake --install libheif\build --config RelWithDebInfo
-          if exist libheif\build\libheif\*.pdb copy /Y libheif\build\libheif\*.pdb install\lib\
+          cmake --build libheif\build-shared --config RelWithDebInfo
+          if errorlevel 1 exit /b %errorlevel%
+          cmake --install libheif\build-shared --config RelWithDebInfo
+          if errorlevel 1 exit /b %errorlevel%
+          cmake --build libheif\build-static --config RelWithDebInfo
+          if errorlevel 1 exit /b %errorlevel%
+          if exist libheif\build-shared\libheif\*.pdb copy /Y libheif\build-shared\libheif\*.pdb install\lib\
+          copy /Y libheif\build-static\libheif\heif.lib install\lib\heif_a.lib
+          if errorlevel 1 exit /b %errorlevel%
+          if exist libheif\build-static\libheif\heif.pdb copy /Y libheif\build-static\libheif\heif.pdb install\lib\heif_a.pdb
+          copy /Y deps\lib\libde265.lib install\lib\libde265_a.lib
+          copy /Y deps\lib\x265.lib install\lib\x265_a.lib
+          copy /Y deps\lib\aom.lib install\lib\aom_a.lib
+          copy /Y deps\lib\libdav1d.a install\lib\dav1d_a.lib
       - name: Verify libheif codecs
         run: |
           if not exist install\include\libheif\heif.h exit /b 1
           if not exist install\bin\heif.dll exit /b 1
           if not exist install\lib\heif.lib exit /b 1
-          cl /nologo /W3 /Iinstall\include winlib-builder\.github\ci\check-libheif.c /link /LIBPATH:install\lib heif.lib /OUT:check-libheif.exe
+          if not exist install\lib\heif_a.lib exit /b 1
+          cl /nologo /W3 /MD /Iinstall\include winlib-builder\.github\ci\check-libheif.c /link /LIBPATH:install\lib heif.lib /OUT:check-libheif-shared.exe
+          if errorlevel 1 exit /b %errorlevel%
           set PATH=%GITHUB_WORKSPACE%\install\bin;%PATH%
-          check-libheif.exe
+          check-libheif-shared.exe
+          if errorlevel 1 exit /b %errorlevel%
+          cl /nologo /W3 /MD /DLIBHEIF_STATIC_BUILD /Iinstall\include winlib-builder\.github\ci\check-libheif.c /link /LIBPATH:install\lib /LIBPATH:deps\lib heif_a.lib libde265_a.lib x265_a.lib aom_a.lib dav1d_a.lib jpeg.lib /OUT:check-libheif-static.exe
+          if errorlevel 1 exit /b %errorlevel%
+          check-libheif-static.exe
       - name: Remove private metadata
         run: if exist install\lib\pkgconfig rmdir /s /q install\lib\pkgconfig
       - name: Upload artifacts
