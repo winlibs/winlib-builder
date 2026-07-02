@@ -262,7 +262,7 @@ jobs:
           set PATH=%GITHUB_WORKSPACE%\install\bin;%PATH%
           check-libheif-shared.exe
           if errorlevel 1 exit /b %errorlevel%
-          cl /nologo /W3 /MD /DLIBHEIF_STATIC_BUILD /Iinstall\include winlib-builder\.github\ci\check-libheif.c /link /LIBPATH:install\lib /LIBPATH:deps\lib heif_a.lib libde265_a.lib x265_a.lib aom_a.lib dav1d_a.lib jpeg.lib /OUT:check-libheif-static.exe
+          cl /nologo /W3 /MD /DLIBHEIF_STATIC_BUILD /Iinstall\include winlib-builder\.github\ci\check-libheif.c /link /LIBPATH:install\lib /LIBPATH:deps\lib heif_a.lib libde265_a.lib x265_a.lib aom_a.lib dav1d_a.lib jpeg.lib Advapi32.lib /OUT:check-libheif-static.exe
           if errorlevel 1 exit /b %errorlevel%
           check-libheif-static.exe
       - name: Remove private metadata
