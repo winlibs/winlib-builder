@@ -38,7 +38,7 @@ jobs:
   build:
     strategy:
       matrix:
-        arch: [x64, x86]
+        arch: [x64]
     runs-on: ${{ (inputs.php == '8.6' || inputs.php == 'master') && 'windows-2025-vs2026' || 'windows-2022' }}
     steps:
       - name: Checkout winlib-builder
@@ -99,12 +99,8 @@ jobs:
           cmake --build x265\build --config Release
           cmake --install x265\build --config Release
           copy /Y x265\build\x265-static.lib deps\lib\x265.lib
-      - name: Configure AOM for x64
-        if: matrix.arch == 'x64'
+      - name: Configure AOM
         run: cmake -S aom -B aom\build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="%GITHUB_WORKSPACE%\deps" -DBUILD_SHARED_LIBS=OFF -DENABLE_DOCS=OFF -DENABLE_EXAMPLES=OFF -DENABLE_TESTDATA=OFF -DENABLE_TESTS=OFF -DENABLE_TOOLS=OFF -DENABLE_NASM=ON
-      - name: Configure AOM for x86
-        if: matrix.arch == 'x86'
-        run: cmake -S aom -B aom\build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="%GITHUB_WORKSPACE%\deps" -DBUILD_SHARED_LIBS=OFF -DENABLE_DOCS=OFF -DENABLE_EXAMPLES=OFF -DENABLE_TESTDATA=OFF -DENABLE_TESTS=OFF -DENABLE_TOOLS=OFF -DENABLE_NASM=ON -DENABLE_SSE2=OFF -DENABLE_SSE3=OFF -DENABLE_SSSE3=OFF -DENABLE_SSE4_1=OFF -DENABLE_SSE4_2=OFF -DENABLE_AVX=OFF -DENABLE_AVX2=OFF
       - name: Build AOM
         run: |
           cmake --build aom\build --config Release
