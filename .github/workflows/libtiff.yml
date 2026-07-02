@@ -62,9 +62,9 @@ jobs:
         run: |
           echo CMAKE_WORKSPACE=%GITHUB_WORKSPACE:\=/%>>"%GITHUB_ENV%"
           echo CL=/DLZMA_API_STATIC>>"%GITHUB_ENV%"
-      - name: Configure libtiff
+      - name: Configure shared libtiff
         run: >-
-          cmake -S libtiff -B libtiff\build
+          cmake -S libtiff -B libtiff\build-shared
           -G Ninja
           -DCMAKE_BUILD_TYPE=RelWithDebInfo
           -DCMAKE_INSTALL_PREFIX="%CMAKE_WORKSPACE%/install"
@@ -96,15 +96,53 @@ jobs:
           -Dlibdeflate=OFF
           -Djbig=OFF
           -Dlerc=OFF
+      - name: Configure static libtiff
+        run: >-
+          cmake -S libtiff -B libtiff\build-static
+          -G Ninja
+          -DCMAKE_BUILD_TYPE=RelWithDebInfo
+          -DCMAKE_PREFIX_PATH="%CMAKE_WORKSPACE%/deps"
+          -DBUILD_SHARED_LIBS=OFF
+          -Dtiff-static=ON
+          -Dtiff-tools=OFF
+          -Dtiff-tests=OFF
+          -Dtiff-contrib=OFF
+          -Dtiff-docs=OFF
+          -Dtiff-cxx=OFF
+          -Dtiff-opengl=OFF
+          -Dzlib=ON
+          -DZLIB_INCLUDE_DIR="%CMAKE_WORKSPACE%/deps/include"
+          -DZLIB_LIBRARY="%CMAKE_WORKSPACE%/deps/lib/zlib_a.lib"
+          -Djpeg=ON
+          -Dold-jpeg=ON
+          -DJPEG_INCLUDE_DIR="%CMAKE_WORKSPACE%/deps/include"
+          -DJPEG_LIBRARY="%CMAKE_WORKSPACE%/deps/lib/libjpeg_a.lib"
+          -Dwebp=ON
+          -DWebP_INCLUDE_DIR="%CMAKE_WORKSPACE%/deps/include"
+          -DWebP_LIBRARY="%CMAKE_WORKSPACE%/deps/lib/libwebp_a.lib"
+          -Dzstd=ON
+          -DZSTD_INCLUDE_DIR="%CMAKE_WORKSPACE%/deps/include"
+          -DZSTD_LIBRARY="%CMAKE_WORKSPACE%/deps/lib/libzstd_a.lib"
+          -Dlzma=ON
+          -DLIBLZMA_INCLUDE_DIR="%CMAKE_WORKSPACE%/deps/include"
+          -DLIBLZMA_LIBRARY="%CMAKE_WORKSPACE%/deps/lib/liblzma_a.lib"
+          -Dlibdeflate=OFF
+          -Djbig=OFF
+          -Dlerc=OFF
       - name: Build and install libtiff
         run: |
-          cmake --build libtiff\build --config RelWithDebInfo
+          cmake --build libtiff\build-shared --config RelWithDebInfo
           if errorlevel 1 exit /b %errorlevel%
-          cmake --install libtiff\build --config RelWithDebInfo
+          cmake --install libtiff\build-shared --config RelWithDebInfo
+          if errorlevel 1 exit /b %errorlevel%
+          cmake --build libtiff\build-static --config RelWithDebInfo
           if errorlevel 1 exit /b %errorlevel%
           copy /Y libtiff\LICENSE.md install\
           if errorlevel 1 exit /b %errorlevel%
-          if exist libtiff\build\libtiff\*.pdb copy /Y libtiff\build\libtiff\*.pdb install\lib\
+          if exist libtiff\build-shared\libtiff\*.pdb copy /Y libtiff\build-shared\libtiff\*.pdb install\lib\
+          copy /Y libtiff\build-static\libtiff\tiff.lib install\lib\tiff_a.lib
+          if errorlevel 1 exit /b %errorlevel%
+          if exist libtiff\build-static\libtiff\tiff.pdb copy /Y libtiff\build-static\libtiff\tiff.pdb install\lib\tiff_a.pdb
           if exist install\lib\pkgconfig rmdir /s /q install\lib\pkgconfig
       - name: Verify libtiff codecs
         run: |
@@ -113,12 +151,17 @@ jobs:
           if not exist install\include\tiffio.h (echo Missing install\include\tiffio.h & exit /b 1)
           if not exist install\bin\tiff.dll (echo Missing install\bin\tiff.dll & exit /b 1)
           if not exist install\lib\tiff.lib (echo Missing install\lib\tiff.lib & exit /b 1)
+          if not exist install\lib\tiff_a.lib (echo Missing install\lib\tiff_a.lib & exit /b 1)
           if not exist install\lib\cmake\tiff\tiff-config.cmake (echo Missing install\lib\cmake\tiff\tiff-config.cmake & exit /b 1)
           if not exist install\LICENSE.md (echo Missing install\LICENSE.md & exit /b 1)
-          cl /nologo /W3 /Iinstall\include winlib-builder\.github\ci\check-libtiff.c /link /LIBPATH:install\lib tiff.lib /OUT:check-libtiff.exe
+          cl /nologo /W3 /Iinstall\include winlib-builder\.github\ci\check-libtiff.c /link /LIBPATH:install\lib tiff.lib /OUT:check-libtiff-shared.exe
           if errorlevel 1 exit /b %errorlevel%
           set PATH=%GITHUB_WORKSPACE%\install\bin;%PATH%
-          check-libtiff.exe
+          check-libtiff-shared.exe
+          if errorlevel 1 exit /b %errorlevel%
+          cl /nologo /W3 /Iinstall\include winlib-builder\.github\ci\check-libtiff.c /link /LIBPATH:install\lib /LIBPATH:deps\lib tiff_a.lib zlib_a.lib libjpeg_a.lib liblzma_a.lib libzstd_a.lib libwebp_a.lib /OUT:check-libtiff-static.exe
+          if errorlevel 1 exit /b %errorlevel%
+          check-libtiff-static.exe
       - name: Normalize version
         id: version
         shell: pwsh
