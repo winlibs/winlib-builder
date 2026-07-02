@@ -32,6 +32,10 @@ jobs:
       - name: Compute virtual inputs
         id: virtuals
         run: powershell winlib-builder/scripts/compute-virtuals -version ${{ github.event.inputs.php }} -arch ${{ matrix.arch }}
+      - name: Setup CMake
+        uses: jwlawson/actions-setup-cmake@v2
+        with:
+          cmake-version: '3.31.x'
       - name: Configure libultrahdr
         run: >-
           cmake -S libultrahdr -B libultrahdr\build
@@ -62,14 +66,23 @@ jobs:
           copy /Y libultrahdr\ultrahdr_api.h install\include\
           copy /Y libultrahdr\build\RelWithDebInfo\uhdr.dll install\bin\
           copy /Y libultrahdr\build\RelWithDebInfo\uhdr.lib install\lib\
-          copy /Y libultrahdr\build\RelWithDebInfo\uhdr-static.lib install\lib\
+          copy /Y libultrahdr\build\RelWithDebInfo\uhdr-static.lib install\lib\uhdr_a.lib
           if exist libultrahdr\build\RelWithDebInfo\*.pdb copy /Y libultrahdr\build\RelWithDebInfo\*.pdb install\lib\
+          if exist install\lib\uhdr-static.pdb move /Y install\lib\uhdr-static.pdb install\lib\uhdr_a.pdb
       - name: Verify libultrahdr artifacts
         run: |
           if not exist install\include\ultrahdr_api.h exit /b 1
           if not exist install\bin\uhdr.dll exit /b 1
           if not exist install\lib\uhdr.lib exit /b 1
-          if not exist install\lib\uhdr-static.lib exit /b 1
+          if not exist install\lib\uhdr_a.lib exit /b 1
+          cl /nologo /W3 /MD /DUHDR_USING_SHARED_LIBRARY /Iinstall\include winlib-builder\.github\ci\check-libultrahdr.c /link /LIBPATH:install\lib uhdr.lib /OUT:check-libultrahdr-shared.exe
+          if errorlevel 1 exit /b %errorlevel%
+          set PATH=%GITHUB_WORKSPACE%\install\bin;%PATH%
+          check-libultrahdr-shared.exe
+          if errorlevel 1 exit /b %errorlevel%
+          cl /nologo /W3 /MD /Iinstall\include winlib-builder\.github\ci\check-libultrahdr.c /link /LIBPATH:install\lib uhdr_a.lib libultrahdr\build\turbojpeg\src\turbojpeg-build\RelWithDebInfo\jpeg-static.lib /OUT:check-libultrahdr-static.exe
+          if errorlevel 1 exit /b %errorlevel%
+          check-libultrahdr-static.exe
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
