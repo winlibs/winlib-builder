@@ -6,9 +6,11 @@ on:
       version:
         description: libultrahdr tag to build
         required: true
+        default: libultrahdr-1.4.0
       php:
         description: PHP version to build for
         required: true
+        default: '8.6'
 defaults:
   run:
     shell: cmd
@@ -36,13 +38,16 @@ jobs:
         uses: jwlawson/actions-setup-cmake@v2
         with:
           cmake-version: '3.31.x'
+      - name: Setup MSVC environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.arch }}
+          toolset: ${{ steps.virtuals.outputs.toolset }}
       - name: Configure libultrahdr
         run: >-
           cmake -S libultrahdr -B libultrahdr\build
-          -G "Visual Studio ${{ steps.virtuals.outputs.vsinst }}"
-          -A ${{ steps.virtuals.outputs.msarch }}
-          -T ${{ steps.virtuals.outputs.msts }}
-          -DCMAKE_SYSTEM_VERSION=${{ steps.virtuals.outputs.winsdk }}
+          -G Ninja
+          -DCMAKE_BUILD_TYPE=RelWithDebInfo
           -DBUILD_SHARED_LIBS=ON
           -DUHDR_BUILD_EXAMPLES=OFF
           -DUHDR_BUILD_TESTS=OFF
@@ -64,10 +69,10 @@ jobs:
           mkdir install\lib
           mkdir install\bin
           copy /Y libultrahdr\ultrahdr_api.h install\include\
-          copy /Y libultrahdr\build\RelWithDebInfo\uhdr.dll install\bin\
-          copy /Y libultrahdr\build\RelWithDebInfo\uhdr.lib install\lib\
-          copy /Y libultrahdr\build\RelWithDebInfo\uhdr-static.lib install\lib\uhdr_a.lib
-          if exist libultrahdr\build\RelWithDebInfo\*.pdb copy /Y libultrahdr\build\RelWithDebInfo\*.pdb install\lib\
+          copy /Y libultrahdr\build\uhdr.dll install\bin\
+          copy /Y libultrahdr\build\uhdr.lib install\lib\
+          copy /Y libultrahdr\build\uhdr-static.lib install\lib\uhdr_a.lib
+          if exist libultrahdr\build\*.pdb copy /Y libultrahdr\build\*.pdb install\lib\
           if exist install\lib\uhdr-static.pdb move /Y install\lib\uhdr-static.pdb install\lib\uhdr_a.pdb
       - name: Verify libultrahdr artifacts
         run: |
@@ -80,7 +85,7 @@ jobs:
           set PATH=%GITHUB_WORKSPACE%\install\bin;%PATH%
           check-libultrahdr-shared.exe
           if errorlevel 1 exit /b %errorlevel%
-          cl /nologo /W3 /MD /Iinstall\include winlib-builder\.github\ci\check-libultrahdr.c /link /LIBPATH:install\lib uhdr_a.lib libultrahdr\build\turbojpeg\src\turbojpeg-build\RelWithDebInfo\jpeg-static.lib /OUT:check-libultrahdr-static.exe
+          cl /nologo /W3 /MD /Iinstall\include winlib-builder\.github\ci\check-libultrahdr.c /link /LIBPATH:install\lib uhdr_a.lib libultrahdr\build\turbojpeg\src\turbojpeg-build\jpeg-static.lib /OUT:check-libultrahdr-static.exe
           if errorlevel 1 exit /b %errorlevel%
           check-libultrahdr-static.exe
       - name: Upload artifacts
