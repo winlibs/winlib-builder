@@ -187,7 +187,7 @@ jobs:
           if not exist install\include\libheif\heif.h exit /b 1
           if not exist install\bin\heif.dll exit /b 1
           if not exist install\lib\heif.lib exit /b 1
-          cl /nologo /W3 /Iinstall\include winlib-builder\scripts\check-libheif.c /link /LIBPATH:install\lib heif.lib /OUT:check-libheif.exe
+          cl /nologo /W3 /Iinstall\include winlib-builder\.github\ci\check-libheif.c /link /LIBPATH:install\lib heif.lib /OUT:check-libheif.exe
           set PATH=%GITHUB_WORKSPACE%\install\bin;%PATH%
           check-libheif.exe
       - name: Remove private metadata
