@@ -103,12 +103,13 @@ jobs:
           if exist install\lib\pkgconfig rmdir /s /q install\lib\pkgconfig
       - name: Verify libtiff codecs
         run: |
-          if not exist install\include\tiff.h exit /b 1
-          if not exist install\include\tiffio.h exit /b 1
-          if not exist install\bin\tiff.dll exit /b 1
-          if not exist install\lib\tiff.lib exit /b 1
-          if not exist install\lib\cmake\tiff\tiff-config.cmake exit /b 1
-          if not exist install\LICENSE.md exit /b 1
+          dir /s /b install
+          if not exist install\include\tiff.h (echo Missing install\include\tiff.h & exit /b 1)
+          if not exist install\include\tiffio.h (echo Missing install\include\tiffio.h & exit /b 1)
+          if not exist install\bin\tiff.dll (echo Missing install\bin\tiff.dll & exit /b 1)
+          if not exist install\lib\tiff.lib (echo Missing install\lib\tiff.lib & exit /b 1)
+          if not exist install\lib\cmake\tiff\tiff-config.cmake (echo Missing install\lib\cmake\tiff\tiff-config.cmake & exit /b 1)
+          if not exist install\LICENSE.md (echo Missing install\LICENSE.md & exit /b 1)
           cl /nologo /W3 /Iinstall\include winlib-builder\.github\ci\check-libtiff.c /link /LIBPATH:install\lib tiff.lib /OUT:check-libtiff.exe
           set PATH=%GITHUB_WORKSPACE%\install\bin;%PATH%
           check-libtiff.exe
