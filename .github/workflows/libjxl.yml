@@ -113,6 +113,16 @@ jobs:
           Get-ChildItem libjxl\build-static -Recurse -Filter '*.pdb' |
             Where-Object { $_.FullName -match 'RelWithDebInfo' } |
             Copy-Item -Destination install\lib -ErrorAction SilentlyContinue
+      - name: Remove dynamic Brotli artifacts
+        run: |
+          if exist install\bin\brotli.exe del /q install\bin\brotli.exe
+          if exist install\bin\brotli*.dll del /q install\bin\brotli*.dll
+          if exist install\include\brotli rmdir /s /q install\include\brotli
+          if exist install\lib\brotlicommon.lib del /q install\lib\brotlicommon.lib
+          if exist install\lib\brotlidec.lib del /q install\lib\brotlidec.lib
+          if exist install\lib\brotlienc.lib del /q install\lib\brotlienc.lib
+          if exist install\lib\brotli*.pdb del /q install\lib\brotli*.pdb
+          if exist install\lib\cmake\brotli rmdir /s /q install\lib\cmake\brotli
       - name: Verify libjxl artifacts
         run: |
           if not exist install\include\jxl\decode.h exit /b 1
