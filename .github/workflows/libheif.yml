@@ -116,6 +116,8 @@ jobs:
           cmake --build libjpeg-turbo\build --config Release
           cmake --install libjpeg-turbo\build --config Release
           copy /Y deps\lib\jpeg-static.lib deps\lib\jpeg.lib
+      - name: Normalize CMake paths
+        run: echo CMAKE_WORKSPACE=%GITHUB_WORKSPACE:\=/%>>"%GITHUB_ENV%"
       - name: Configure libheif
         run: >-
           cmake -S libheif -B libheif\build
@@ -137,28 +139,28 @@ jobs:
           -DWITH_FUZZERS=OFF
           -DWITH_LIBDE265=ON
           -DWITH_LIBDE265_PLUGIN=OFF
-          -DLIBDE265_INCLUDE_DIR="%GITHUB_WORKSPACE%\deps\include"
-          -DLIBDE265_LIBRARY="%GITHUB_WORKSPACE%\deps\lib\libde265.lib"
+          -DLIBDE265_INCLUDE_DIR="%CMAKE_WORKSPACE%/deps/include"
+          -DLIBDE265_LIBRARY="%CMAKE_WORKSPACE%/deps/lib/libde265.lib"
           -DWITH_X265=ON
           -DWITH_X265_PLUGIN=OFF
-          -DX265_INCLUDE_DIR="%GITHUB_WORKSPACE%\deps\include"
-          -DX265_LIBRARY="%GITHUB_WORKSPACE%\deps\lib\x265.lib"
+          -DX265_INCLUDE_DIR="%CMAKE_WORKSPACE%/deps/include"
+          -DX265_LIBRARY="%CMAKE_WORKSPACE%/deps/lib/x265.lib"
           -DWITH_AOM_DECODER=ON
           -DWITH_AOM_DECODER_PLUGIN=OFF
           -DWITH_AOM_ENCODER=ON
           -DWITH_AOM_ENCODER_PLUGIN=OFF
-          -DAOM_INCLUDE_DIR="%GITHUB_WORKSPACE%\deps\include"
-          -DAOM_LIBRARY="%GITHUB_WORKSPACE%\deps\lib\aom.lib"
+          -DAOM_INCLUDE_DIR="%CMAKE_WORKSPACE%/deps/include"
+          -DAOM_LIBRARY="%CMAKE_WORKSPACE%/deps/lib/aom.lib"
           -DWITH_DAV1D=ON
           -DWITH_DAV1D_PLUGIN=OFF
-          -DDAV1D_INCLUDE_DIR="%GITHUB_WORKSPACE%\deps\include"
-          -DDAV1D_LIBRARY="%GITHUB_WORKSPACE%\deps\lib\dav1d.lib"
+          -DDAV1D_INCLUDE_DIR="%CMAKE_WORKSPACE%/deps/include"
+          -DDAV1D_LIBRARY="%CMAKE_WORKSPACE%/deps/lib/dav1d.lib"
           -DWITH_JPEG_DECODER=ON
           -DWITH_JPEG_DECODER_PLUGIN=OFF
           -DWITH_JPEG_ENCODER=ON
           -DWITH_JPEG_ENCODER_PLUGIN=OFF
-          -DJPEG_INCLUDE_DIR="%GITHUB_WORKSPACE%\deps\include"
-          -DJPEG_LIBRARY="%GITHUB_WORKSPACE%\deps\lib\jpeg.lib"
+          -DJPEG_INCLUDE_DIR="%CMAKE_WORKSPACE%/deps/include"
+          -DJPEG_LIBRARY="%CMAKE_WORKSPACE%/deps/lib/jpeg.lib"
           -DWITH_UNCOMPRESSED_CODEC=ON
           -DWITH_SvtEnc=OFF
           -DWITH_RAV1E=OFF
