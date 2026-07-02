@@ -1,0 +1,201 @@
+name: Build libheif
+run-name: "Build ${{ inputs.version }} for PHP ${{ inputs.php }}"
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: libheif tag to build
+        required: true
+        default: v1.23.1
+      php:
+        description: PHP version to build for
+        required: true
+        default: '8.6'
+      libde265:
+        description: libde265 tag to build
+        required: true
+        default: v1.1.1
+      x265:
+        description: x265 tag to build
+        required: true
+        default: '4.2'
+      aom:
+        description: AOM tag to build
+        required: true
+        default: v3.14.1
+      dav1d:
+        description: dav1d tag to build
+        required: true
+        default: 1.5.3
+      jpeg:
+        description: libjpeg-turbo tag to build
+        required: true
+        default: 3.2.0
+defaults:
+  run:
+    shell: cmd
+jobs:
+  build:
+    strategy:
+      matrix:
+        arch: [x64, x86]
+    runs-on: ${{ (inputs.php == '8.6' || inputs.php == 'master') && 'windows-2025-vs2026' || 'windows-2022' }}
+    steps:
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v5
+        with:
+          path: winlib-builder
+      - name: Checkout libheif
+        uses: actions/checkout@v5
+        with:
+          path: libheif
+          repository: winlibs/libheif
+          ref: ${{ inputs.version }}
+      - name: Checkout libde265
+        uses: actions/checkout@v5
+        with:
+          path: libde265
+          repository: strukturag/libde265
+          ref: ${{ inputs.libde265 }}
+      - name: Checkout x265
+        uses: actions/checkout@v5
+        with:
+          path: x265
+          repository: Multicorewareinc/x265
+          ref: ${{ inputs.x265 }}
+      - name: Checkout libjpeg-turbo
+        uses: actions/checkout@v5
+        with:
+          path: libjpeg-turbo
+          repository: libjpeg-turbo/libjpeg-turbo
+          ref: ${{ inputs.jpeg }}
+      - name: Checkout AOM and dav1d
+        run: |
+          git clone --depth 1 --branch ${{ inputs.aom }} https://aomedia.googlesource.com/aom aom
+          git clone --depth 1 --branch ${{ inputs.dav1d }} https://code.videolan.org/videolan/dav1d.git dav1d
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{ inputs.php }} -arch ${{ matrix.arch }}
+      - name: Setup CMake
+        uses: jwlawson/actions-setup-cmake@v2
+        with:
+          cmake-version: '3.31.x'
+      - name: Setup NASM
+        uses: ilammy/setup-nasm@v1
+      - name: Setup MSVC environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.arch }}
+      - name: Setup Meson
+        run: python -m pip install meson
+      - name: Build libde265
+        run: |
+          cmake -S libde265 -B libde265\build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="%GITHUB_WORKSPACE%\deps" -DBUILD_SHARED_LIBS=OFF -DENABLE_SDL=OFF -DENABLE_DECODER=ON -DENABLE_ENCODER=OFF -DENABLE_SHERLOCK265=OFF -DENABLE_INTERNAL_DEVELOPMENT_TOOLS=OFF -DWITH_FUZZERS=OFF
+          cmake --build libde265\build --config Release
+          cmake --install libde265\build --config Release
+      - name: Build x265
+        run: |
+          cmake -S x265\source -B x265\build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="%GITHUB_WORKSPACE%\deps" -DENABLE_SHARED=OFF -DENABLE_CLI=OFF -DSTATIC_LINK_CRT=OFF -DENABLE_LIBNUMA=OFF
+          cmake --build x265\build --config Release
+          cmake --install x265\build --config Release
+          copy /Y x265\build\x265-static.lib deps\lib\x265.lib
+      - name: Configure AOM for x64
+        if: matrix.arch == 'x64'
+        run: cmake -S aom -B aom\build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="%GITHUB_WORKSPACE%\deps" -DBUILD_SHARED_LIBS=OFF -DENABLE_DOCS=OFF -DENABLE_EXAMPLES=OFF -DENABLE_TESTDATA=OFF -DENABLE_TESTS=OFF -DENABLE_TOOLS=OFF -DENABLE_NASM=ON
+      - name: Configure AOM for x86
+        if: matrix.arch == 'x86'
+        run: cmake -S aom -B aom\build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="%GITHUB_WORKSPACE%\deps" -DBUILD_SHARED_LIBS=OFF -DENABLE_DOCS=OFF -DENABLE_EXAMPLES=OFF -DENABLE_TESTDATA=OFF -DENABLE_TESTS=OFF -DENABLE_TOOLS=OFF -DENABLE_NASM=ON -DENABLE_SSE2=OFF -DENABLE_SSE3=OFF -DENABLE_SSSE3=OFF -DENABLE_SSE4_1=OFF -DENABLE_SSE4_2=OFF -DENABLE_AVX=OFF -DENABLE_AVX2=OFF
+      - name: Build AOM
+        run: |
+          cmake --build aom\build --config Release
+          cmake --install aom\build --config Release
+      - name: Build dav1d
+        run: |
+          meson setup dav1d\build dav1d --backend ninja --buildtype release --default-library static --prefix "%GITHUB_WORKSPACE%\deps" --libdir lib --includedir include -Db_vscrt=md -Denable_tools=false -Denable_tests=false -Denable_examples=false
+          meson compile -C dav1d\build
+          meson install -C dav1d\build
+      - name: Build libjpeg-turbo
+        run: |
+          cmake -S libjpeg-turbo -B libjpeg-turbo\build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="%GITHUB_WORKSPACE%\deps" -DENABLE_SHARED=OFF -DENABLE_STATIC=ON -DWITH_CRT_DLL=ON -DWITH_TURBOJPEG=OFF -DWITH_TOOLS=OFF -DWITH_TESTS=OFF
+          cmake --build libjpeg-turbo\build --config Release
+          cmake --install libjpeg-turbo\build --config Release
+          copy /Y deps\lib\jpeg-static.lib deps\lib\jpeg.lib
+      - name: Configure libheif
+        run: >-
+          cmake -S libheif -B libheif\build
+          -G Ninja
+          -DCMAKE_BUILD_TYPE=RelWithDebInfo
+          -DCMAKE_INSTALL_PREFIX="%GITHUB_WORKSPACE%\install"
+          -DCMAKE_PREFIX_PATH="%GITHUB_WORKSPACE%\deps"
+          -DCMAKE_INCLUDE_PATH="%GITHUB_WORKSPACE%\deps\include"
+          -DCMAKE_LIBRARY_PATH="%GITHUB_WORKSPACE%\deps\lib"
+          -DCMAKE_CXX_FLAGS=/DLIBDE265_STATIC_BUILD
+          -DBUILD_SHARED_LIBS=ON
+          -DBUILD_TESTING=OFF
+          -DBUILD_DOCUMENTATION=OFF
+          -DBUILD_DEVELOPMENT_TOOLS=OFF
+          -DENABLE_PLUGIN_LOADING=OFF
+          -DENABLE_EXPERIMENTAL_FEATURES=OFF
+          -DWITH_EXAMPLES=OFF
+          -DWITH_GDK_PIXBUF=OFF
+          -DWITH_FUZZERS=OFF
+          -DWITH_LIBDE265=ON
+          -DWITH_LIBDE265_PLUGIN=OFF
+          -DLIBDE265_INCLUDE_DIR="%GITHUB_WORKSPACE%\deps\include"
+          -DLIBDE265_LIBRARY="%GITHUB_WORKSPACE%\deps\lib\libde265.lib"
+          -DWITH_X265=ON
+          -DWITH_X265_PLUGIN=OFF
+          -DX265_INCLUDE_DIR="%GITHUB_WORKSPACE%\deps\include"
+          -DX265_LIBRARY="%GITHUB_WORKSPACE%\deps\lib\x265.lib"
+          -DWITH_AOM_DECODER=ON
+          -DWITH_AOM_DECODER_PLUGIN=OFF
+          -DWITH_AOM_ENCODER=ON
+          -DWITH_AOM_ENCODER_PLUGIN=OFF
+          -DAOM_INCLUDE_DIR="%GITHUB_WORKSPACE%\deps\include"
+          -DAOM_LIBRARY="%GITHUB_WORKSPACE%\deps\lib\aom.lib"
+          -DWITH_DAV1D=ON
+          -DWITH_DAV1D_PLUGIN=OFF
+          -DDAV1D_INCLUDE_DIR="%GITHUB_WORKSPACE%\deps\include"
+          -DDAV1D_LIBRARY="%GITHUB_WORKSPACE%\deps\lib\dav1d.lib"
+          -DWITH_JPEG_DECODER=ON
+          -DWITH_JPEG_DECODER_PLUGIN=OFF
+          -DWITH_JPEG_ENCODER=ON
+          -DWITH_JPEG_ENCODER_PLUGIN=OFF
+          -DJPEG_INCLUDE_DIR="%GITHUB_WORKSPACE%\deps\include"
+          -DJPEG_LIBRARY="%GITHUB_WORKSPACE%\deps\lib\jpeg.lib"
+          -DWITH_UNCOMPRESSED_CODEC=ON
+          -DWITH_SvtEnc=OFF
+          -DWITH_RAV1E=OFF
+          -DWITH_KVAZAAR=OFF
+          -DWITH_X264=OFF
+          -DWITH_OpenH264_DECODER=OFF
+          -DWITH_OpenJPEG_DECODER=OFF
+          -DWITH_OpenJPEG_ENCODER=OFF
+          -DWITH_OPENJPH_ENCODER=OFF
+          -DWITH_FFMPEG_DECODER=OFF
+          -DWITH_UVG266=OFF
+          -DWITH_VVDEC=OFF
+          -DWITH_VVENC=OFF
+          -DWITH_LIBSHARPYUV=OFF
+          -DWITH_HEADER_COMPRESSION=OFF
+          -DCMAKE_DISABLE_FIND_PACKAGE_PNG=TRUE
+      - name: Build and install libheif
+        run: |
+          cmake --build libheif\build --config RelWithDebInfo
+          cmake --install libheif\build --config RelWithDebInfo
+          if exist libheif\build\libheif\*.pdb copy /Y libheif\build\libheif\*.pdb install\lib\
+      - name: Verify libheif codecs
+        run: |
+          if not exist install\include\libheif\heif.h exit /b 1
+          if not exist install\bin\heif.dll exit /b 1
+          if not exist install\lib\heif.lib exit /b 1
+          cl /nologo /W3 /Iinstall\include winlib-builder\scripts\check-libheif.c /link /LIBPATH:install\lib heif.lib /OUT:check-libheif.exe
+          set PATH=%GITHUB_WORKSPACE%\install\bin;%PATH%
+          check-libheif.exe
+      - name: Remove private metadata
+        run: if exist install\lib\pkgconfig rmdir /s /q install\lib\pkgconfig
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.version }}-${{ steps.virtuals.outputs.vs }}-${{ matrix.arch }}
+          path: install
