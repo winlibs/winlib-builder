@@ -11,6 +11,16 @@ on:
         description: PHP version to build for
         required: true
         default: '8.6'
+      stability:
+        description: the series stability
+        required: false
+        default: staging
+      workflow_run_ids:
+        description: Comma-separated winlib-builder workflow run IDs to download dependency artifacts from
+        required: false
+permissions:
+  actions: read
+  contents: read
 defaults:
   run:
     shell: cmd
@@ -43,6 +53,12 @@ jobs:
         with:
           arch: ${{ matrix.arch }}
           toolset: ${{ steps.virtuals.outputs.toolset }}
+      - name: Fetch dependencies
+        run: powershell winlib-builder/scripts/fetch-deps -lib libultrahdr -version ${{ inputs.php }} -vs ${{ steps.virtuals.outputs.vs }} -arch ${{ matrix.arch }} -stability ${{ inputs.stability }} -workflow_run_ids:'${{ inputs.workflow_run_ids }}'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Normalize CMake paths
+        run: echo CMAKE_WORKSPACE=%GITHUB_WORKSPACE:\=/%>>"%GITHUB_ENV%"
       - name: Configure libultrahdr
         run: >-
           cmake -S libultrahdr -B libultrahdr\build
@@ -53,7 +69,7 @@ jobs:
           -DUHDR_BUILD_TESTS=OFF
           -DUHDR_BUILD_BENCHMARK=OFF
           -DUHDR_BUILD_FUZZERS=OFF
-          -DUHDR_BUILD_DEPS=ON
+          -DUHDR_BUILD_DEPS=OFF
           -DUHDR_BUILD_JAVA=OFF
           -DUHDR_BUILD_PACKAGING=OFF
           -DUHDR_ENABLE_INSTALL=OFF
@@ -61,6 +77,9 @@ jobs:
           -DUHDR_ENABLE_WERROR=OFF
           -DUHDR_WRITE_XMP=OFF
           -DUHDR_WRITE_ISO=ON
+          -DJPEG_INCLUDE_DIR="%CMAKE_WORKSPACE%/deps/include"
+          -DJPEG_LIBRARY="%CMAKE_WORKSPACE%/deps/lib/libjpeg_a.lib"
+          -DJPEG_LIBRARY_RELEASE="%CMAKE_WORKSPACE%/deps/lib/libjpeg_a.lib"
       - name: Build libultrahdr
         run: cmake --build libultrahdr\build --config RelWithDebInfo
       - name: Stage libultrahdr
@@ -85,7 +104,7 @@ jobs:
           set PATH=%GITHUB_WORKSPACE%\install\bin;%PATH%
           check-libultrahdr-shared.exe
           if errorlevel 1 exit /b %errorlevel%
-          cl /nologo /W3 /MD /Iinstall\include winlib-builder\.github\ci\check-libultrahdr.c /link /LIBPATH:install\lib uhdr_a.lib libultrahdr\build\turbojpeg\src\turbojpeg-build\jpeg-static.lib /OUT:check-libultrahdr-static.exe
+          cl /nologo /W3 /MD /Iinstall\include winlib-builder\.github\ci\check-libultrahdr.c /link /LIBPATH:install\lib /LIBPATH:deps\lib uhdr_a.lib libjpeg_a.lib /OUT:check-libultrahdr-static.exe
           if errorlevel 1 exit /b %errorlevel%
           check-libultrahdr-static.exe
       - name: Upload artifacts
