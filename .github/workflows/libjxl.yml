@@ -6,9 +6,11 @@ on:
       version:
         description: libjxl tag to build
         required: true
+        default: libjxl-0.11.2
       php:
         description: PHP version to build for
         required: true
+        default: '8.6'
 defaults:
   run:
     shell: cmd
@@ -64,6 +66,48 @@ jobs:
           cmake --install libjxl\build --config RelWithDebInfo
           if exist libjxl\build\lib\RelWithDebInfo\*.pdb xcopy libjxl\build\lib\RelWithDebInfo\*.pdb install\lib\*
           if exist install\lib\pkgconfig rmdir /s /q install\lib\pkgconfig
+      - name: Configure static libjxl
+        run: >-
+          cmake -S libjxl -B libjxl\build-static
+          -G "Visual Studio ${{ steps.virtuals.outputs.vsinst }}"
+          -A ${{ steps.virtuals.outputs.msarch }}
+          -T ${{ steps.virtuals.outputs.msts }}
+          -DCMAKE_SYSTEM_VERSION=${{ steps.virtuals.outputs.winsdk }}
+          -DCMAKE_INSTALL_PREFIX="%GITHUB_WORKSPACE%\install-static"
+          -DBUILD_SHARED_LIBS=OFF
+          -DBUILD_TESTING=OFF
+          -DJPEGXL_ENABLE_BENCHMARK=OFF
+          -DJPEGXL_ENABLE_DEVTOOLS=OFF
+          -DJPEGXL_ENABLE_DOXYGEN=OFF
+          -DJPEGXL_ENABLE_EXAMPLES=OFF
+          -DJPEGXL_ENABLE_FUZZERS=OFF
+          -DJPEGXL_ENABLE_JNI=OFF
+          -DJPEGXL_ENABLE_MANPAGES=OFF
+          -DJPEGXL_ENABLE_OPENEXR=OFF
+          -DJPEGXL_ENABLE_PLUGINS=OFF
+          -DJPEGXL_ENABLE_SJPEG=OFF
+          -DJPEGXL_ENABLE_TCMALLOC=OFF
+          -DJPEGXL_ENABLE_TOOLS=OFF
+          -DJPEGXL_ENABLE_VIEWERS=OFF
+          -DJPEGXL_WARNINGS_AS_ERRORS=OFF
+      - name: Build and install static libjxl
+        run: |
+          cmake --build libjxl\build-static --config RelWithDebInfo
+          cmake --install libjxl\build-static --config RelWithDebInfo
+      - name: Stage static libjxl libraries
+        shell: pwsh
+        run: |
+          $libraries = @('jxl', 'jxl_cms', 'jxl_threads', 'hwy', 'brotlicommon', 'brotlidec', 'brotlienc')
+          foreach ($library in $libraries) {
+            $archive = Get-ChildItem libjxl\build-static -Recurse -Filter "$library.lib" |
+              Where-Object { $_.FullName -match 'RelWithDebInfo' } |
+              Select-Object -First 1
+            if (!$archive) { throw "Static library $library.lib was not built" }
+            Copy-Item $archive.FullName "install\lib\${library}_a.lib"
+          }
+          Get-ChildItem libjxl\build-static -Recurse -Filter '*.pdb' |
+            Where-Object { $_.FullName -match 'RelWithDebInfo' } |
+            Copy-Item -Destination install\lib -ErrorAction SilentlyContinue
       - name: Verify libjxl artifacts
         run: |
           if not exist install\include\jxl\decode.h exit /b 1
@@ -74,6 +118,18 @@ jobs:
           if not exist install\lib\jxl.lib exit /b 1
           if not exist install\lib\jxl_cms.lib exit /b 1
           if not exist install\lib\jxl_threads.lib exit /b 1
+          if not exist install\lib\jxl_a.lib exit /b 1
+          if not exist install\lib\jxl_cms_a.lib exit /b 1
+          if not exist install\lib\jxl_threads_a.lib exit /b 1
+          if not exist install\lib\hwy_a.lib exit /b 1
+          if not exist install\lib\brotlicommon_a.lib exit /b 1
+          if not exist install\lib\brotlidec_a.lib exit /b 1
+          if not exist install\lib\brotlienc_a.lib exit /b 1
+          cl /nologo /MD /I install\include winlib-builder\.github\ci\check-libjxl.c /link /LIBPATH:install\lib jxl.lib jxl_cms.lib
+          set PATH=%CD%\install\bin;%PATH%
+          check-libjxl.exe
+          cl /nologo /MD /DJXL_STATIC_DEFINE /DJXL_CMS_STATIC_DEFINE /I install\include winlib-builder\.github\ci\check-libjxl.c /link /LIBPATH:install\lib jxl_a.lib jxl_cms_a.lib hwy_a.lib brotlienc_a.lib brotlidec_a.lib brotlicommon_a.lib
+          check-libjxl.exe
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
