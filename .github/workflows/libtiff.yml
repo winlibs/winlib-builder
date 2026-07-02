@@ -97,8 +97,11 @@ jobs:
       - name: Build and install libtiff
         run: |
           cmake --build libtiff\build --config RelWithDebInfo
+          if errorlevel 1 exit /b %errorlevel%
           cmake --install libtiff\build --config RelWithDebInfo
+          if errorlevel 1 exit /b %errorlevel%
           copy /Y libtiff\LICENSE.md install\
+          if errorlevel 1 exit /b %errorlevel%
           if exist libtiff\build\libtiff\*.pdb copy /Y libtiff\build\libtiff\*.pdb install\lib\
           if exist install\lib\pkgconfig rmdir /s /q install\lib\pkgconfig
       - name: Verify libtiff codecs
@@ -111,6 +114,7 @@ jobs:
           if not exist install\lib\cmake\tiff\tiff-config.cmake (echo Missing install\lib\cmake\tiff\tiff-config.cmake & exit /b 1)
           if not exist install\LICENSE.md (echo Missing install\LICENSE.md & exit /b 1)
           cl /nologo /W3 /Iinstall\include winlib-builder\.github\ci\check-libtiff.c /link /LIBPATH:install\lib tiff.lib /OUT:check-libtiff.exe
+          if errorlevel 1 exit /b %errorlevel%
           set PATH=%GITHUB_WORKSPACE%\install\bin;%PATH%
           check-libtiff.exe
       - name: Normalize version
