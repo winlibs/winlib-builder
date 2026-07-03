@@ -38,13 +38,22 @@ jobs:
           arch: ${{matrix.arch}}
           toolset: ${{steps.virtuals.outputs.toolset}}
       - name: Build libwebp
-        run: cd libwebp && nmake /f Makefile.vc CFG=release-static RTLIBCFG=dynamic OBJDIR=output
+        run: cd libwebp && nmake /f Makefile.vc CFG=release-static RTLIBCFG=dynamic OBJDIR=output all
       - name: Install libwebp
         run: |
           cd libwebp
           xcopy output\release-static\${{matrix.arch}}\bin\*.exe ..\build\bin\*
           xcopy src\webp\*.h ..\build\include\webp\*
           xcopy output\release-static\${{matrix.arch}}\lib\* ..\build\lib\*
+      - name: Verify libwebp artifacts
+        run: |
+          if not exist build\include\webp\decode.h exit /b 1
+          if not exist build\include\webp\demux.h exit /b 1
+          if not exist build\include\webp\encode.h exit /b 1
+          if not exist build\include\webp\mux.h exit /b 1
+          if not exist build\lib\libwebp_a.lib exit /b 1
+          if not exist build\lib\libwebpdemux_a.lib exit /b 1
+          if not exist build\lib\libwebpmux_a.lib exit /b 1
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
