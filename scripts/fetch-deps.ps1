@@ -16,6 +16,7 @@ $deps = @{
     "enchant" = "glib";
     "glib" = "libffi", "libintl", "zlib";
     "libpng" = "zlib";
+    "libjxl" = "brotli";
     "librdkafka" = "libzstd", "openssl", "zlib";
     "libssh2" = "openssl", "zlib";
     "libtiff" = "zlib", "libjpeg-turbo", "libwebp", "libzstd", "liblzma";

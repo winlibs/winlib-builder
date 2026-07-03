@@ -11,6 +11,16 @@ on:
         description: PHP version to build for
         required: true
         default: '8.6'
+      stability:
+        description: the series stability
+        required: false
+        default: staging
+      workflow_run_ids:
+        description: Comma-separated winlib-builder workflow run IDs to download dependency artifacts from
+        required: false
+permissions:
+  actions: read
+  contents: read
 defaults:
   run:
     shell: cmd
@@ -40,6 +50,24 @@ jobs:
         with:
           arch: ${{ matrix.arch }}
           toolset: ${{ steps.virtuals.outputs.toolset }}
+      - name: Fetch dependencies
+        run: powershell winlib-builder/scripts/fetch-deps -lib libjxl -version ${{ inputs.php }} -vs ${{ steps.virtuals.outputs.vs }} -arch ${{ matrix.arch }} -stability ${{ inputs.stability }} -workflow_run_ids:'${{ inputs.workflow_run_ids }}'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Locate static Brotli libraries
+        shell: pwsh
+        run: |
+          $libraries = @{
+            BROTLICOMMON_LIBRARY = @('brotlicommon.lib', 'brotlicommon-static.lib')
+            BROTLIDEC_LIBRARY = @('brotlidec.lib', 'brotlidec-static.lib')
+            BROTLIENC_LIBRARY = @('brotlienc.lib', 'brotlienc-static.lib')
+          }
+          foreach ($entry in $libraries.GetEnumerator()) {
+            $library = $entry.Value | ForEach-Object { Join-Path $env:GITHUB_WORKSPACE "deps/lib/$_" } | Where-Object { Test-Path $_ } | Select-Object -First 1
+            if (!$library) { throw "Static Brotli library for $($entry.Key) was not found" }
+            "$($entry.Key)=$($library.Replace('\', '/'))" >> $env:GITHUB_ENV
+          }
+          "BROTLI_INCLUDE_DIR=$(($env:GITHUB_WORKSPACE + '/deps/include').Replace('\', '/'))" >> $env:GITHUB_ENV
       - name: Configure libjxl
         run: >-
           cmake -S libjxl -B libjxl\build
@@ -50,6 +78,11 @@ jobs:
           -DCMAKE_INSTALL_PREFIX="%GITHUB_WORKSPACE%\install"
           -DBUILD_SHARED_LIBS=ON
           -DBUILD_TESTING=OFF
+          -DJPEGXL_FORCE_SYSTEM_BROTLI=ON
+          -DBROTLI_INCLUDE_DIR="%BROTLI_INCLUDE_DIR%"
+          -DBROTLICOMMON_LIBRARY="%BROTLICOMMON_LIBRARY%"
+          -DBROTLIDEC_LIBRARY="%BROTLIDEC_LIBRARY%"
+          -DBROTLIENC_LIBRARY="%BROTLIENC_LIBRARY%"
           -DJPEGXL_ENABLE_BENCHMARK=OFF
           -DJPEGXL_ENABLE_DEVTOOLS=OFF
           -DJPEGXL_ENABLE_DOXYGEN=OFF
@@ -81,6 +114,11 @@ jobs:
           -DCMAKE_INSTALL_PREFIX="%GITHUB_WORKSPACE%\install-static"
           -DBUILD_SHARED_LIBS=OFF
           -DBUILD_TESTING=OFF
+          -DJPEGXL_FORCE_SYSTEM_BROTLI=ON
+          -DBROTLI_INCLUDE_DIR="%BROTLI_INCLUDE_DIR%"
+          -DBROTLICOMMON_LIBRARY="%BROTLICOMMON_LIBRARY%"
+          -DBROTLIDEC_LIBRARY="%BROTLIDEC_LIBRARY%"
+          -DBROTLIENC_LIBRARY="%BROTLIENC_LIBRARY%"
           -DJPEGXL_ENABLE_BENCHMARK=OFF
           -DJPEGXL_ENABLE_DEVTOOLS=OFF
           -DJPEGXL_ENABLE_DOXYGEN=OFF
@@ -102,7 +140,7 @@ jobs:
       - name: Stage static libjxl libraries
         shell: pwsh
         run: |
-          $libraries = @('jxl', 'jxl_cms', 'jxl_threads', 'hwy', 'brotlicommon', 'brotlidec', 'brotlienc')
+          $libraries = @('jxl', 'jxl_cms', 'jxl_threads', 'hwy')
           foreach ($library in $libraries) {
             $archive = Get-ChildItem libjxl\build-static -Recurse -Filter "$library.lib" |
               Where-Object { $_.FullName -match 'RelWithDebInfo' } |
@@ -113,16 +151,6 @@ jobs:
           Get-ChildItem libjxl\build-static -Recurse -Filter '*.pdb' |
             Where-Object { $_.FullName -match 'RelWithDebInfo' } |
             Copy-Item -Destination install\lib -ErrorAction SilentlyContinue
-      - name: Remove dynamic Brotli artifacts
-        run: |
-          if exist install\bin\brotli.exe del /q install\bin\brotli.exe
-          if exist install\bin\brotli*.dll del /q install\bin\brotli*.dll
-          if exist install\include\brotli rmdir /s /q install\include\brotli
-          if exist install\lib\brotlicommon.lib del /q install\lib\brotlicommon.lib
-          if exist install\lib\brotlidec.lib del /q install\lib\brotlidec.lib
-          if exist install\lib\brotlienc.lib del /q install\lib\brotlienc.lib
-          if exist install\lib\brotli*.pdb del /q install\lib\brotli*.pdb
-          if exist install\lib\cmake\brotli rmdir /s /q install\lib\cmake\brotli
       - name: Verify libjxl artifacts
         run: |
           if not exist install\include\jxl\decode.h exit /b 1
@@ -137,13 +165,12 @@ jobs:
           if not exist install\lib\jxl_cms_a.lib exit /b 1
           if not exist install\lib\jxl_threads_a.lib exit /b 1
           if not exist install\lib\hwy_a.lib exit /b 1
-          if not exist install\lib\brotlicommon_a.lib exit /b 1
-          if not exist install\lib\brotlidec_a.lib exit /b 1
-          if not exist install\lib\brotlienc_a.lib exit /b 1
+          if exist install\include\brotli exit /b 1
+          if exist install\lib\brotli*.lib exit /b 1
           cl /nologo /MD /I install\include winlib-builder\.github\ci\check-libjxl.c /link /LIBPATH:install\lib jxl.lib jxl_cms.lib
           set PATH=%CD%\install\bin;%PATH%
           check-libjxl.exe
-          cl /nologo /MD /DJXL_STATIC_DEFINE /DJXL_CMS_STATIC_DEFINE /I install\include winlib-builder\.github\ci\check-libjxl.c /link /LIBPATH:install\lib jxl_a.lib jxl_cms_a.lib hwy_a.lib brotlienc_a.lib brotlidec_a.lib brotlicommon_a.lib
+          cl /nologo /MD /DJXL_STATIC_DEFINE /DJXL_CMS_STATIC_DEFINE /I install\include winlib-builder\.github\ci\check-libjxl.c /link /LIBPATH:install\lib jxl_a.lib jxl_cms_a.lib hwy_a.lib "%BROTLIENC_LIBRARY%" "%BROTLIDEC_LIBRARY%" "%BROTLICOMMON_LIBRARY%"
           check-libjxl.exe
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
