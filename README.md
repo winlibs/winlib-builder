@@ -4,4 +4,4 @@ This is the flows manager to handle all dependencies need to build php-src for w
 
 # Add a new library
 
-Please see [Add a new library guid](docs/library_contribitions.md)
+Please see [Add a new library guide](docs/library_contribitions.md)
