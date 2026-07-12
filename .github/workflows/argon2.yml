@@ -38,12 +38,16 @@ jobs:
           arch: ${{matrix.arch}}
           toolset: ${{steps.virtuals.outputs.toolset}}
       - name: Build argon2
-        run: cd argon2 && nmake /f Makefile.vc
+        run: |
+          cd argon2
+          nmake /f Makefile.vc
+          nmake /f Makefile.vc DEBUG=1
       - name: Install argon2
         run: |
           cd argon2
           xcopy include\*.h ..\install\include\*
-          xcopy argon2_a.* ..\install\lib\*
+          xcopy argon2_a*.lib ..\install\lib\*
+          xcopy argon2_a*.pdb ..\install\lib\*
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

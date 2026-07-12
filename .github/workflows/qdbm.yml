@@ -38,12 +38,16 @@ jobs:
           arch: ${{matrix.arch}}
           toolset: ${{steps.virtuals.outputs.toolset}}
       - name: Build qdbm
-        run: cd qdbm && nmake /f VCmakefile
+        run: |
+          cd qdbm
+          nmake /f VCmakefile
+          nmake /f VCmakefile CFG=dd
       - name: Install qdbm
         run: |
           cd qdbm
-          xcopy qdbm.dll ..\install\bin\*
+          xcopy qdbm*.dll ..\install\bin\*
           xcopy tmp\qdbm.pdb ..\install\bin\*
+          xcopy tmp_debug\qdbm_debug.pdb ..\install\bin\*
           xcopy *.h ..\install\include\qdbm\*
           del ..\install\include\qdbm\hovel.h ..\install\include\qdbm\myconf.h
           xcopy *.lib ..\install\lib\*
