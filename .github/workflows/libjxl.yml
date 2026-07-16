@@ -54,17 +54,17 @@ jobs:
         run: powershell winlib-builder/scripts/fetch-deps -lib libjxl -version ${{ inputs.php }} -vs ${{ steps.virtuals.outputs.vs }} -arch ${{ matrix.arch }} -stability ${{ inputs.stability }} -workflow_run_ids:'${{ inputs.workflow_run_ids }}'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Locate static Brotli libraries
+      - name: Locate Brotli import libraries
         shell: pwsh
         run: |
           $libraries = @{
-            BROTLICOMMON_LIBRARY = @('brotlicommon.lib', 'brotlicommon-static.lib')
-            BROTLIDEC_LIBRARY = @('brotlidec.lib', 'brotlidec-static.lib')
-            BROTLIENC_LIBRARY = @('brotlienc.lib', 'brotlienc-static.lib')
+            BROTLICOMMON_LIBRARY = @('brotlicommon.lib')
+            BROTLIDEC_LIBRARY = @('brotlidec.lib')
+            BROTLIENC_LIBRARY = @('brotlienc.lib')
           }
           foreach ($entry in $libraries.GetEnumerator()) {
             $library = $entry.Value | ForEach-Object { Join-Path $env:GITHUB_WORKSPACE "deps/lib/$_" } | Where-Object { Test-Path $_ } | Select-Object -First 1
-            if (!$library) { throw "Static Brotli library for $($entry.Key) was not found" }
+            if (!$library) { throw "Brotli import library for $($entry.Key) was not found" }
             "$($entry.Key)=$($library.Replace('\', '/'))" >> $env:GITHUB_ENV
           }
           "BROTLI_INCLUDE_DIR=$(($env:GITHUB_WORKSPACE + '/deps/include').Replace('\', '/'))" >> $env:GITHUB_ENV
@@ -168,7 +168,7 @@ jobs:
           if exist install\include\brotli exit /b 1
           if exist install\lib\brotli*.lib exit /b 1
           cl /nologo /MD /I install\include winlib-builder\.github\ci\check-libjxl.c /link /LIBPATH:install\lib jxl.lib jxl_cms.lib
-          set PATH=%CD%\install\bin;%PATH%
+          set PATH=%CD%\deps\bin;%CD%\install\bin;%PATH%
           check-libjxl.exe
           cl /nologo /MD /DJXL_STATIC_DEFINE /DJXL_CMS_STATIC_DEFINE /I install\include winlib-builder\.github\ci\check-libjxl.c /link /LIBPATH:install\lib jxl_a.lib jxl_cms_a.lib hwy_a.lib "%BROTLIENC_LIBRARY%" "%BROTLIDEC_LIBRARY%" "%BROTLICOMMON_LIBRARY%"
           check-libjxl.exe
