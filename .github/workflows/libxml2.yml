@@ -63,6 +63,18 @@ jobs:
           del /q install\bin\run*
           del /q install\bin\test*
           del /q install\bin\xml*.pdb
+      - name: Copy license files
+        run: xcopy libxml2\Copyright install\share\licenses\libxml2\*
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library libxml2
+          -Version '${{ github.event.inputs.version }}'
+          -InstallRoot 'install'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ github.event.inputs.php }}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

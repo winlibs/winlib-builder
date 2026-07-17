@@ -61,6 +61,18 @@ jobs:
           xcopy include\*.h ..\install\include\libssh2\*
           xcopy win32\Release_lib\libssh2_a.* ..\install\lib\*
           xcopy win32\Release_dll\libssh2.lib ..\install\lib\*
+      - name: Copy license files
+        run: xcopy libssh2\COPYING install\share\licenses\libssh2\*
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library libssh2
+          -Version '${{ github.event.inputs.version }}'
+          -InstallRoot 'install'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ github.event.inputs.php }}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

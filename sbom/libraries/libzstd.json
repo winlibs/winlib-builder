@@ -1,0 +1,22 @@
+{
+  "$schema": "../schema.json",
+  "component": "libzstd",
+  "aliases": [
+    "zstd"
+  ],
+  "version": {
+    "stripPrefixes": [
+      "libzstd-",
+      "zstd-",
+      "v"
+    ]
+  },
+  "upstream": {
+    "repository": "facebook/zstd",
+    "tagTemplate": "v{version}"
+  },
+  "license": {
+    "expression": "BSD-3-Clause OR GPL-2.0-only"
+  },
+  "purl": "pkg:generic/zstd@{upstreamVersion}"
+}

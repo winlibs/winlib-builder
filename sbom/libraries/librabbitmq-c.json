@@ -1,0 +1,16 @@
+{
+  "$schema": "../schema.json",
+  "component": "librabbitmq",
+  "aliases": ["rabbitmq-c", "librabbitmq-c"],
+  "version": {
+    "stripPrefixes": ["rabbitmq-c-", "librabbitmq-", "v"]
+  },
+  "upstream": {
+    "repository": "alanxz/rabbitmq-c",
+    "tagTemplate": "v{version}"
+  },
+  "license": {
+    "id": "MIT"
+  },
+  "purl": "pkg:generic/rabbitmq-c@{upstreamVersion}"
+}

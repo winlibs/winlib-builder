@@ -267,6 +267,25 @@ jobs:
           check-libheif-static.exe
       - name: Remove private metadata
         run: if exist install\lib\pkgconfig rmdir /s /q install\lib\pkgconfig
+      - name: Copy license files
+        run: |
+          xcopy libheif\COPYING install\share\licenses\libheif\*
+          xcopy libde265\COPYING install\share\licenses\libde265\*
+          xcopy x265\COPYING install\share\licenses\x265\*
+          xcopy aom\LICENSE install\share\licenses\aom\*
+          xcopy aom\PATENTS install\share\licenses\aom\*
+          xcopy dav1d\COPYING install\share\licenses\dav1d\*
+          xcopy libjpeg-turbo\LICENSE.md install\share\licenses\libjpeg-turbo\*
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library libheif
+          -Version '${{ inputs.version }}'
+          -InstallRoot 'install'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ inputs.php }}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

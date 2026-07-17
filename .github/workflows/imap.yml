@@ -44,6 +44,20 @@ jobs:
           cd imap
           xcopy c-client\*.h ..\install\include\c-client\*
           xcopy c-client\cclient_a.lib ..\install\lib\*
+      - name: Copy license files
+        run: |
+          xcopy imap\LICENSE.txt install\share\licenses\c-client\*
+          xcopy imap\NOTICE install\share\licenses\c-client\*
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library imap
+          -Version '${{ github.event.inputs.version }}'
+          -InstallRoot 'install'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ github.event.inputs.php }}'
       - name: Set package name
         id: package
         shell: pwsh

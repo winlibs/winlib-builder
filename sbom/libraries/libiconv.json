@@ -1,0 +1,17 @@
+{
+  "$schema": "../schema.json",
+  "component": "libiconv",
+  "version": {
+    "stripPrefixes": [
+      "libiconv-"
+    ]
+  },
+  "upstream": {
+    "url": "https://git.savannah.gnu.org/git/libiconv.git",
+    "tagTemplate": "v{version}"
+  },
+  "license": {
+    "id": "LGPL-2.1-or-later"
+  },
+  "purl": "pkg:generic/libiconv@{upstreamVersion}"
+}

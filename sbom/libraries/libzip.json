@@ -1,0 +1,18 @@
+{
+  "$schema": "../schema.json",
+  "component": "libzip",
+  "version": {
+    "stripPrefixes": [
+      "libzip-",
+      "v"
+    ]
+  },
+  "upstream": {
+    "repository": "nih-at/libzip",
+    "tagTemplate": "v{version}"
+  },
+  "license": {
+    "id": "BSD-3-Clause"
+  },
+  "purl": "pkg:generic/libzip@{upstreamVersion}"
+}

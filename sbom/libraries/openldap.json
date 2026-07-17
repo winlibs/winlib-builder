@@ -1,0 +1,35 @@
+{
+  "$schema": "../schema.json",
+  "component": "openldap",
+  "version": {
+    "stripPrefixes": [
+      "openldap-"
+    ]
+  },
+  "upstream": {
+    "repository": "openldap/openldap",
+    "tagTemplate": "OPENLDAP_REL_ENG_{versionUnderscore}"
+  },
+  "license": {
+    "id": "OLDAP-2.8"
+  },
+  "purl": "pkg:generic/openldap@{upstreamVersion}",
+  "cpe": "cpe:2.3:a:openldap:openldap:{upstreamVersion}:*:*:*:*:*:*:*",
+  "components": [
+    {
+      "component": "rxspencer",
+      "sourcePath": "rxspencer",
+      "version": {
+        "stripPrefixes": ["v"]
+      },
+      "upstream": {
+        "repository": "garyhouston/rxspencer",
+        "tagTemplate": "v{version}"
+      },
+      "license": {
+        "id": "Spencer-94"
+      },
+      "purl": "pkg:generic/rxspencer@{upstreamVersion}"
+    }
+  ]
+}

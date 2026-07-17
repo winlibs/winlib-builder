@@ -1,0 +1,19 @@
+{
+  "$schema": "../schema.json",
+  "component": "libpng",
+  "version": {
+    "stripPrefixes": [
+      "libpng-",
+      "v"
+    ]
+  },
+  "upstream": {
+    "repository": "pnggroup/libpng",
+    "tagTemplate": "v{version}"
+  },
+  "license": {
+    "id": "libpng-2.0"
+  },
+  "purl": "pkg:generic/libpng@{upstreamVersion}",
+  "cpe": "cpe:2.3:a:libpng:libpng:{upstreamVersion}:*:*:*:*:*:*:*"
+}

@@ -40,10 +40,21 @@ jobs:
         run: |
           cd pslib
           xcopy COPYING ..\install\*
+          xcopy COPYING ..\install\share\licenses\pslib\*
           xcopy RelWithDebInfo\pslib.dll ..\install\bin\*
           xcopy RelWithDebInfo\pslib.pdb ..\install\bin\*
           xcopy include\libps\*.h ..\install\include\libps\*
           xcopy RelWithDebInfo\pslib.lib ..\install\lib\*
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library pslib
+          -Version '${{ inputs.version }}'
+          -InstallRoot 'install'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ inputs.php }}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

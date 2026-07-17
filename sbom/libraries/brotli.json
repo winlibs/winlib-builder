@@ -1,0 +1,19 @@
+{
+  "$schema": "../schema.json",
+  "component": "brotli",
+  "version": {
+    "stripPrefixes": [
+      "brotli-",
+      "v"
+    ]
+  },
+  "upstream": {
+    "repository": "google/brotli",
+    "tagTemplate": "v{version}"
+  },
+  "license": {
+    "id": "MIT"
+  },
+  "purl": "pkg:generic/brotli@{upstreamVersion}",
+  "cpe": "cpe:2.3:a:google:brotli:{upstreamVersion}:*:*:*:*:*:*:*"
+}

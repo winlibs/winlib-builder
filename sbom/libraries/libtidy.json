@@ -1,0 +1,18 @@
+{
+  "$schema": "../schema.json",
+  "component": "libtidy",
+  "version": {
+    "stripPrefixes": [
+      "libtidy-",
+      "tidy-"
+    ]
+  },
+  "upstream": {
+    "repository": "htacg/tidy-html5",
+    "tagTemplate": "{version}"
+  },
+  "license": {
+    "id": "Zlib"
+  },
+  "purl": "pkg:generic/libtidy@{upstreamVersion}"
+}

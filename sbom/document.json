@@ -1,0 +1,8 @@
+{
+  "$schema": "./schema.json",
+  "namespace": "https://php.net/sbom/winlibs",
+  "author": "Winlibs",
+  "tool": "winlib-builder-sbom",
+  "downloadBaseUrl": "https://downloads.php.net/~windows/php-sdk/deps",
+  "licenseListUrl": "https://spdx.org/licenses/licenses.json"
+}

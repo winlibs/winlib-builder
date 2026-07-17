@@ -1,0 +1,17 @@
+{
+  "$schema": "../schema.json",
+  "component": "net-snmp",
+  "version": {
+    "stripPrefixes": [
+      "net-snmp-"
+    ]
+  },
+  "upstream": {
+    "repository": "net-snmp/net-snmp",
+    "tagTemplate": "v{version}"
+  },
+  "license": {
+    "id": "BSD-3-Clause"
+  },
+  "purl": "pkg:generic/net-snmp@{upstreamVersion}"
+}

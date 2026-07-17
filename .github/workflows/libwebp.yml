@@ -54,6 +54,20 @@ jobs:
           if not exist build\lib\libwebp_a.lib exit /b 1
           if not exist build\lib\libwebpdemux_a.lib exit /b 1
           if not exist build\lib\libwebpmux_a.lib exit /b 1
+      - name: Copy license files
+        run: |
+          xcopy libwebp\COPYING build\share\licenses\libwebp\*
+          xcopy libwebp\PATENTS build\share\licenses\libwebp\*
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library libwebp
+          -Version '${{ github.event.inputs.version }}'
+          -InstallRoot 'build'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ github.event.inputs.php }}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

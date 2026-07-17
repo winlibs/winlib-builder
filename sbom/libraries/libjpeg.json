@@ -1,0 +1,22 @@
+{
+  "$schema": "../schema.json",
+  "component": "libjpeg-turbo",
+  "aliases": [
+    "libjpeg-turbo"
+  ],
+  "version": {
+    "stripPrefixes": [
+      "libjpeg-turbo-",
+      "libjpeg-"
+    ]
+  },
+  "upstream": {
+    "repository": "libjpeg-turbo/libjpeg-turbo",
+    "tagTemplate": "{version}"
+  },
+  "license": {
+    "expression": "BSD-3-Clause AND IJG"
+  },
+  "purl": "pkg:generic/libjpeg-turbo@{upstreamVersion}",
+  "cpe": "cpe:2.3:a:libjpeg-turbo:libjpeg-turbo:{upstreamVersion}:*:*:*:*:*:*:*"
+}

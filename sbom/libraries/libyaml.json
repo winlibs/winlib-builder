@@ -1,0 +1,15 @@
+{
+  "$schema": "../schema.json",
+  "component": "libyaml",
+  "version": {
+    "stripPrefixes": ["libyaml-", "v"]
+  },
+  "upstream": {
+    "repository": "yaml/libyaml",
+    "tagTemplate": "{version}"
+  },
+  "license": {
+    "id": "MIT"
+  },
+  "purl": "pkg:generic/libyaml@{upstreamVersion}"
+}

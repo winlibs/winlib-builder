@@ -63,6 +63,18 @@ jobs:
               xcopy libzip\build\lib\libzip_a.dir\RelWithDebInfo\libzip_a.pdb install\lib\*
           )
           rmdir /s /q install\lib\pkgconfig
+      - name: Copy license files
+        run: xcopy libzip\LICENSE install\share\licenses\libzip\*
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library libzip
+          -Version '${{ github.event.inputs.version }}'
+          -InstallRoot 'install'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ github.event.inputs.php }}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

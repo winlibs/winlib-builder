@@ -55,6 +55,18 @@ jobs:
           xcopy ..\..\pnglibconf.h ..\..\..\install\include\libpng16\*
           xcopy %objdir%\Release\libpng.lib ..\..\..\install\lib\*
           xcopy "%objdir%\Release Library\libpng_a.*" ..\..\..\install\lib\*
+      - name: Copy license files
+        run: xcopy libpng\LICENSE install\share\licenses\libpng\*
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library libpng
+          -Version '${{ github.event.inputs.version }}'
+          -InstallRoot 'install'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ github.event.inputs.php }}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

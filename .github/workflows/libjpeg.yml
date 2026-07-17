@@ -45,6 +45,20 @@ jobs:
           if exist ..\install\bin rmdir /s /q ..\install\bin
           if exist ..\install\doc rmdir /s /q ..\install\doc
           if exist ..\install\lib\pkgconfig rmdir /s /q ..\install\lib\pkgconfig
+      - name: Copy license files
+        run: |
+          xcopy libjpeg\LICENSE.md install\share\licenses\libjpeg-turbo\*
+          xcopy libjpeg\README.ijg install\share\licenses\libjpeg-turbo\*
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library libjpeg
+          -Version '${{ github.event.inputs.version }}'
+          -InstallRoot 'install'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ github.event.inputs.php }}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

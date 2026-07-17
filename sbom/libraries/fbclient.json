@@ -1,0 +1,25 @@
+{
+  "$schema": "../schema.json",
+  "component": "fbclient",
+  "version": {
+    "stripPrefixes": [
+      "fbclient-",
+      "v"
+    ]
+  },
+  "upstream": {
+    "repository": "FirebirdSQL/firebird",
+    "tagTemplate": "v{version}"
+  },
+  "license": {
+    "expression": "Interbase-1.0 AND LicenseRef-fbclient-IDPL-1.0",
+    "extractedLicenses": [
+      {
+        "licenseRef": "LicenseRef-fbclient-IDPL-1.0",
+        "name": "Initial Developer's Public License 1.0",
+        "textFiles": ["share/licenses/fbclient/IDPLicense.txt"]
+      }
+    ]
+  },
+  "purl": "pkg:generic/firebird@{upstreamVersion}"
+}

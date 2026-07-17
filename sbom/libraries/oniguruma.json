@@ -1,0 +1,22 @@
+{
+  "$schema": "../schema.json",
+  "component": "libonig",
+  "aliases": [
+    "libonig"
+  ],
+  "version": {
+    "stripPrefixes": [
+      "libonig-",
+      "oniguruma-",
+      "v"
+    ]
+  },
+  "upstream": {
+    "repository": "kkos/oniguruma",
+    "tagTemplate": "v{version}"
+  },
+  "license": {
+    "id": "BSD-2-Clause"
+  },
+  "purl": "pkg:generic/oniguruma@{upstreamVersion}"
+}

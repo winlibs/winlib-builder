@@ -1,0 +1,35 @@
+{
+  "$schema": "../schema.json",
+  "component": "libpq",
+  "aliases": [
+    "libpq"
+  ],
+  "version": {
+    "stripPrefixes": [
+      "libpq-",
+      "postgresql-",
+      "REL_"
+    ]
+  },
+  "upstream": {
+    "repository": "postgres/postgres",
+    "tagTemplate": "REL_{versionUnderscore}"
+  },
+  "license": {
+    "id": "PostgreSQL"
+  },
+  "purl": "pkg:generic/postgresql@{upstreamVersion}",
+  "cpe": "cpe:2.3:a:postgresql:postgresql:{upstreamVersion}:*:*:*:*:*:*:*",
+  "notAffectedCves": [
+    {
+      "id": "CVE-2017-8806",
+      "source": "NVD",
+      "url": "https://nvd.nist.gov/vuln/detail/CVE-2017-8806",
+      "detail": "This CVE affects Debian and Ubuntu postgresql-common cluster scripts, which are not included in the Windows libpq artifact.",
+      "justification": "component_not_present",
+      "references": [
+        "https://www.debian.org/security/2017/dsa-4029"
+      ]
+    }
+  ]
+}

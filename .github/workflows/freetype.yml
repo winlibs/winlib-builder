@@ -54,6 +54,18 @@ jobs:
           cd freetype
           xcopy /e include ..\install\include\freetype2\*
           xcopy objs\${{env.FREETYPE_BUILDFOLDER}}\${{steps.virtuals.outputs.msarch}}\freetype_a.* ..\install\lib\*
+      - name: Copy license files
+        run: xcopy freetype\LICENSE.TXT install\share\licenses\freetype\*
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library freetype
+          -Version '${{ github.event.inputs.version }}'
+          -InstallRoot 'install'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ github.event.inputs.php }}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

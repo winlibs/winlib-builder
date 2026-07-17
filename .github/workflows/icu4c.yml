@@ -60,6 +60,18 @@ jobs:
           xcopy /e icu4c\include\* build\include\*
           xcopy %WB_LIBDIR%\* build\lib\*
           del build\lib\*test*.*
+      - name: Copy license files
+        run: xcopy icu4c\LICENSE build\share\licenses\icu4c\*
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library icu4c
+          -Version '${{ github.event.inputs.version }}'
+          -InstallRoot 'build'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ github.event.inputs.php }}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

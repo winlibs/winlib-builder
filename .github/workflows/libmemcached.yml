@@ -49,6 +49,19 @@ jobs:
           xcopy src\libmemcached\RelWithDebInfo\libmemcached.pdb ..\..\install\bin\*
           xcopy src\libmemcachedprotocol\RelWithDebInfo\libmemcachedprotocol.pdb ..\..\install\bin\*
           xcopy src\libmemcachedutil\RelWithDebInfo\libmemcachedutil.pdb ..\..\install\bin\*
+          xcopy ..\COPYING ..\..\install\share\licenses\libmemcached\*
+          xcopy ..\LICENSE ..\..\install\share\licenses\libmemcached\*
+          xcopy ..\LICENSE.HEADER ..\..\install\share\licenses\libmemcached\*
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library libmemcached
+          -Version '${{ inputs.version }}'
+          -InstallRoot 'install'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ inputs.php }}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

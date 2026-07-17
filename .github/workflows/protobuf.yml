@@ -49,6 +49,21 @@ jobs:
         run: |
           cd protobuf\build
           cmake --install . --config Release
+          New-Item -Path ${{ github.workspace }}\install\share\licenses\protobuf -ItemType Directory -Force | Out-Null
+          New-Item -Path ${{ github.workspace }}\install\share\licenses\utf8_range -ItemType Directory -Force | Out-Null
+          Copy-Item ..\LICENSE ${{ github.workspace }}\install\share\licenses\protobuf\
+          Copy-Item ..\third_party\utf8_range\LICENSE ${{ github.workspace }}\install\share\licenses\utf8_range\
+
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library protobuf
+          -Version '${{ inputs.version }}'
+          -InstallRoot 'install'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ inputs.php }}'
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4

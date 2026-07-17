@@ -1,0 +1,218 @@
+{
+  "$schema": "../schema.json",
+  "component": "libssh2",
+  "version": {
+    "stripPrefixes": [
+      "libssh2-"
+    ]
+  },
+  "upstream": {
+    "repository": "libssh2/libssh2",
+    "tagTemplate": "libssh2-{version}"
+  },
+  "license": {
+    "id": "BSD-3-Clause"
+  },
+  "purl": "pkg:generic/libssh2@{upstreamVersion}",
+  "cpe": "cpe:2.3:a:libssh2:libssh2:{upstreamVersion}:*:*:*:*:*:*:*",
+  "patchedBuilds": [
+    {
+      "tag": "libssh2-1.11.1-2",
+      "upstream": {
+        "repository": "libssh2/libssh2",
+        "tag": "libssh2-1.11.1",
+        "version": "1.11.1"
+      },
+      "fork": {
+        "repository": "winlibs/libssh2",
+        "tag": "libssh2-1.11.1-2"
+      },
+      "fixedCves": [
+        {
+          "id": "CVE-2026-7598",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-7598",
+          "detail": "Fixed by backporting upstream username_len bounds checking in src/userauth.c.",
+          "references": [
+            "https://github.com/libssh2/libssh2/pull/1858",
+            "https://github.com/libssh2/libssh2/commit/256d04b60d80bf1190e96b0ad1e91b2174d744b1"
+          ]
+        }
+      ]
+    },
+    {
+      "tag": "libssh2-1.11.1-3",
+      "upstream": {
+        "repository": "libssh2/libssh2",
+        "tag": "libssh2-1.11.1",
+        "version": "1.11.1"
+      },
+      "fork": {
+        "repository": "winlibs/libssh2",
+        "tag": "libssh2-1.11.1-3"
+      },
+      "fixedCves": [
+        {
+          "id": "CVE-2026-7598",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-7598",
+          "detail": "Fixed by backporting upstream username_len bounds checking in src/userauth.c.",
+          "references": [
+            "https://github.com/libssh2/libssh2/pull/1858",
+            "https://github.com/libssh2/libssh2/commit/256d04b60d80bf1190e96b0ad1e91b2174d744b1"
+          ]
+        }
+      ]
+    },
+    {
+      "tag": "libssh2-1.11.1-4",
+      "upstream": {
+        "repository": "libssh2/libssh2",
+        "tag": "libssh2-1.11.1",
+        "version": "1.11.1"
+      },
+      "fork": {
+        "repository": "winlibs/libssh2",
+        "tag": "libssh2-1.11.1-4"
+      },
+      "fixedCves": [
+        {
+          "id": "CVE-2026-7598",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-7598",
+          "detail": "Fixed by backporting upstream username_len bounds checking in src/userauth.c.",
+          "references": [
+            "https://github.com/libssh2/libssh2/pull/1858",
+            "https://github.com/libssh2/libssh2/commit/256d04b60d80bf1190e96b0ad1e91b2174d744b1"
+          ]
+        },
+        {
+          "id": "CVE-2025-15661",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-15661",
+          "detail": "Fixed by backporting the upstream bounds-checked parsing for malformed SFTP symlink responses in src/sftp.c and the follow-up SSH_FXP_STATUS response handling fix.",
+          "references": [
+            "https://github.com/winlibs/libssh2/commit/94726036b0d5abec38dfec6202270c5b4d0021dc",
+            "https://github.com/libssh2/libssh2/commit/2dae3024897e1898d389835151f4e9606227721d",
+            "https://github.com/libssh2/libssh2/commit/4ed26f5740bdd409269ed9fb48a28bf8f565b681"
+          ]
+        },
+        {
+          "id": "CVE-2026-55199",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-55199",
+          "detail": "Fixed by backporting the upstream parse-failure handling for SSH_MSG_EXT_INFO extension name and value strings in src/packet.c.",
+          "references": [
+            "https://github.com/winlibs/libssh2/commit/f6732df726b0e187f0ab6c4d538b7e5e5307439c",
+            "https://github.com/libssh2/libssh2/commit/17626857d20b3c9a1addfa45979dadcee1cd84a4"
+          ]
+        },
+        {
+          "id": "CVE-2026-55200",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-55200",
+          "detail": "Fixed by backporting the upstream packet length upper-bound validation in src/transport.c.",
+          "references": [
+            "https://github.com/winlibs/libssh2/commit/f2abc265e35792e3c86752c9f12682a1fb0d4a01",
+            "https://github.com/libssh2/libssh2/commit/97acf3dfda80c91c3a8c9f2372546301d4a1a7a8"
+          ]
+        },
+        {
+          "id": "CVE-2026-58050",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-58050",
+          "detail": "Fixed by backporting the upstream bounds checking for public-key attribute counts in src/publickey.c.",
+          "references": [
+            "https://github.com/winlibs/libssh2/commit/103972c538a11e5ae571f6126657e1baefccc415",
+            "https://github.com/libssh2/libssh2/commit/34497525929b9a47f03dfb81887ac896202b7e12"
+          ]
+        },
+        {
+          "id": "CVE-2026-58051",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-58051",
+          "detail": "Fixed by backporting the upstream initialization of newly allocated public-key list entries in src/publickey.c.",
+          "references": [
+            "https://github.com/winlibs/libssh2/commit/97e8f0143a55b66df60a695678433ccbe24291f0",
+            "https://github.com/libssh2/libssh2/commit/a9758da45a52bc8c630ec9493804d0c6ea30b24a"
+          ]
+        }
+      ]
+    },
+    {
+      "tag": "libssh2-1.11.1-5",
+      "upstream": {
+        "repository": "libssh2/libssh2",
+        "tag": "libssh2-1.11.1",
+        "version": "1.11.1"
+      },
+      "fork": {
+        "repository": "winlibs/libssh2",
+        "tag": "libssh2-1.11.1-5"
+      },
+      "fixedCves": [
+        {
+          "id": "CVE-2026-7598",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-7598",
+          "detail": "Fixed by backporting upstream username_len bounds checking in src/userauth.c.",
+          "references": [
+            "https://github.com/libssh2/libssh2/pull/1858",
+            "https://github.com/libssh2/libssh2/commit/256d04b60d80bf1190e96b0ad1e91b2174d744b1"
+          ]
+        },
+        {
+          "id": "CVE-2025-15661",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-15661",
+          "detail": "Fixed by backporting the upstream bounds-checked parsing for malformed SFTP symlink responses in src/sftp.c and the follow-up SSH_FXP_STATUS response handling fix.",
+          "references": [
+            "https://github.com/winlibs/libssh2/commit/94726036b0d5abec38dfec6202270c5b4d0021dc",
+            "https://github.com/libssh2/libssh2/commit/2dae3024897e1898d389835151f4e9606227721d",
+            "https://github.com/libssh2/libssh2/commit/4ed26f5740bdd409269ed9fb48a28bf8f565b681"
+          ]
+        },
+        {
+          "id": "CVE-2026-55199",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-55199",
+          "detail": "Fixed by backporting the upstream parse-failure handling for SSH_MSG_EXT_INFO extension name and value strings in src/packet.c.",
+          "references": [
+            "https://github.com/winlibs/libssh2/commit/f6732df726b0e187f0ab6c4d538b7e5e5307439c",
+            "https://github.com/libssh2/libssh2/commit/17626857d20b3c9a1addfa45979dadcee1cd84a4"
+          ]
+        },
+        {
+          "id": "CVE-2026-55200",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-55200",
+          "detail": "Fixed by backporting the upstream packet length upper-bound validation in src/transport.c.",
+          "references": [
+            "https://github.com/winlibs/libssh2/commit/f2abc265e35792e3c86752c9f12682a1fb0d4a01",
+            "https://github.com/libssh2/libssh2/commit/97acf3dfda80c91c3a8c9f2372546301d4a1a7a8"
+          ]
+        },
+        {
+          "id": "CVE-2026-58050",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-58050",
+          "detail": "Fixed by backporting the upstream bounds checking for public-key attribute counts in src/publickey.c.",
+          "references": [
+            "https://github.com/winlibs/libssh2/commit/103972c538a11e5ae571f6126657e1baefccc415",
+            "https://github.com/libssh2/libssh2/commit/34497525929b9a47f03dfb81887ac896202b7e12"
+          ]
+        },
+        {
+          "id": "CVE-2026-58051",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-58051",
+          "detail": "Fixed by backporting the upstream initialization of newly allocated public-key list entries in src/publickey.c.",
+          "references": [
+            "https://github.com/winlibs/libssh2/commit/97e8f0143a55b66df60a695678433ccbe24291f0",
+            "https://github.com/libssh2/libssh2/commit/a9758da45a52bc8c630ec9493804d0c6ea30b24a"
+          ]
+        }
+      ]
+    }
+  ]
+}

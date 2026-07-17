@@ -48,6 +48,19 @@ jobs:
         run: |
           cd fann\build
           cmake --install . --config Release
+          New-Item -Path ${{ github.workspace }}\install\share\licenses\libfann -ItemType Directory -Force | Out-Null
+          Copy-Item ..\LICENSE.md ${{ github.workspace }}\install\share\licenses\libfann\
+
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library libfann
+          -Version '2.2.0'
+          -InstallRoot 'install'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ inputs.php }}'
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v6

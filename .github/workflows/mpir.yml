@@ -44,6 +44,20 @@ jobs:
           xcopy lib\${{steps.virtuals.outputs.msarch}}\Release\gmp.h ..\install\include\mpir\*
           xcopy lib\${{steps.virtuals.outputs.msarch}}\Release\mpir.h ..\install\include\mpir\*
           xcopy build.vc${{steps.virtuals.outputs.vsnum}}\lib_mpir_gc\${{steps.virtuals.outputs.msarch}}\Release\mpir_a.??? ..\install\lib\*
+      - name: Copy license files
+        run: |
+          xcopy mpir\COPYING install\share\licenses\mpir\*
+          xcopy mpir\COPYING.LIB install\share\licenses\mpir\*
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library mpir
+          -Version '${{ github.event.inputs.version }}'
+          -InstallRoot 'install'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ github.event.inputs.php }}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

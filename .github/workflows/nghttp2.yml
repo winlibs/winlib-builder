@@ -43,6 +43,18 @@ jobs:
           copy lib\RelWithDebInfo\nghttp2.pdb ..\winlib-builder\build\bin
           del /s /q ..\winlib-builder\build\lib\pkgconfig\*
           del /s /q ..\winlib-builder\build\share\*
+      - name: Copy license files
+        run: xcopy nghttp2\COPYING winlib-builder\build\share\licenses\nghttp2\*
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library nghttp2
+          -Version '${{ github.event.inputs.version }}'
+          -InstallRoot 'winlib-builder\build'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ github.event.inputs.php }}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

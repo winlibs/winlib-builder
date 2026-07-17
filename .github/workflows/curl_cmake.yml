@@ -93,6 +93,18 @@ jobs:
           lib /OUT:libcurl_a.lib libcurl_static.lib %GITHUB_WORKSPACE%\deps\lib\libzstd_a.lib secur32.lib iphlpapi.lib
           if errorlevel 1 exit /b 1
           del libcurl_static.lib
+      - name: Copy license files
+        run: xcopy curl\COPYING install\share\licenses\libcurl\*
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library curl
+          -Version '${{ github.event.inputs.version }}'
+          -InstallRoot 'install'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ github.event.inputs.php }}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

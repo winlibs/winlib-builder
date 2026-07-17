@@ -1,0 +1,21 @@
+{
+  "$schema": "../schema.json",
+  "component": "libintl",
+  "aliases": [
+    "libintl"
+  ],
+  "version": {
+    "stripPrefixes": [
+      "libintl-",
+      "gettext-"
+    ]
+  },
+  "upstream": {
+    "url": "https://git.savannah.gnu.org/git/gettext.git",
+    "tagTemplate": "v{version}"
+  },
+  "license": {
+    "id": "LGPL-2.1-or-later"
+  },
+  "purl": "pkg:generic/gettext@{upstreamVersion}"
+}

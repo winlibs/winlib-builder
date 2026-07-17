@@ -45,6 +45,18 @@ jobs:
         id: normalize_version
         shell: pwsh
         run: echo "version=$('${{ github.event.inputs.version }}' -replace '^v')" >> $env:GITHUB_OUTPUT
+      - name: Copy license files
+        run: xcopy brotli\LICENSE install\share\licenses\brotli\*
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library brotli
+          -Version '${{ github.event.inputs.version }}'
+          -InstallRoot 'install'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ github.event.inputs.php }}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

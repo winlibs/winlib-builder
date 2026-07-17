@@ -1,0 +1,21 @@
+{
+  "$schema": "../schema.json",
+  "component": "liblmdb",
+  "aliases": [
+    "liblmdb"
+  ],
+  "version": {
+    "stripPrefixes": [
+      "liblmdb-",
+      "lmdb-"
+    ]
+  },
+  "upstream": {
+    "repository": "LMDB/lmdb",
+    "tagTemplate": "LMDB_{version}"
+  },
+  "license": {
+    "id": "OLDAP-2.8"
+  },
+  "purl": "pkg:generic/lmdb@{upstreamVersion}"
+}

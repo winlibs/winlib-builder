@@ -166,6 +166,18 @@ jobs:
         id: version
         shell: pwsh
         run: echo "value=$('${{ inputs.version }}' -replace '^v' -replace '^libtiff-')" >> $env:GITHUB_OUTPUT
+      - name: Copy license files
+        run: xcopy libtiff\LICENSE.md install\share\licenses\libtiff\*
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library libtiff
+          -Version '${{ inputs.version }}'
+          -InstallRoot 'install'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ inputs.php }}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

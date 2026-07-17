@@ -47,6 +47,17 @@ jobs:
           xcopy *.lib ..\install\lib\*
           xcopy *.pdb ..\install\lib\*
           echo See http://news.php.net/php.pecl.dev/7625>..\install\LICENSE
+          xcopy COPYING ..\install\share\licenses\ssdeep\*
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library ssdeep
+          -Version '${{ inputs.version }}'
+          -InstallRoot 'install'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ inputs.php }}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

@@ -50,6 +50,19 @@ jobs:
           xcopy pthreadVC?.lib ..\build\lib\*
           if exist COPYING xcopy COPYING ..\build\*
           if exist LICENSE xcopy LICENSE ..\build\*
+          if exist COPYING xcopy COPYING ..\build\share\licenses\pthreads\*
+          if exist LICENSE xcopy LICENSE ..\build\share\licenses\pthreads\*
+          if exist NOTICE xcopy NOTICE ..\build\share\licenses\pthreads\*
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library pthreads
+          -Version '${{ inputs.version }}'
+          -InstallRoot 'build'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ inputs.php }}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

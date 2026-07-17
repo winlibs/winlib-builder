@@ -45,6 +45,20 @@ jobs:
           xcopy *.exe ..\..\..\build\bin\*
           xcopy lmdb.h ..\..\..\build\include\*
           xcopy liblmdb_a.* ..\..\..\build\lib\*
+      - name: Copy license files
+        run: |
+          xcopy lmdb\libraries\liblmdb\COPYRIGHT build\share\licenses\liblmdb\libraries\liblmdb\*
+          xcopy lmdb\libraries\liblmdb\LICENSE build\share\licenses\liblmdb\libraries\liblmdb\*
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library lmdb
+          -Version '${{ github.event.inputs.version }}'
+          -InstallRoot 'build'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ github.event.inputs.php }}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

@@ -1,0 +1,15 @@
+{
+  "$schema": "../schema.json",
+  "component": "libxcrypt",
+  "version": {
+    "stripPrefixes": ["libxcrypt-", "v"]
+  },
+  "upstream": {
+    "repository": "besser82/libxcrypt",
+    "tagTemplate": "v{version}"
+  },
+  "license": {
+    "id": "LGPL-2.1-only"
+  },
+  "purl": "pkg:generic/libxcrypt@{upstreamVersion}"
+}

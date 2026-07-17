@@ -56,6 +56,18 @@ jobs:
         run: |
           cd libbzip2
           xcopy libbz2_a_debug.* ..\build\lib\*
+      - name: Copy license files
+        run: xcopy libbzip2\LICENSE build\share\licenses\libbzip2\*
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library libbzip2
+          -Version '${{ github.event.inputs.version }}'
+          -InstallRoot 'build'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ github.event.inputs.php }}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

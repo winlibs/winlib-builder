@@ -1,0 +1,16 @@
+{
+  "$schema": "../schema.json",
+  "component": "libfann",
+  "aliases": ["fann"],
+  "version": {
+    "stripPrefixes": ["libfann-", "v"]
+  },
+  "upstream": {
+    "repository": "libfann/fann",
+    "tagTemplate": "{version}"
+  },
+  "license": {
+    "id": "LGPL-2.1-only"
+  },
+  "purl": "pkg:generic/libfann@{upstreamVersion}"
+}

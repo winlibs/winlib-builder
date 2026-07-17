@@ -50,6 +50,18 @@ jobs:
               xcopy win32\${{steps.virtuals.outputs.vs}}_${{matrix.arch}}\Release\libffi.lib ..\install\lib\*
               xcopy win32\${{steps.virtuals.outputs.vs}}_${{matrix.arch}}\Release\libffi.pdb ..\install\lib\*
           )
+      - name: Copy license files
+        run: xcopy libffi\LICENSE install\share\licenses\libffi\*
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library libffi
+          -Version '${{ github.event.inputs.version }}'
+          -InstallRoot 'install'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ github.event.inputs.php }}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

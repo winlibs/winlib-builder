@@ -48,6 +48,18 @@ jobs:
           del ..\install\include\sodium\randombytes_nativeclient.h
           xcopy bin\%platform%\Release\%toolset%\dynamic\libsodium.lib ..\install\lib\*
           copy bin\%platform%\Release\%toolset%\static\libsodium.lib ..\install\lib\libsodium_a.lib
+      - name: Copy license files
+        run: xcopy libsodium\LICENSE install\share\licenses\libsodium\*
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library libsodium
+          -Version '${{ github.event.inputs.version }}'
+          -InstallRoot 'install'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ github.event.inputs.php }}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

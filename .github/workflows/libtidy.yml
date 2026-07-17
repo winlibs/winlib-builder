@@ -45,6 +45,20 @@ jobs:
           dir ..\build\lib\tidy_a.lib
           copy /y RelWithDebInfo\tidy.pdb ..\build\bin\tidy.pdb
           copy /y RelWithDebInfo\tidy_a.pdb ..\build\lib\tidy_a.pdb
+      - name: Copy license files
+        run: |
+          xcopy libtidy\README\LICENSE.md build\share\licenses\libtidy\README\*
+          xcopy libtidy\README\LICENSE.txt build\share\licenses\libtidy\README\*
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library libtidy
+          -Version '${{ github.event.inputs.version }}'
+          -InstallRoot 'build'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ github.event.inputs.php }}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

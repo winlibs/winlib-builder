@@ -1,0 +1,21 @@
+{
+  "$schema": "../schema.json",
+  "component": "liblzma",
+  "aliases": [
+    "xz"
+  ],
+  "version": {
+    "stripPrefixes": [
+      "liblzma-",
+      "xz-"
+    ]
+  },
+  "upstream": {
+    "repository": "tukaani-project/xz",
+    "tagTemplate": "v{version}"
+  },
+  "license": {
+    "id": "0BSD"
+  },
+  "purl": "pkg:generic/xz@{upstreamVersion}"
+}

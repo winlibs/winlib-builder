@@ -87,6 +87,18 @@ jobs:
           del ..\..\install\lib\CORE_RL_pixman_.pdb
           del ..\..\install\lib\CORE_RL_raqm_.pdb
           xcopy ..\ImageMagick\LICENSE ..\..\install\*
+          xcopy ..\ImageMagick\LICENSE ..\..\install\share\licenses\imagemagick\*
+          if exist ..\ImageMagick\NOTICE xcopy ..\ImageMagick\NOTICE ..\..\install\share\licenses\imagemagick\*
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library imagemagick
+          -Version '${{ inputs.tag }}'
+          -InstallRoot 'install'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ inputs.php }}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v6
         with:

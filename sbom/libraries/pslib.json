@@ -1,0 +1,15 @@
+{
+  "$schema": "../schema.json",
+  "component": "pslib",
+  "version": {
+    "stripPrefixes": ["pslib-", "v"]
+  },
+  "upstream": {
+    "url": "https://pslib.sourceforge.net/",
+    "tagTemplate": "{tag}"
+  },
+  "license": {
+    "id": "GPL-2.0-only"
+  },
+  "purl": "pkg:generic/pslib@{upstreamVersion}"
+}

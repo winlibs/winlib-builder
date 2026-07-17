@@ -1,0 +1,19 @@
+{
+  "$schema": "../schema.json",
+  "component": "zlib",
+  "version": {
+    "stripPrefixes": [
+      "zlib-",
+      "v"
+    ]
+  },
+  "upstream": {
+    "repository": "madler/zlib",
+    "tagTemplate": "v{version}"
+  },
+  "license": {
+    "id": "Zlib"
+  },
+  "purl": "pkg:generic/zlib@{upstreamVersion}",
+  "cpe": "cpe:2.3:a:zlib:zlib:{upstreamVersion}:*:*:*:*:*:*:*"
+}

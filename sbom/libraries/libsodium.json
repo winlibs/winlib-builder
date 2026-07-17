@@ -1,0 +1,17 @@
+{
+  "$schema": "../schema.json",
+  "component": "libsodium",
+  "version": {
+    "stripPrefixes": [
+      "libsodium-"
+    ]
+  },
+  "upstream": {
+    "repository": "jedisct1/libsodium",
+    "tagTemplate": "{version}-RELEASE"
+  },
+  "license": {
+    "id": "ISC"
+  },
+  "purl": "pkg:generic/libsodium@{upstreamVersion}"
+}

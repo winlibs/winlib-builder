@@ -1,0 +1,22 @@
+{
+  "$schema": "../schema.json",
+  "component": "libcurl",
+  "aliases": [
+    "libcurl"
+  ],
+  "version": {
+    "stripPrefixes": [
+      "libcurl-",
+      "curl-"
+    ]
+  },
+  "upstream": {
+    "repository": "curl/curl",
+    "tagTemplate": "curl-{versionUnderscore}"
+  },
+  "license": {
+    "id": "curl"
+  },
+  "purl": "pkg:generic/curl@{upstreamVersion}",
+  "cpe": "cpe:2.3:a:haxx:curl:{upstreamVersion}:*:*:*:*:*:*:*"
+}

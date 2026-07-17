@@ -1,0 +1,17 @@
+{
+  "$schema": "../schema.json",
+  "component": "libjudy",
+  "version": {
+    "stripPrefixes": ["Judy-", "libjudy-"]
+  },
+  "upstream": {
+    "url": "https://judy.sourceforge.net/",
+    "tagTemplate": "Judy-{version}"
+  },
+  "sourceUrl": "https://downloads.sourceforge.net/project/judy/judy/Judy-{upstreamVersion}/Judy-{upstreamVersion}.tar.gz",
+  "homepage": "https://judy.sourceforge.net/",
+  "license": {
+    "id": "LGPL-2.1-only"
+  },
+  "purl": "pkg:generic/judy@{upstreamVersion}"
+}

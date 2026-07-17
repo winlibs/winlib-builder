@@ -81,6 +81,18 @@ jobs:
           set MSYS2_PATH_TYPE=inherit
           set MSYS2_ARG_CONV_EXCL=*
           C:\msys64\usr\bin\bash.exe -lc ./winlibs.sh
+      - name: Copy license files
+        run: xcopy libxcrypt\COPYING.LIB install\share\licenses\libxcrypt\*
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library libxcrypt
+          -Version '${{ inputs.version }}'
+          -InstallRoot 'install'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ inputs.php }}'
       - name: Upload failure logs
         if: failure()
         uses: actions/upload-artifact@v7
