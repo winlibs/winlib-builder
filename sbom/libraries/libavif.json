@@ -1,0 +1,36 @@
+{
+  "$schema": "../schema.json",
+  "component": "libavif",
+  "version": {
+    "stripPrefixes": [
+      "libavif-",
+      "v"
+    ]
+  },
+  "upstream": {
+    "repository": "AOMediaCodec/libavif",
+    "tagTemplate": "v{version}"
+  },
+  "license": {
+    "id": "BSD-2-Clause"
+  },
+  "purl": "pkg:generic/libavif@{upstreamVersion}",
+  "components": [
+    {
+      "component": "aom",
+      "sourcePath": "libavif/ext/aom",
+      "version": {
+        "stripPrefixes": ["v"]
+      },
+      "upstream": {
+        "url": "https://aomedia.googlesource.com/aom",
+        "tagTemplate": "v{version}",
+        "tagUrlTemplate": "https://aomedia.googlesource.com/aom/+/refs/tags/{sourceTag}"
+      },
+      "license": {
+        "id": "BSD-3-Clause"
+      },
+      "purl": "pkg:generic/aom@{upstreamVersion}"
+    }
+  ]
+}

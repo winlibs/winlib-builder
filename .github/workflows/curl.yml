@@ -55,6 +55,18 @@ jobs:
         run: cd curl\winbuild && nmake /f Makefile.vc mode=static VC=${{steps.virtuals.outputs.vsnum}} WITH_DEVEL=..\..\deps WITH_SSL=dll WITH_ZLIB=static WITH_NGHTTP2=dll WITH_SSH2=dll ENABLE_WINSSL=no USE_IDN=yes ENABLE_IPV6=yes GEN_PDB=yes DEBUG=no MACHINE=${{matrix.arch}} CURL_DISABLE_MQTT=1 WINBUILD_ACKNOWLEDGE_DEPRECATED=yes
       - name: Install curl
         run: cd curl && xcopy /e builds\libcurl-vc${{steps.virtuals.outputs.vsnum}}-${{matrix.arch}}-release-static-ssl-dll-zlib-static-ssh2-dll-ipv6-sspi-nghttp2-dll\* ..\build\*
+      - name: Copy license files
+        run: xcopy curl\COPYING build\share\licenses\libcurl\*
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library curl
+          -Version '${{ github.event.inputs.version }}'
+          -InstallRoot 'build'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ github.event.inputs.php }}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

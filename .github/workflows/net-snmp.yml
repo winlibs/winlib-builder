@@ -72,6 +72,18 @@ jobs:
           xcopy win32\lib\release\netsnmp.lib ..\install\lib\*
           xcopy win32\libsnmp\release\libsnmp.pdb ..\install\lib\*
           xcopy mibs\* ..\install\share\mibs\*
+      - name: Copy license files
+        run: xcopy net-snmp\COPYING install\share\licenses\net-snmp\*
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library net-snmp
+          -Version '${{ github.event.inputs.version }}'
+          -InstallRoot 'install'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ github.event.inputs.php }}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

@@ -1,0 +1,15 @@
+{
+  "$schema": "../schema.json",
+  "component": "ssdeep",
+  "version": {
+    "stripPrefixes": ["ssdeep-", "release-"]
+  },
+  "upstream": {
+    "repository": "ssdeep-project/ssdeep",
+    "tagTemplate": "release-{version}"
+  },
+  "license": {
+    "id": "GPL-2.0-only"
+  },
+  "purl": "pkg:generic/ssdeep@{upstreamVersion}"
+}

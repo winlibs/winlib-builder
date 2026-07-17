@@ -1,0 +1,16 @@
+{
+  "$schema": "../schema.json",
+  "component": "librdkafka",
+  "version": {
+    "stripPrefixes": ["librdkafka-", "v"]
+  },
+  "upstream": {
+    "repository": "confluentinc/librdkafka",
+    "tagTemplate": "v{version}"
+  },
+  "license": {
+    "id": "BSD-2-Clause"
+  },
+  "purl": "pkg:generic/librdkafka@{upstreamVersion}",
+  "cpe": "cpe:2.3:a:confluent:librdkafka:{upstreamVersion}:*:*:*:*:*:*:*"
+}

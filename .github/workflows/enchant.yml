@@ -66,6 +66,18 @@ jobs:
           xcopy lib\enchant.h ..\install\include\*
           xcopy %prefix%\Release\libenchant2.lib ..\install\lib\*
           xcopy %prefix%\Release\libenchant2_hunspell.lib ..\install\lib\*
+      - name: Copy license files
+        run: xcopy enchant\COPYING.LIB install\share\licenses\libenchant2\*
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library enchant
+          -Version '${{ github.event.inputs.version }}'
+          -InstallRoot 'install'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ github.event.inputs.php }}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

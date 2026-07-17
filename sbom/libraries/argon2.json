@@ -1,0 +1,21 @@
+{
+  "$schema": "../schema.json",
+  "component": "libargon2",
+  "aliases": [
+    "libargon2"
+  ],
+  "version": {
+    "stripPrefixes": [
+      "libargon2-",
+      "argon2-"
+    ]
+  },
+  "upstream": {
+    "repository": "P-H-C/phc-winner-argon2",
+    "tagTemplate": "{version}"
+  },
+  "license": {
+    "id": "CC0-1.0"
+  },
+  "purl": "pkg:generic/libargon2@{upstreamVersion}"
+}

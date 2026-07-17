@@ -1,0 +1,21 @@
+{
+  "$schema": "../schema.json",
+  "component": "c-client",
+  "aliases": [
+    "c-client"
+  ],
+  "version": {
+    "stripPrefixes": [
+      "imap-",
+      "c-client-"
+    ]
+  },
+  "upstream": {
+    "repository": "winlibs/imap",
+    "tagTemplate": "imap-{version}"
+  },
+  "license": {
+    "expression": "Apache-2.0 AND BSD-3-Clause"
+  },
+  "purl": "pkg:generic/c-client@{upstreamVersion}"
+}

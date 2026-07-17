@@ -107,6 +107,18 @@ jobs:
           cl /nologo /W3 /MD /Iinstall\include winlib-builder\.github\ci\check-libultrahdr.c /link /LIBPATH:install\lib /LIBPATH:deps\lib uhdr_a.lib libjpeg_a.lib /OUT:check-libultrahdr-static.exe
           if errorlevel 1 exit /b %errorlevel%
           check-libultrahdr-static.exe
+      - name: Copy license files
+        run: xcopy libultrahdr\LICENSE install\share\licenses\libultrahdr\*
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library libultrahdr
+          -Version '${{ inputs.version }}'
+          -InstallRoot 'install'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ inputs.php }}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

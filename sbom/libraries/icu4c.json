@@ -1,0 +1,21 @@
+{
+  "$schema": "../schema.json",
+  "component": "ICU",
+  "aliases": [
+    "ICU"
+  ],
+  "version": {
+    "stripPrefixes": [
+      "icu4c-",
+      "ICU-"
+    ]
+  },
+  "upstream": {
+    "repository": "unicode-org/icu",
+    "tagTemplate": "release-{versionDash}"
+  },
+  "license": {
+    "id": "Unicode-DFS-2016"
+  },
+  "purl": "pkg:generic/icu@{upstreamVersion}"
+}

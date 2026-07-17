@@ -1,0 +1,18 @@
+{
+  "$schema": "../schema.json",
+  "component": "libffi",
+  "version": {
+    "stripPrefixes": [
+      "libffi-",
+      "v"
+    ]
+  },
+  "upstream": {
+    "repository": "libffi/libffi",
+    "tagTemplate": "v{version}"
+  },
+  "license": {
+    "id": "MIT"
+  },
+  "purl": "pkg:generic/libffi@{upstreamVersion}"
+}

@@ -1,0 +1,21 @@
+{
+  "$schema": "../schema.json",
+  "component": "libbzip2",
+  "aliases": [
+    "bzip2"
+  ],
+  "version": {
+    "stripPrefixes": [
+      "libbzip2-",
+      "bzip2-"
+    ]
+  },
+  "upstream": {
+    "repository": "libarchive/bzip2",
+    "tagTemplate": "bzip2-{version}"
+  },
+  "license": {
+    "id": "bzip2-1.0.6"
+  },
+  "purl": "pkg:generic/bzip2@{upstreamVersion}"
+}

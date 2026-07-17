@@ -1,0 +1,15 @@
+{
+  "$schema": "../schema.json",
+  "component": "libultrahdr",
+  "version": {
+    "stripPrefixes": ["libultrahdr-", "v"]
+  },
+  "upstream": {
+    "repository": "google/libultrahdr",
+    "tagTemplate": "v{version}"
+  },
+  "license": {
+    "expression": "Apache-2.0 AND MIT"
+  },
+  "purl": "pkg:generic/libultrahdr@{upstreamVersion}"
+}

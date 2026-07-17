@@ -1,0 +1,19 @@
+{
+  "$schema": "../schema.json",
+  "component": "freetype",
+  "version": {
+    "stripPrefixes": [
+      "freetype-",
+      "VER-"
+    ]
+  },
+  "upstream": {
+    "repository": "freetype/freetype",
+    "tagTemplate": "VER-{versionDash}"
+  },
+  "license": {
+    "expression": "FTL OR GPL-2.0-or-later"
+  },
+  "purl": "pkg:generic/freetype@{upstreamVersion}",
+  "cpe": "cpe:2.3:a:freetype:freetype:{upstreamVersion}:*:*:*:*:*:*:*"
+}

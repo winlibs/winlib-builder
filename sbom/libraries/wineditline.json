@@ -1,0 +1,18 @@
+{
+  "$schema": "../schema.json",
+  "component": "wineditline",
+  "version": {
+    "stripPrefixes": [
+      "WinEditLine-",
+      "wineditline-"
+    ]
+  },
+  "upstream": {
+    "repository": "ptosco/wineditline",
+    "tagTemplate": "wineditline-{version}"
+  },
+  "license": {
+    "id": "BSD-3-Clause"
+  },
+  "purl": "pkg:generic/wineditline@{upstreamVersion}"
+}

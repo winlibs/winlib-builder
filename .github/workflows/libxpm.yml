@@ -43,6 +43,20 @@ jobs:
           cd libxpm\windows\${{steps.virtuals.outputs.vs}}
           xcopy ..\..\include\X11\* ..\..\..\install\include\X11\*
           xcopy "..\builds\${{steps.virtuals.outputs.msarch}}\Static Release\libxpm_a.*" ..\..\..\install\lib\*
+      - name: Copy license files
+        run: |
+          xcopy libxpm\COPYING install\share\licenses\libxpm\*
+          xcopy libxpm\COPYRIGHT install\share\licenses\libxpm\*
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library libxpm
+          -Version '${{ github.event.inputs.version }}'
+          -InstallRoot 'install'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ github.event.inputs.php }}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

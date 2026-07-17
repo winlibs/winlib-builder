@@ -1,0 +1,46 @@
+{
+  "$schema": "../schema.json",
+  "component": "nghttp2",
+  "version": {
+    "stripPrefixes": [
+      "nghttp2-",
+      "v"
+    ]
+  },
+  "upstream": {
+    "repository": "nghttp2/nghttp2",
+    "tagTemplate": "v{version}"
+  },
+  "license": {
+    "id": "MIT"
+  },
+  "purl": "pkg:generic/nghttp2@{upstreamVersion}",
+  "cpe": "cpe:2.3:a:nghttp2:nghttp2:{upstreamVersion}:*:*:*:*:*:*:*",
+  "patchedBuilds": [
+    {
+      "tag": "nghttp2-1.69.0-1",
+      "upstream": {
+        "repository": "nghttp2/nghttp2",
+        "tag": "v1.69.0",
+        "version": "1.69.0"
+      },
+      "fork": {
+        "repository": "winlibs/nghttp2",
+        "tag": "nghttp2-1.69.0-1"
+      },
+      "fixedCves": [
+        {
+          "id": "CVE-2026-58055",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-58055",
+          "detail": "Fixed by backporting the upstream nghttpx request-header validation in winlibs/nghttp2 tag nghttp2-1.69.0-1.",
+          "references": [
+            "https://github.com/winlibs/nghttp2/commit/2a9c99ffa829858a2c0b245eeb4a6e7c9cae7c62",
+            "https://github.com/nghttp2/nghttp2/commit/ab28105c4a0197da24f8bfc414bc116055249e1e",
+            "https://github.com/nghttp2/nghttp2/pull/2769"
+          ]
+        }
+      ]
+    }
+  ]
+}

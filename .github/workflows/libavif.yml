@@ -63,6 +63,21 @@ jobs:
           cmake --install . --config RelWithDebInfo --prefix ..\install
           xcopy RelWithDebInfo\avif_a.pdb ..\install\lib\*
           rmdir /s /q ..\install\lib\pkgconfig
+      - name: Copy license files
+        run: |
+          xcopy libavif\LICENSE install\share\licenses\libavif\*
+          xcopy libavif\ext\aom\LICENSE install\share\licenses\aom\*
+          xcopy libavif\ext\aom\PATENTS install\share\licenses\aom\*
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library libavif
+          -Version '${{ github.event.inputs.version }}'
+          -InstallRoot 'install'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ github.event.inputs.php }}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

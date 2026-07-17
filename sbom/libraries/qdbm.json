@@ -1,0 +1,21 @@
+{
+  "$schema": "../schema.json",
+  "component": "libqdbm",
+  "aliases": [
+    "libqdbm"
+  ],
+  "version": {
+    "stripPrefixes": [
+      "libqdbm-",
+      "qdbm-"
+    ]
+  },
+  "upstream": {
+    "url": "https://dbmx.net/qdbm/",
+    "tagTemplate": "qdbm-{version}"
+  },
+  "license": {
+    "id": "LGPL-2.1-or-later"
+  },
+  "purl": "pkg:generic/qdbm@{upstreamVersion}"
+}

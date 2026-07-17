@@ -49,6 +49,21 @@ jobs:
           xcopy ..\source\include\iconv.h ..\..\install\include\*
           xcopy ${{steps.virtuals.outputs.msarch}}\lib\*.lib ..\..\install\lib\*
           xcopy ${{steps.virtuals.outputs.msarch}}\lib\*.pdb ..\..\install\lib\*
+      - name: Copy license files
+        run: |
+          xcopy libiconv\source\COPYING install\share\licenses\libiconv\source\*
+          xcopy libiconv\source\COPYING.LIB install\share\licenses\libiconv\source\*
+          xcopy libiconv\source\libcharset\COPYING.LIB install\share\licenses\libiconv\source\libcharset\*
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library libiconv
+          -Version '${{ github.event.inputs.version }}'
+          -InstallRoot 'install'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ github.event.inputs.php }}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

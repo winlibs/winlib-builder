@@ -62,6 +62,18 @@ jobs:
           xcopy /e C:\usr\local\ssl\include ..\install\include\*
           xcopy /s /e C:\usr\local\ssl\lib ..\install\lib\*
           xcopy apps\openssl.cnf ..\install\*
+      - name: Copy license files
+        run: xcopy openssl\LICENSE.txt install\share\licenses\openssl\*
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library openssl
+          -Version '${{ github.event.inputs.version }}'
+          -InstallRoot 'install'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ github.event.inputs.php }}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

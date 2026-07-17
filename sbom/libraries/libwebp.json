@@ -1,0 +1,18 @@
+{
+  "$schema": "../schema.json",
+  "component": "libwebp",
+  "version": {
+    "stripPrefixes": [
+      "libwebp-",
+      "v"
+    ]
+  },
+  "upstream": {
+    "repository": "webmproject/libwebp",
+    "tagTemplate": "v{version}"
+  },
+  "license": {
+    "id": "BSD-3-Clause"
+  },
+  "purl": "pkg:generic/libwebp@{upstreamVersion}"
+}

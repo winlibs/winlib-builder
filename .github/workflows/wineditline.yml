@@ -49,6 +49,18 @@ jobs:
         id: artifact
         run: |
           powershell -NoProfile -Command "$version = '${{github.event.inputs.version}}'.ToLowerInvariant(); 'version=' + $version | Out-File -Append -FilePath $env:GITHUB_OUTPUT"
+      - name: Copy license files
+        run: xcopy wineditline\COPYING install\share\licenses\wineditline\*
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library wineditline
+          -Version '${{ github.event.inputs.version }}'
+          -InstallRoot 'install'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ github.event.inputs.php }}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

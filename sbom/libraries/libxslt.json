@@ -1,0 +1,74 @@
+{
+  "$schema": "../schema.json",
+  "component": "libxslt",
+  "version": {
+    "stripPrefixes": [
+      "libxslt-",
+      "v"
+    ]
+  },
+  "upstream": {
+    "repository": "GNOME/libxslt",
+    "tagTemplate": "v{version}"
+  },
+  "license": {
+    "id": "MIT"
+  },
+  "purl": "pkg:generic/libxslt@{upstreamVersion}",
+  "cpe": "cpe:2.3:a:xmlsoft:libxslt:{upstreamVersion}:*:*:*:*:*:*:*",
+  "patchedBuilds": [
+    {
+      "tag": "libxslt-1.1.43-2",
+      "upstream": {
+        "repository": "GNOME/libxslt",
+        "tag": "v1.1.43",
+        "version": "1.1.43"
+      },
+      "fork": {
+        "repository": "winlibs/libxslt",
+        "tag": "libxslt-1.1.43-2"
+      },
+      "notAffectedCves": [
+        {
+          "id": "CVE-2025-7425",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-7425",
+          "detail": "The patched libxml2 dependency shipped with this Winlibs build preserves the private atype flag bits, preventing the corruption in libxslt.",
+          "justification": "inline_mitigations_already_exist",
+          "references": [
+            "https://gitlab.gnome.org/GNOME/libxslt/-/issues/140"
+          ]
+        }
+      ],
+      "fixedCves": [
+        {
+          "id": "CVE-2025-10911",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-10911",
+          "detail": "Fixed by the winlibs/libxslt backport in tag libxslt-1.1.43-2.",
+          "references": [
+            "https://github.com/winlibs/libxslt/commit/9f399f8d223ddddeaeacd15285a2e993ec326c0f"
+          ]
+        },
+        {
+          "id": "CVE-2025-11731",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-11731",
+          "detail": "Fixed by the winlibs/libxslt backport in tag libxslt-1.1.43-2.",
+          "references": [
+            "https://github.com/winlibs/libxslt/commit/7b6b3c1b3abc2d4c4332496d44979b8a1933dd1b"
+          ]
+        },
+        {
+          "id": "CVE-2025-7424",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-7424",
+          "detail": "Fixed by the winlibs/libxslt backport in tag libxslt-1.1.43-2.",
+          "references": [
+            "https://github.com/winlibs/libxslt/commit/f32502000e6e6404125988d67cd9503ef8677e43"
+          ]
+        }
+      ]
+    }
+  ]
+}

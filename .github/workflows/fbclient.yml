@@ -100,6 +100,23 @@ jobs:
           Copy-Item -Path (Join-Path $includeSource '*') -Destination $includeRoot -Recurse
           Copy-Item -Path $importLib -Destination (Join-Path $libRoot 'fbclient_ms.lib')
 
+      - name: Copy license files
+        shell: pwsh
+        run: |
+          $extractRoot = Join-Path (Join-Path $env:RUNNER_TEMP 'firebird-release') 'extracted'
+          $licenseRoot = Join-Path $env:GITHUB_WORKSPACE 'install/share/licenses/fbclient'
+          New-Item -Path $licenseRoot -ItemType Directory -Force | Out-Null
+          Copy-Item -Path (Join-Path $extractRoot 'IDPLicense.txt'), (Join-Path $extractRoot 'IPLicense.txt') -Destination $licenseRoot -Force
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library fbclient
+          -Version '${{ github.event.inputs.version }}'
+          -InstallRoot 'install'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ github.event.inputs.php }}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
         with:

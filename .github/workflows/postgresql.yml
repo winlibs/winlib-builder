@@ -76,6 +76,18 @@ jobs:
           xcopy Release\libpq\libpq.lib ..\install\lib\*
           xcopy ReleaseStatic\libpq\libpq_a.lib ..\install\lib\*
           xcopy ReleaseStatic\libpq\libpq_a.pdb ..\install\lib\*
+      - name: Copy license files
+        run: xcopy postgresql\COPYRIGHT install\share\licenses\libpq\*
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library postgresql
+          -Version '${{ github.event.inputs.version }}'
+          -InstallRoot 'install'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ github.event.inputs.php }}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

@@ -41,6 +41,16 @@ jobs:
         run: cd sqlite3 && nmake PREFIX=..\build
       - name: Install sqlite3
         run: cd sqlite3 && nmake PREFIX=..\build install
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library sqlite3
+          -Version '${{ github.event.inputs.version }}'
+          -InstallRoot 'build'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ github.event.inputs.php }}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

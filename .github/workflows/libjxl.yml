@@ -172,6 +172,20 @@ jobs:
           check-libjxl.exe
           cl /nologo /MD /DJXL_STATIC_DEFINE /DJXL_CMS_STATIC_DEFINE /I install\include winlib-builder\.github\ci\check-libjxl.c /link /LIBPATH:install\lib jxl_a.lib jxl_cms_a.lib hwy_a.lib "%BROTLIENC_LIBRARY%" "%BROTLIDEC_LIBRARY%" "%BROTLICOMMON_LIBRARY%"
           check-libjxl.exe
+      - name: Copy license files
+        run: |
+          xcopy libjxl\LICENSE install\share\licenses\libjxl\*
+          xcopy libjxl\third_party\highway\LICENSE install\share\licenses\highway\*
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library libjxl
+          -Version '${{ inputs.version }}'
+          -InstallRoot 'install'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ inputs.php }}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

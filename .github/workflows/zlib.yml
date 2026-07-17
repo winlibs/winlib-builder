@@ -47,6 +47,18 @@ jobs:
           xcopy zutil.h ..\build\include\*
           xcopy zlib_a.lib ..\build\lib\*
           xcopy zlib_a.pdb ..\build\lib\*
+      - name: Copy license files
+        run: xcopy zlib\LICENSE build\share\licenses\zlib\*
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library zlib
+          -Version '${{ github.event.inputs.version }}'
+          -InstallRoot 'build'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ github.event.inputs.php }}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

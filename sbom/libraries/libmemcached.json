@@ -1,0 +1,16 @@
+{
+  "$schema": "../schema.json",
+  "component": "libmemcached",
+  "version": {
+    "stripPrefixes": ["libmemcached-", "v"]
+  },
+  "upstream": {
+    "repository": "awesomized/libmemcached",
+    "tagTemplate": "{tag}"
+  },
+  "license": {
+    "id": "BSD-3-Clause"
+  },
+  "purl": "pkg:generic/libmemcached@{upstreamVersion}",
+  "cpe": "cpe:2.3:a:libmemcached:libmemcached:{upstreamVersion}:*:*:*:*:*:*:*"
+}

@@ -1,0 +1,39 @@
+{
+  "$schema": "../schema.json",
+  "component": "openssl",
+  "version": {
+    "stripPrefixes": [
+      "openssl-",
+      "OpenSSL_"
+    ]
+  },
+  "upstream": {
+    "repository": "openssl/openssl",
+    "tagTemplate": "openssl-{version}"
+  },
+  "license": {
+    "id": "Apache-2.0"
+  },
+  "purl": "pkg:generic/openssl@{upstreamVersion}",
+  "cpe": "cpe:2.3:a:openssl:openssl:{upstreamVersion}:*:*:*:*:*:*:*",
+  "patchedBuilds": [
+    {
+      "tag": "openssl-3.0.21.pl1",
+      "upstream": {
+        "repository": "openssl/openssl",
+        "tag": "openssl-3.0.21",
+        "version": "3.0.21"
+      },
+      "fork": {
+        "repository": "winlibs/openssl",
+        "tag": "openssl-3.0.21.pl1"
+      },
+      "patches": [
+        {
+          "url": "https://github.com/winlibs/openssl/commit/76409f1973ddc85fa2f6838b2679b1b2ea1e0bb6",
+          "detail": "Backport Ubuntu's PKCS#1 implicit-rejection patch."
+        }
+      ]
+    }
+  ]
+}

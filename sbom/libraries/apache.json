@@ -1,0 +1,74 @@
+{
+  "$schema": "../schema.json",
+  "component": "apache",
+  "aliases": [
+    "httpd"
+  ],
+  "version": {
+    "stripPrefixes": [
+      "apache-",
+      "httpd-"
+    ]
+  },
+  "upstream": {
+    "repository": "apache/httpd",
+    "tagTemplate": "{version}"
+  },
+  "license": {
+    "id": "Apache-2.0"
+  },
+  "purl": "pkg:generic/apache-httpd@{upstreamVersion}",
+  "cpe": "cpe:2.3:a:apache:http_server:{upstreamVersion}:*:*:*:*:*:*:*",
+  "spdxPackageOverrides": {
+    "zherczeg/sljit": {
+      "supplier": "Person: Zoltan Herczeg",
+      "licenseConcluded": "BSD-2-Clause"
+    }
+  },
+  "notAffectedCves": [
+    {
+      "id": "CVE-1999-0289",
+      "source": "NVD",
+      "url": "https://nvd.nist.gov/vuln/detail/CVE-1999-0289",
+      "detail": "The affected legacy Win32 path handling is not present in Apache HTTP Server 2.4 builds.",
+      "justification": "vulnerable_code_not_present",
+      "references": [
+        "https://httpd.apache.org/security/vulnerabilities_24.html"
+      ]
+    },
+    {
+      "id": "CVE-1999-0678",
+      "source": "NVD",
+      "url": "https://nvd.nist.gov/vuln/detail/CVE-1999-0678",
+      "detail": "This CVE concerns a Debian default ServerRoot configuration; Debian packaging and configuration are not present in the Windows artifact.",
+      "justification": "component_not_present"
+    },
+    {
+      "id": "CVE-2025-3891",
+      "source": "NVD",
+      "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-3891",
+      "detail": "This CVE affects mod_auth_openidc, which is a separate module and is not included in the Apache dependency artifact.",
+      "justification": "component_not_present",
+      "references": [
+        "https://github.com/OpenIDC/mod_auth_openidc/security/advisories/GHSA-x7cf-8wgv-5j86"
+      ]
+    }
+  ],
+  "components": [
+    {
+      "component": "apr-iconv",
+      "sourcePath": "apr-iconv-source/apr-iconv-1.2.2",
+      "version": {
+        "value": "1.2.2"
+      },
+      "upstream": {
+        "repository": "apache/apr-iconv",
+        "tagTemplate": "{version}"
+      },
+      "license": {
+        "id": "Apache-2.0"
+      },
+      "purl": "pkg:generic/apr-iconv@{upstreamVersion}"
+    }
+  ]
+}

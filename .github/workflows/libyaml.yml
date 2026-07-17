@@ -54,8 +54,21 @@ jobs:
           cmake --install . --config Release
           Remove-Item -Recurse -Force ${{ github.workspace }}\install\cmake
           Copy-Item ..\License ${{ github.workspace }}\install\License
+          New-Item -Path ${{ github.workspace }}\install\share\licenses\libyaml -ItemType Directory -Force | Out-Null
+          Copy-Item ..\License ${{ github.workspace }}\install\share\licenses\libyaml\
           $pdbPath = if (Test-Path Release\yaml.pdb) { "Release\yaml.pdb" } else { "yaml.dir\Release\yaml.pdb" }
           Copy-Item $pdbPath ${{ github.workspace }}\install\lib\
+
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library libyaml
+          -Version '${{ inputs.libyaml }}'
+          -InstallRoot 'install'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ inputs.php }}'
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v6

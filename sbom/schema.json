@@ -1,0 +1,277 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://php.net/sbom/winlibs/schema.json",
+  "title": "Winlibs SBOM metadata",
+  "oneOf": [
+    { "$ref": "#/$defs/document" },
+    { "$ref": "#/$defs/library" }
+  ],
+  "$defs": {
+    "document": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["namespace", "author", "tool", "downloadBaseUrl", "licenseListUrl"],
+      "properties": {
+        "$schema": { "type": "string" },
+        "namespace": { "type": "string", "format": "uri" },
+        "author": { "type": "string", "minLength": 1 },
+        "tool": { "type": "string", "minLength": 1 },
+        "downloadBaseUrl": { "type": "string", "format": "uri" },
+        "licenseListUrl": { "type": "string", "format": "uri" }
+      }
+    },
+    "library": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["component", "version", "upstream", "license", "purl"],
+      "properties": {
+        "$schema": { "type": "string" },
+        "component": { "type": "string", "minLength": 1 },
+        "copyrightText": { "type": "string", "minLength": 1 },
+        "aliases": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "sourcePath": { "type": "string", "minLength": 1 },
+        "sourceUrl": { "type": "string", "minLength": 1 },
+        "version": { "$ref": "#/$defs/version" },
+        "upstream": { "$ref": "#/$defs/source" },
+        "license": { "$ref": "#/$defs/license" },
+        "homepage": { "type": "string", "format": "uri" },
+        "purl": { "type": "string", "minLength": 1 },
+        "cpe": { "type": "string", "minLength": 1 },
+        "components": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/embeddedComponent" }
+        },
+        "spdxPackageOverrides": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/spdxPackageOverride" }
+        },
+        "patchedBuilds": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/patchedBuild" }
+        },
+        "notAffectedCves": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/notAffectedCve" }
+        }
+      }
+    },
+    "embeddedComponent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["component", "sourcePath", "upstream", "license", "purl"],
+      "properties": {
+        "component": { "type": "string", "minLength": 1 },
+        "sourcePath": { "type": "string", "minLength": 1 },
+        "version": { "$ref": "#/$defs/version" },
+        "upstream": { "$ref": "#/$defs/source" },
+        "license": { "$ref": "#/$defs/license" },
+        "homepage": { "type": "string", "format": "uri" },
+        "purl": { "type": "string", "minLength": 1 },
+        "cpe": { "type": "string", "minLength": 1 }
+      }
+    },
+    "spdxPackageOverride": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "versionInfo": { "type": "string", "minLength": 1 },
+        "supplier": { "type": "string", "pattern": "^(Organization|Person): .+" },
+        "licenseConcluded": { "type": "string", "minLength": 1 }
+      }
+    },
+    "version": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "value": { "type": "string", "minLength": 1 },
+        "stripPrefixes": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "stripRebuildSuffix": { "type": "boolean" }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "repository": { "type": "string", "pattern": "^\\S+/\\S+$" },
+        "url": { "type": "string", "format": "uri" },
+        "tagUrlTemplate": { "type": "string", "minLength": 1 },
+        "tagTemplate": { "type": "string", "minLength": 1 },
+        "tag": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 }
+      },
+      "allOf": [
+        {
+          "anyOf": [
+            { "required": ["repository"] },
+            { "required": ["url"] }
+          ]
+        },
+        {
+          "anyOf": [
+            { "required": ["tagTemplate"] },
+            { "required": ["tag"] }
+          ]
+        }
+      ]
+    },
+    "fork": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "tag"],
+      "properties": {
+        "repository": { "type": "string", "pattern": "^\\S+/\\S+$" },
+        "tag": { "type": "string", "minLength": 1 }
+      }
+    },
+    "license": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "expression": { "type": "string", "minLength": 1 },
+        "licenseRef": { "type": "string", "pattern": "^LicenseRef-.+" },
+        "name": { "type": "string", "minLength": 1 },
+        "text": { "type": "string", "minLength": 1 },
+        "textFiles": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "extractedLicenses": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/extractedLicense" }
+        }
+      },
+      "anyOf": [
+        { "required": ["id"] },
+        { "required": ["expression"] },
+        { "required": ["licenseRef", "name"] },
+        { "required": ["name"] }
+      ],
+      "allOf": [
+        {
+          "if": { "required": ["licenseRef"] },
+          "then": {
+            "anyOf": [
+              { "required": ["text"] },
+              { "required": ["textFiles"] }
+            ]
+          }
+        }
+      ]
+    },
+    "extractedLicense": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["licenseRef", "name"],
+      "properties": {
+        "licenseRef": { "type": "string", "pattern": "^LicenseRef-.+" },
+        "name": { "type": "string", "minLength": 1 },
+        "text": { "type": "string", "minLength": 1 },
+        "textFiles": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      },
+      "anyOf": [
+        { "required": ["text"] },
+        { "required": ["textFiles"] }
+      ]
+    },
+    "patchedBuild": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["upstream", "fork"],
+      "properties": {
+        "tag": { "type": "string", "minLength": 1 },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "version": { "type": "string", "minLength": 1 },
+        "upstream": { "$ref": "#/$defs/source" },
+        "fork": { "$ref": "#/$defs/fork" },
+        "patches": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/patch" }
+        },
+        "fixedCves": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/fixedCve" }
+        },
+        "notAffectedCves": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/notAffectedCve" }
+        }
+      },
+      "anyOf": [
+        { "required": ["tag"] },
+        { "required": ["tags"] },
+        { "required": ["version"] }
+      ]
+    },
+    "patch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url"],
+      "properties": {
+        "url": { "type": "string", "format": "uri" },
+        "detail": { "type": "string", "minLength": 1 }
+      }
+    },
+    "fixedCve": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "source", "url", "detail"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^CVE-[0-9]{4}-[0-9]+$" },
+        "source": { "type": "string", "minLength": 1 },
+        "url": { "type": "string", "format": "uri" },
+        "detail": { "type": "string", "minLength": 1 },
+        "references": {
+          "type": "array",
+          "items": { "type": "string", "format": "uri" },
+          "uniqueItems": true
+        }
+      }
+    },
+    "notAffectedCve": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "source", "url", "detail", "justification"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^CVE-[0-9]{4}-[0-9]+$" },
+        "source": { "type": "string", "minLength": 1 },
+        "url": { "type": "string", "format": "uri" },
+        "detail": { "type": "string", "minLength": 1 },
+        "justification": {
+          "enum": [
+            "component_not_present",
+            "vulnerable_code_not_present",
+            "vulnerable_code_not_in_execute_path",
+            "vulnerable_code_cannot_be_controlled_by_adversary",
+            "inline_mitigations_already_exist"
+          ]
+        },
+        "references": {
+          "type": "array",
+          "items": { "type": "string", "format": "uri" },
+          "uniqueItems": true
+        }
+      }
+    }
+  }
+}

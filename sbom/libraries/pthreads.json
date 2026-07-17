@@ -1,0 +1,15 @@
+{
+  "$schema": "../schema.json",
+  "component": "pthreads",
+  "version": {
+    "stripPrefixes": ["pthreads-", "v"]
+  },
+  "upstream": {
+    "repository": "GerHobbelt/pthread-win32",
+    "tagTemplate": "{tag}"
+  },
+  "license": {
+    "id": "Apache-2.0"
+  },
+  "purl": "pkg:generic/pthreads-win32@{upstreamVersion}"
+}

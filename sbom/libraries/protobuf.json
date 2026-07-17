@@ -1,0 +1,28 @@
+{
+  "$schema": "../schema.json",
+  "component": "protobuf",
+  "version": {
+    "stripPrefixes": ["protobuf-", "v"]
+  },
+  "upstream": {
+    "repository": "protocolbuffers/protobuf",
+    "tagTemplate": "v{version}"
+  },
+  "license": {
+    "id": "BSD-3-Clause"
+  },
+  "purl": "pkg:generic/protobuf@{upstreamVersion}",
+  "components": [
+    {
+      "component": "utf8-range",
+      "sourcePath": "protobuf/third_party/utf8_range",
+      "version": { "value": "{packageVersion}" },
+      "upstream": {
+        "repository": "protocolbuffers/utf8_range",
+        "tagTemplate": "{version}"
+      },
+      "license": { "id": "MIT" },
+      "purl": "pkg:generic/utf8-range@{upstreamVersion}"
+    }
+  ]
+}

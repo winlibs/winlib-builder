@@ -1,0 +1,18 @@
+{
+  "$schema": "../schema.json",
+  "component": "imagemagick",
+  "sourcePath": "imagemagick-windows/ImageMagick",
+  "version": {
+    "stripPrefixes": ["ImageMagick-", "imagemagick-"],
+    "stripRebuildSuffix": false
+  },
+  "upstream": {
+    "repository": "ImageMagick/ImageMagick",
+    "tagTemplate": "{tag}"
+  },
+  "license": {
+    "id": "ImageMagick"
+  },
+  "purl": "pkg:generic/imagemagick@{upstreamVersion}",
+  "cpe": "cpe:2.3:a:imagemagick:imagemagick:{upstreamVersion}:*:*:*:*:*:*:*"
+}

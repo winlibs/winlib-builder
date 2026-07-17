@@ -115,6 +115,24 @@ jobs:
           -ApriconvRoot "${{ steps.deps.outputs.apriconv_root }}"
           -AprExportsRoot "${{ github.workspace }}/apache-apr-exports"
 
+      - name: Copy license files
+        run: |
+          xcopy httpd\LICENSE install\share\licenses\apache\*
+          xcopy httpd\NOTICE install\share\licenses\apache\*
+          xcopy apr-iconv-source\apr-iconv-${{ env.APR_ICONV_VERSION }}\COPYING install\share\licenses\apr-iconv\*
+          xcopy apr-iconv-source\apr-iconv-${{ env.APR_ICONV_VERSION }}\LICENSE install\share\licenses\apr-iconv\*
+          xcopy apr-iconv-source\apr-iconv-${{ env.APR_ICONV_VERSION }}\NOTICE install\share\licenses\apr-iconv\*
+          powershell -NoProfile -Command "$ErrorActionPreference = 'Stop'; foreach ($root in @('${{ steps.deps.outputs.deps_root }}', '${{ steps.deps.outputs.static_root }}')) { $share = Join-Path $root 'share'; if (-not (Test-Path $share)) { continue }; Get-ChildItem -Path $share -Filter copyright -File -Recurse | Where-Object { $_.Directory.Name -notin @('vcpkg-cmake', 'vcpkg-cmake-config', 'vcpkg-cmake-get-vars') } | ForEach-Object { $relative = $_.DirectoryName.Substring($share.Length).TrimStart('\', '/'); $target = Join-Path 'install\share\licenses\vcpkg' $relative; New-Item -Path $target -ItemType Directory -Force | Out-Null; Copy-Item -Path $_.FullName -Destination (Join-Path $target 'copyright') -Force } }"
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library apache
+          -Version '${{ github.event.inputs.version }}'
+          -InstallRoot 'install'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ github.event.inputs.php }}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

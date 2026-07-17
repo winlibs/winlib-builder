@@ -1,0 +1,73 @@
+{
+  "$schema": "../schema.json",
+  "component": "libheif",
+  "version": {
+    "stripPrefixes": ["libheif-", "v"]
+  },
+  "upstream": {
+    "repository": "strukturag/libheif",
+    "tagTemplate": "v{version}"
+  },
+  "license": {
+    "id": "LGPL-3.0-only"
+  },
+  "purl": "pkg:generic/libheif@{upstreamVersion}",
+  "cpe": "cpe:2.3:a:struktur:libheif:{upstreamVersion}:*:*:*:*:*:*:*",
+  "components": [
+    {
+      "component": "libde265",
+      "sourcePath": "libde265",
+      "version": { "stripPrefixes": ["v"] },
+      "upstream": {
+        "repository": "strukturag/libde265",
+        "tagTemplate": "v{version}"
+      },
+      "license": { "id": "LGPL-3.0-only" },
+      "purl": "pkg:generic/libde265@{upstreamVersion}"
+    },
+    {
+      "component": "x265",
+      "sourcePath": "x265",
+      "upstream": {
+        "repository": "Multicorewareinc/x265",
+        "tagTemplate": "{tag}"
+      },
+      "license": { "id": "GPL-2.0-only" },
+      "purl": "pkg:generic/x265@{upstreamVersion}"
+    },
+    {
+      "component": "aom",
+      "sourcePath": "aom",
+      "version": { "stripPrefixes": ["v"] },
+      "upstream": {
+        "url": "https://aomedia.googlesource.com/aom",
+        "tagTemplate": "v{version}",
+        "tagUrlTemplate": "https://aomedia.googlesource.com/aom/+/refs/tags/{sourceTag}"
+      },
+      "license": { "id": "BSD-3-Clause" },
+      "purl": "pkg:generic/aom@{upstreamVersion}"
+    },
+    {
+      "component": "dav1d",
+      "sourcePath": "dav1d",
+      "upstream": {
+        "url": "https://code.videolan.org/videolan/dav1d",
+        "tagTemplate": "{version}",
+        "tagUrlTemplate": "https://code.videolan.org/videolan/dav1d/-/tree/{sourceTag}"
+      },
+      "license": { "id": "BSD-2-Clause" },
+      "purl": "pkg:generic/dav1d@{upstreamVersion}"
+    },
+    {
+      "component": "libjpeg-turbo",
+      "sourcePath": "libjpeg-turbo",
+      "version": { "stripPrefixes": ["libjpeg-turbo-", "v"] },
+      "upstream": {
+        "repository": "libjpeg-turbo/libjpeg-turbo",
+        "tagTemplate": "{version}"
+      },
+      "license": { "expression": "BSD-3-Clause AND IJG" },
+      "purl": "pkg:generic/libjpeg-turbo@{upstreamVersion}"
+    }
+  ]
+}

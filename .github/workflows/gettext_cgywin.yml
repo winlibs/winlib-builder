@@ -130,6 +130,21 @@ jobs:
           foreach ($file in $required) {
             if (!(Test-Path "install/$file")) { throw "Missing install/$file" }
           }
+      - name: Copy license files
+        run: |
+          xcopy gettext\COPYING install\share\licenses\libintl\*
+          xcopy gettext\gettext-runtime\COPYING install\share\licenses\libintl\gettext-runtime\*
+          xcopy gettext\gettext-runtime\intl\COPYING.LIB install\share\licenses\libintl\gettext-runtime\intl\*
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library gettext
+          -Version '${{ github.event.inputs.version }}'
+          -InstallRoot 'install'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ github.event.inputs.php }}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

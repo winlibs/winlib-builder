@@ -217,12 +217,17 @@ The uploaded directory should normally contain:
 bin/       DLLs and runtime files
 include/   public headers
 lib/       import and static libraries, CMake/pkg-config metadata
-LICENSE*   upstream license files
+share/licenses/<library>/  upstream license and notice files
+share/sbom/                generated CycloneDX, SPDX, and optional OpenVEX files
 ```
 
 Include PDB files when the build produces them. Do not include tests, examples,
 developer tools, or dependency-owned files unless they are intentional parts
 of the PHP SDK package.
+
+Add the library's canonical upstream identity and license expression under
+`sbom/libraries/`, then run `scripts/generate-sbom.ps1` after staging licenses
+and before uploading the artifact. See [Winlibs SBOM metadata](sbom.md).
 
 Upload the installation directory, not the source or build tree:
 
@@ -315,5 +320,6 @@ For a later upstream release:
 4. Update the workflow's default tag.
 5. Confirm dependency versions and filenames in the target PHP SDK series.
 6. Build and verify every supported architecture and linkage variant.
-7. Publish to staging and test php-src with the feature visibly enabled.
-8. Never move the previous release tags or replace their source history.
+7. Inspect the generated license directory and validate both SBOM formats.
+8. Publish to staging and test php-src with the feature visibly enabled.
+9. Never move the previous release tags or replace their source history.

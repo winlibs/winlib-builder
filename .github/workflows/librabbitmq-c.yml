@@ -79,6 +79,21 @@ jobs:
       - name: Build & install
         run: cmake --build build --config Release --target install
 
+      - name: Copy license files
+        shell: cmd
+        run: xcopy rabbitmq-c\LICENSE build\install\share\licenses\librabbitmq-c\*
+
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library librabbitmq-c
+          -Version '${{ inputs.librabbitmq-c-ref }}'
+          -InstallRoot 'build/install'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ inputs.php }}'
+
       - name: Normalize version
         id: version
         shell: pwsh

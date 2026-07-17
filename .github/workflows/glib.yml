@@ -52,6 +52,18 @@ jobs:
         run: cd glib && msbuild /p:Configuration=Release_BundledPCRE;Platform=${{steps.virtuals.outputs.msarch}};PlatformToolset=${{steps.virtuals.outputs.msts}};WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}};PythonPath=C:\hostedtoolcache\windows\Python\3.7.9\x64 win32\vs${{steps.virtuals.outputs.vsnum}}\glib.sln
       - name: Install glib
         run: xcopy /e vs${{steps.virtuals.outputs.vsnum}}\${{steps.virtuals.outputs.msarch}} install\*
+      - name: Copy license files
+        run: xcopy glib\COPYING install\share\licenses\glib\*
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library glib
+          -Version '${{ github.event.inputs.version }}'
+          -InstallRoot 'install'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ github.event.inputs.php }}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

@@ -1,0 +1,17 @@
+{
+  "$schema": "../schema.json",
+  "component": "mpir",
+  "version": {
+    "stripPrefixes": [
+      "mpir-"
+    ]
+  },
+  "upstream": {
+    "repository": "wbhart/mpir",
+    "tagTemplate": "mpir-{version}"
+  },
+  "license": {
+    "id": "LGPL-3.0-or-later"
+  },
+  "purl": "pkg:generic/mpir@{upstreamVersion}"
+}

@@ -1,0 +1,21 @@
+{
+  "$schema": "../schema.json",
+  "component": "libsasl",
+  "aliases": [
+    "libsasl"
+  ],
+  "version": {
+    "stripPrefixes": [
+      "libsasl-",
+      "cyrus-sasl-"
+    ]
+  },
+  "upstream": {
+    "repository": "cyrusimap/cyrus-sasl",
+    "tagTemplate": "cyrus-sasl-{version}"
+  },
+  "license": {
+    "id": "BSD-4-Clause"
+  },
+  "purl": "pkg:generic/cyrus-sasl@{upstreamVersion}"
+}

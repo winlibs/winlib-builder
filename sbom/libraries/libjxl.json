@@ -1,0 +1,28 @@
+{
+  "$schema": "../schema.json",
+  "component": "libjxl",
+  "version": {
+    "stripPrefixes": ["libjxl-", "v"]
+  },
+  "upstream": {
+    "repository": "libjxl/libjxl",
+    "tagTemplate": "v{version}"
+  },
+  "license": {
+    "id": "BSD-3-Clause"
+  },
+  "purl": "pkg:generic/libjxl@{upstreamVersion}",
+  "components": [
+    {
+      "component": "highway",
+      "sourcePath": "libjxl/third_party/highway",
+      "version": { "stripPrefixes": ["v"] },
+      "upstream": {
+        "repository": "google/highway",
+        "tagTemplate": "{version}"
+      },
+      "license": { "expression": "Apache-2.0 OR BSD-3-Clause" },
+      "purl": "pkg:generic/highway@{upstreamVersion}"
+    }
+  ]
+}

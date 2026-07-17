@@ -1,0 +1,982 @@
+{
+  "$schema": "../schema.json",
+  "component": "libxml2",
+  "aliases": [
+    "libxml"
+  ],
+  "version": {
+    "stripPrefixes": [
+      "libxml2-",
+      "libxml-"
+    ]
+  },
+  "upstream": {
+    "repository": "GNOME/libxml2",
+    "tagTemplate": "v{version}"
+  },
+  "license": {
+    "id": "MIT"
+  },
+  "purl": "pkg:generic/libxml2@{upstreamVersion}",
+  "cpe": "cpe:2.3:a:xmlsoft:libxml2:{upstreamVersion}:*:*:*:*:*:*:*",
+  "patchedBuilds": [
+    {
+      "tag": "libxml2-2.9.10-1",
+      "upstream": {
+        "repository": "GNOME/libxml2",
+        "tag": "v2.9.10",
+        "version": "2.9.10"
+      },
+      "fork": {
+        "repository": "winlibs/libxml2",
+        "tag": "libxml2-2.9.10-1"
+      },
+      "fixedCves": [
+        {
+          "id": "CVE-2021-3541",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2021-3541",
+          "detail": "Fixed by winlibs/libxml2 parameter entity expansion backport in tag libxml2-2.9.10-1."
+        }
+      ]
+    },
+    {
+      "tag": "libxml2-2.9.14-4",
+      "upstream": {
+        "repository": "GNOME/libxml2",
+        "tag": "v2.9.14",
+        "version": "2.9.14"
+      },
+      "fork": {
+        "repository": "winlibs/libxml2",
+        "tag": "libxml2-2.9.14-4"
+      },
+      "fixedCves": [
+        {
+          "id": "CVE-2025-27113",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-27113",
+          "detail": "Fixed by winlibs/libxml2 backport in tag libxml2-2.9.14-1."
+        }
+      ]
+    },
+    {
+      "tag": "libxml2-2.10.4-6",
+      "upstream": {
+        "repository": "GNOME/libxml2",
+        "tag": "v2.10.4",
+        "version": "2.10.4"
+      },
+      "fork": {
+        "repository": "winlibs/libxml2",
+        "tag": "libxml2-2.10.4-6"
+      },
+      "fixedCves": [
+        {
+          "id": "CVE-2024-25062",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-25062",
+          "detail": "Fixed by the XML Reader XInclude use-after-free backport in winlibs/libxml2 tag libxml2-2.10.4-6.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/1c73a6c376c2d520eaada3b92cfd4f98162356a2"
+          ]
+        },
+        {
+          "id": "CVE-2024-34459",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-34459",
+          "detail": "Fixed by the xmllint --htmlout buffer overread backport in winlibs/libxml2 tag libxml2-2.10.4-6.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/bf8478ae3fadbe0efad786f4770e4e022394b78c"
+          ]
+        },
+        {
+          "id": "CVE-2024-56171",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-56171",
+          "detail": "Fixed by the winlibs/libxml2 backport in tag libxml2-2.10.4-6.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/dd01595fc74d2746ad2888d6440f5343ac2f60dd"
+          ]
+        },
+        {
+          "id": "CVE-2025-24928",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-24928",
+          "detail": "Fixed by the winlibs/libxml2 backport in tag libxml2-2.10.4-6.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/37bebde79cb22b8c55b507c4abf19a953087b749"
+          ]
+        },
+        {
+          "id": "CVE-2025-27113",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-27113",
+          "detail": "Fixed by winlibs/libxml2 backport in tag libxml2-2.10.4-1."
+        },
+        {
+          "id": "CVE-2025-32414",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-32414",
+          "detail": "Fixed by the winlibs/libxml2 backport in tag libxml2-2.10.4-6.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/9bac466bb016cf25ced3b15989a5b850c5991d10"
+          ]
+        },
+        {
+          "id": "CVE-2025-32415",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-32415",
+          "detail": "Fixed by the xmlSchemaIDCFillNodeTables heap buffer overflow backport in winlibs/libxml2 tag libxml2-2.10.4-6.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/d963820501a091df1089d092e08f5d17e52ec537"
+          ]
+        },
+        {
+          "id": "CVE-2025-49794",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-49794",
+          "detail": "Fixed by winlibs/libxml2 schematron backport in tag libxml2-2.10.4-4."
+        },
+        {
+          "id": "CVE-2025-49795",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-49795",
+          "detail": "Fixed by the winlibs/libxml2 backport in tag libxml2-2.10.4-6.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/e5afa4ec2e052e417cd876079f7ba881105ab30d"
+          ]
+        },
+        {
+          "id": "CVE-2025-49796",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-49796",
+          "detail": "Fixed by winlibs/libxml2 schematron backport in tag libxml2-2.10.4-4."
+        },
+        {
+          "id": "CVE-2025-6021",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-6021",
+          "detail": "Fixed by the winlibs/libxml2 backport in tag libxml2-2.10.4-6.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/d723785ce7a425d67989538605469e3e65279ab9"
+          ]
+        },
+        {
+          "id": "CVE-2025-6170",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-6170",
+          "detail": "Fixed by the debugXML interactive shell buffer overflow backport in winlibs/libxml2 tag libxml2-2.10.4-6.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/35c00d862ffa065f5b1d882069e61a2164fc71a0"
+          ]
+        },
+        {
+          "id": "CVE-2025-7425",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-7425",
+          "detail": "Fixed by preserving libxslt private flag bits in winlibs/libxml2 tag libxml2-2.10.4-6.",
+          "references": [
+            "https://gitlab.gnome.org/GNOME/libxslt/-/issues/140",
+            "https://gitlab.gnome.org/GNOME/libxml2/-/commit/f1e1f13b766eb580a8dcc0c4e7a447346dfd862e"
+          ]
+        },
+        {
+          "id": "CVE-2025-8732",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-8732",
+          "detail": "Fixed by SGML catalog recursion limit backport in winlibs/libxml2 tag libxml2-2.10.4-5.",
+          "references": [
+            "https://gitlab.gnome.org/GNOME/libxml2/-/commit/eae9291aa73907694dd3a4274d306e31217e746e"
+          ]
+        },
+        {
+          "id": "CVE-2026-0989",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-0989",
+          "detail": "Fixed by the winlibs/libxml2 backport in tag libxml2-2.10.4-6.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/b5d63abd7cadb4c74497b7ba4168ee4e39c2f87c"
+          ]
+        },
+        {
+          "id": "CVE-2026-0990",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-0990",
+          "detail": "Fixed by the winlibs/libxml2 backport in tag libxml2-2.10.4-6.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/6921e4891853ebcd28288c5877020b7529cf0375"
+          ]
+        },
+        {
+          "id": "CVE-2026-0992",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-0992",
+          "detail": "Fixed by the winlibs/libxml2 backport and compatibility follow-up in tag libxml2-2.10.4-6.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/6f3e673437a625a686dc7ee23153693091cc1173",
+            "https://github.com/winlibs/libxml2/commit/ff42012a0b85a601f20ea4e6ebb988bdbe295a62"
+          ]
+        },
+        {
+          "id": "CVE-2026-1757",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-1757",
+          "detail": "Fixed by the winlibs/libxml2 backport in tag libxml2-2.10.4-6.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/d1ecfeadc65df66837b6f5d2ccec4551b769370e"
+          ]
+        }
+      ]
+    },
+    {
+      "tag": "libxml2-2.11.9-6",
+      "upstream": {
+        "repository": "GNOME/libxml2",
+        "tag": "v2.11.9",
+        "version": "2.11.9"
+      },
+      "fork": {
+        "repository": "winlibs/libxml2",
+        "tag": "libxml2-2.11.9-6"
+      },
+      "fixedCves": [
+        {
+          "id": "CVE-2024-56171",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-56171",
+          "detail": "Fixed by the winlibs/libxml2 backport in tag libxml2-2.11.9-6.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/3e2239c54bcc20495bd9dc35f80d3402179b6809"
+          ]
+        },
+        {
+          "id": "CVE-2025-24928",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-24928",
+          "detail": "Fixed by the winlibs/libxml2 backport in tag libxml2-2.11.9-6.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/f4646b65a167bcdf3f18246772b12415172545a8"
+          ]
+        },
+        {
+          "id": "CVE-2025-27113",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-27113",
+          "detail": "Fixed by winlibs/libxml2 backport in tag libxml2-2.11.9-1."
+        },
+        {
+          "id": "CVE-2025-32414",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-32414",
+          "detail": "Fixed by the winlibs/libxml2 backport in tag libxml2-2.11.9-6.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/220875f30a741ee7a4dbd3aa4cfa1e4569573ea9"
+          ]
+        },
+        {
+          "id": "CVE-2025-32415",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-32415",
+          "detail": "Fixed by the xmlSchemaIDCFillNodeTables heap buffer overflow backport in winlibs/libxml2 tag libxml2-2.11.9-6.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/bcaa5c4af33b2648371b1fff3059bf0c51abe6bd"
+          ]
+        },
+        {
+          "id": "CVE-2025-49794",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-49794",
+          "detail": "Fixed by the winlibs/libxml2 schematron backport in tag libxml2-2.11.9-6.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/781345c83817681e35f201892d3befc6b63d6129"
+          ]
+        },
+        {
+          "id": "CVE-2025-49795",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-49795",
+          "detail": "Fixed by the winlibs/libxml2 schematron backport in tag libxml2-2.11.9-6.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/21afa4ccaf8fcf64f03fc0e8fd0c65ef9770c902"
+          ]
+        },
+        {
+          "id": "CVE-2025-49796",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-49796",
+          "detail": "Fixed by the winlibs/libxml2 schematron backport in tag libxml2-2.11.9-6.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/781345c83817681e35f201892d3befc6b63d6129"
+          ]
+        },
+        {
+          "id": "CVE-2025-6021",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-6021",
+          "detail": "Fixed by the winlibs/libxml2 backport in tag libxml2-2.11.9-6.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/1aaac89c3c076a72c61263e279be47ee9e016a09"
+          ]
+        },
+        {
+          "id": "CVE-2025-6170",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-6170",
+          "detail": "Fixed by the debugXML interactive shell buffer overflow backport in winlibs/libxml2 tag libxml2-2.11.9-6.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/f7f4f1cdc447df9b0d4621ebb84fb2c690cecef4"
+          ]
+        },
+        {
+          "id": "CVE-2025-7425",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-7425",
+          "detail": "Fixed by preserving libxslt private flag bits in winlibs/libxml2 tag libxml2-2.11.9-6.",
+          "references": [
+            "https://gitlab.gnome.org/GNOME/libxslt/-/issues/140",
+            "https://gitlab.gnome.org/GNOME/libxml2/-/commit/f1e1f13b766eb580a8dcc0c4e7a447346dfd862e"
+          ]
+        },
+        {
+          "id": "CVE-2025-8732",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-8732",
+          "detail": "Fixed by SGML catalog recursion limit backport in winlibs/libxml2 tag libxml2-2.11.9-5.",
+          "references": [
+            "https://gitlab.gnome.org/GNOME/libxml2/-/commit/eae9291aa73907694dd3a4274d306e31217e746e"
+          ]
+        },
+        {
+          "id": "CVE-2026-0989",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-0989",
+          "detail": "Fixed by the winlibs/libxml2 backport in tag libxml2-2.11.9-6.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/561fa6aa2df56372746029e027125634008c6f2e"
+          ]
+        },
+        {
+          "id": "CVE-2026-0990",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-0990",
+          "detail": "Fixed by the winlibs/libxml2 backport in tag libxml2-2.11.9-6.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/d26c645cd83ae7c8d1439a696a54730af7630ff4"
+          ]
+        },
+        {
+          "id": "CVE-2026-0992",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-0992",
+          "detail": "Fixed by the winlibs/libxml2 backport and compatibility follow-up in tag libxml2-2.11.9-6.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/850597a70a2ff93de74b0be9e378f6bb4f11ade6",
+            "https://github.com/winlibs/libxml2/commit/04c5570aa73c0c1938ee9e256dbda7649dd7c479"
+          ]
+        },
+        {
+          "id": "CVE-2026-1757",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-1757",
+          "detail": "Fixed by the winlibs/libxml2 backport in tag libxml2-2.11.9-6.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/ca4540f6dcc6cb583c0835dbd5ce4dd76d1d8741"
+          ]
+        }
+      ]
+    },
+    {
+      "tag": "libxml2-2.10.4-7",
+      "upstream": {
+        "repository": "GNOME/libxml2",
+        "tag": "v2.10.4",
+        "version": "2.10.4"
+      },
+      "fork": {
+        "repository": "winlibs/libxml2",
+        "tag": "libxml2-2.10.4-7"
+      },
+      "fixedCves": [
+        {
+          "id": "CVE-2024-25062",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-25062",
+          "detail": "Fixed by the XML Reader XInclude use-after-free backport in winlibs/libxml2 tag libxml2-2.10.4-7.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/1c73a6c376c2d520eaada3b92cfd4f98162356a2"
+          ]
+        },
+        {
+          "id": "CVE-2024-34459",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-34459",
+          "detail": "Fixed by the xmllint --htmlout buffer overread backport in winlibs/libxml2 tag libxml2-2.10.4-7.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/bf8478ae3fadbe0efad786f4770e4e022394b78c"
+          ]
+        },
+        {
+          "id": "CVE-2024-56171",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-56171",
+          "detail": "Fixed by the winlibs/libxml2 backport in tag libxml2-2.10.4-7.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/dd01595fc74d2746ad2888d6440f5343ac2f60dd"
+          ]
+        },
+        {
+          "id": "CVE-2025-24928",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-24928",
+          "detail": "Fixed by the winlibs/libxml2 backport in tag libxml2-2.10.4-7.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/37bebde79cb22b8c55b507c4abf19a953087b749"
+          ]
+        },
+        {
+          "id": "CVE-2025-27113",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-27113",
+          "detail": "Fixed by winlibs/libxml2 backport in tag libxml2-2.10.4-1."
+        },
+        {
+          "id": "CVE-2025-32414",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-32414",
+          "detail": "Fixed by the winlibs/libxml2 backport in tag libxml2-2.10.4-7.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/9bac466bb016cf25ced3b15989a5b850c5991d10"
+          ]
+        },
+        {
+          "id": "CVE-2025-32415",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-32415",
+          "detail": "Fixed by the xmlSchemaIDCFillNodeTables heap buffer overflow backport in winlibs/libxml2 tag libxml2-2.10.4-7.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/d963820501a091df1089d092e08f5d17e52ec537"
+          ]
+        },
+        {
+          "id": "CVE-2025-49794",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-49794",
+          "detail": "Fixed by winlibs/libxml2 schematron backport in tag libxml2-2.10.4-4."
+        },
+        {
+          "id": "CVE-2025-49795",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-49795",
+          "detail": "Fixed by the winlibs/libxml2 backport in tag libxml2-2.10.4-7.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/e5afa4ec2e052e417cd876079f7ba881105ab30d"
+          ]
+        },
+        {
+          "id": "CVE-2025-49796",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-49796",
+          "detail": "Fixed by winlibs/libxml2 schematron backport in tag libxml2-2.10.4-4."
+        },
+        {
+          "id": "CVE-2025-6021",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-6021",
+          "detail": "Fixed by the winlibs/libxml2 backport in tag libxml2-2.10.4-7.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/d723785ce7a425d67989538605469e3e65279ab9"
+          ]
+        },
+        {
+          "id": "CVE-2025-6170",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-6170",
+          "detail": "Fixed by the debugXML interactive shell buffer overflow backport in winlibs/libxml2 tag libxml2-2.10.4-7.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/35c00d862ffa065f5b1d882069e61a2164fc71a0"
+          ]
+        },
+        {
+          "id": "CVE-2025-7425",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-7425",
+          "detail": "Fixed by preserving libxslt private flag bits in winlibs/libxml2 tag libxml2-2.10.4-7.",
+          "references": [
+            "https://gitlab.gnome.org/GNOME/libxslt/-/issues/140",
+            "https://gitlab.gnome.org/GNOME/libxml2/-/commit/f1e1f13b766eb580a8dcc0c4e7a447346dfd862e"
+          ]
+        },
+        {
+          "id": "CVE-2025-8732",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-8732",
+          "detail": "Fixed by SGML catalog recursion limit backport in winlibs/libxml2 tag libxml2-2.10.4-5.",
+          "references": [
+            "https://gitlab.gnome.org/GNOME/libxml2/-/commit/eae9291aa73907694dd3a4274d306e31217e746e"
+          ]
+        },
+        {
+          "id": "CVE-2026-0989",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-0989",
+          "detail": "Fixed by the winlibs/libxml2 backport in tag libxml2-2.10.4-7.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/b5d63abd7cadb4c74497b7ba4168ee4e39c2f87c"
+          ]
+        },
+        {
+          "id": "CVE-2026-0990",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-0990",
+          "detail": "Fixed by the winlibs/libxml2 backport in tag libxml2-2.10.4-7.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/6921e4891853ebcd28288c5877020b7529cf0375"
+          ]
+        },
+        {
+          "id": "CVE-2026-0992",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-0992",
+          "detail": "Fixed by the winlibs/libxml2 backport and compatibility follow-up in tag libxml2-2.10.4-7.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/6f3e673437a625a686dc7ee23153693091cc1173",
+            "https://github.com/winlibs/libxml2/commit/ff42012a0b85a601f20ea4e6ebb988bdbe295a62"
+          ]
+        },
+        {
+          "id": "CVE-2026-1757",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-1757",
+          "detail": "Fixed by the winlibs/libxml2 backport in tag libxml2-2.10.4-7.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/d1ecfeadc65df66837b6f5d2ccec4551b769370e"
+          ]
+        },
+        {
+          "id": "CVE-2022-49043",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-49043",
+          "detail": "Fixed by backporting the upstream fix for the xmlXIncludeAddNode use-after-free in URI error reporting in winlibs/libxml2 tag libxml2-2.10.4-7.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/55cc16e7c4d7ac47a3c36ad573442ed026342062",
+            "https://gitlab.gnome.org/GNOME/libxml2/-/commit/5a19e21605398cef6a8b1452477a8705cb41562b"
+          ]
+        },
+        {
+          "id": "CVE-2023-45322",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2023-45322",
+          "detail": "Fixed by backporting the upstream DTD-copy use-after-free fix in xmlStaticCopyNodeList and its regression follow-up in winlibs/libxml2 tag libxml2-2.10.4-7.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/1ffa4ec5e3dcf0387418975a7a2482c985f1e92b",
+            "https://github.com/winlibs/libxml2/commit/c7dfe471044cb57ff340c6cd18cd7e6d69027865",
+            "https://gitlab.gnome.org/GNOME/libxml2/-/commit/d39f78069dff496ec865c73aa44d7110e429bce9",
+            "https://gitlab.gnome.org/GNOME/libxml2/-/commit/8707838e69f9c6e729c1d1d46bb3681d9e622be5"
+          ]
+        },
+        {
+          "id": "CVE-2026-11979",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-11979",
+          "detail": "Fixed by backporting the upstream bounds checks for xmlcatalog --shell command and argument parsing in winlibs/libxml2 tag libxml2-2.10.4-7.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/4b5f545c1f7a26d19d05737ea573751342046053",
+            "https://gitlab.gnome.org/GNOME/libxml2/-/commit/c2e233fc1b341685fc99621b2768b503f777a72e"
+          ]
+        }
+      ]
+    },
+    {
+      "tag": "libxml2-2.11.9-7",
+      "upstream": {
+        "repository": "GNOME/libxml2",
+        "tag": "v2.11.9",
+        "version": "2.11.9"
+      },
+      "fork": {
+        "repository": "winlibs/libxml2",
+        "tag": "libxml2-2.11.9-7"
+      },
+      "fixedCves": [
+        {
+          "id": "CVE-2024-56171",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-56171",
+          "detail": "Fixed by the winlibs/libxml2 backport in tag libxml2-2.11.9-7.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/3e2239c54bcc20495bd9dc35f80d3402179b6809"
+          ]
+        },
+        {
+          "id": "CVE-2025-24928",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-24928",
+          "detail": "Fixed by the winlibs/libxml2 backport in tag libxml2-2.11.9-7.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/f4646b65a167bcdf3f18246772b12415172545a8"
+          ]
+        },
+        {
+          "id": "CVE-2025-27113",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-27113",
+          "detail": "Fixed by winlibs/libxml2 backport in tag libxml2-2.11.9-1."
+        },
+        {
+          "id": "CVE-2025-32414",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-32414",
+          "detail": "Fixed by the winlibs/libxml2 backport in tag libxml2-2.11.9-7.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/220875f30a741ee7a4dbd3aa4cfa1e4569573ea9"
+          ]
+        },
+        {
+          "id": "CVE-2025-32415",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-32415",
+          "detail": "Fixed by the xmlSchemaIDCFillNodeTables heap buffer overflow backport in winlibs/libxml2 tag libxml2-2.11.9-7.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/bcaa5c4af33b2648371b1fff3059bf0c51abe6bd"
+          ]
+        },
+        {
+          "id": "CVE-2025-49794",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-49794",
+          "detail": "Fixed by the winlibs/libxml2 schematron backport in tag libxml2-2.11.9-7.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/781345c83817681e35f201892d3befc6b63d6129"
+          ]
+        },
+        {
+          "id": "CVE-2025-49795",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-49795",
+          "detail": "Fixed by the winlibs/libxml2 schematron backport in tag libxml2-2.11.9-7.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/21afa4ccaf8fcf64f03fc0e8fd0c65ef9770c902"
+          ]
+        },
+        {
+          "id": "CVE-2025-49796",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-49796",
+          "detail": "Fixed by the winlibs/libxml2 schematron backport in tag libxml2-2.11.9-7.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/781345c83817681e35f201892d3befc6b63d6129"
+          ]
+        },
+        {
+          "id": "CVE-2025-6021",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-6021",
+          "detail": "Fixed by the winlibs/libxml2 backport in tag libxml2-2.11.9-7.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/1aaac89c3c076a72c61263e279be47ee9e016a09"
+          ]
+        },
+        {
+          "id": "CVE-2025-6170",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-6170",
+          "detail": "Fixed by the debugXML interactive shell buffer overflow backport in winlibs/libxml2 tag libxml2-2.11.9-7.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/f7f4f1cdc447df9b0d4621ebb84fb2c690cecef4"
+          ]
+        },
+        {
+          "id": "CVE-2025-7425",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-7425",
+          "detail": "Fixed by preserving libxslt private flag bits in winlibs/libxml2 tag libxml2-2.11.9-7.",
+          "references": [
+            "https://gitlab.gnome.org/GNOME/libxslt/-/issues/140",
+            "https://gitlab.gnome.org/GNOME/libxml2/-/commit/f1e1f13b766eb580a8dcc0c4e7a447346dfd862e"
+          ]
+        },
+        {
+          "id": "CVE-2025-8732",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-8732",
+          "detail": "Fixed by SGML catalog recursion limit backport in winlibs/libxml2 tag libxml2-2.11.9-5.",
+          "references": [
+            "https://gitlab.gnome.org/GNOME/libxml2/-/commit/eae9291aa73907694dd3a4274d306e31217e746e"
+          ]
+        },
+        {
+          "id": "CVE-2026-0989",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-0989",
+          "detail": "Fixed by the winlibs/libxml2 backport in tag libxml2-2.11.9-7.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/561fa6aa2df56372746029e027125634008c6f2e"
+          ]
+        },
+        {
+          "id": "CVE-2026-0990",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-0990",
+          "detail": "Fixed by the winlibs/libxml2 backport in tag libxml2-2.11.9-7.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/d26c645cd83ae7c8d1439a696a54730af7630ff4"
+          ]
+        },
+        {
+          "id": "CVE-2026-0992",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-0992",
+          "detail": "Fixed by the winlibs/libxml2 backport and compatibility follow-up in tag libxml2-2.11.9-7.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/850597a70a2ff93de74b0be9e378f6bb4f11ade6",
+            "https://github.com/winlibs/libxml2/commit/04c5570aa73c0c1938ee9e256dbda7649dd7c479"
+          ]
+        },
+        {
+          "id": "CVE-2026-1757",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-1757",
+          "detail": "Fixed by the winlibs/libxml2 backport in tag libxml2-2.11.9-7.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/ca4540f6dcc6cb583c0835dbd5ce4dd76d1d8741"
+          ]
+        },
+        {
+          "id": "CVE-2023-45322",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2023-45322",
+          "detail": "Fixed by backporting the upstream DTD-copy use-after-free fix in xmlStaticCopyNodeList and its regression follow-up in winlibs/libxml2 tag libxml2-2.11.9-7.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/8af91ce979a7478c852a67a450774b0b3d374308",
+            "https://github.com/winlibs/libxml2/commit/f06d784607050c08a9b28b1fce2faa4236c052cf",
+            "https://gitlab.gnome.org/GNOME/libxml2/-/commit/d39f78069dff496ec865c73aa44d7110e429bce9",
+            "https://gitlab.gnome.org/GNOME/libxml2/-/commit/8707838e69f9c6e729c1d1d46bb3681d9e622be5"
+          ]
+        },
+        {
+          "id": "CVE-2026-11979",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-11979",
+          "detail": "Fixed by backporting the upstream bounds checks for xmlcatalog --shell command and argument parsing in winlibs/libxml2 tag libxml2-2.11.9-7.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/8abcf2bca49fe3ad8618d356536dc7b0cb3b3225",
+            "https://gitlab.gnome.org/GNOME/libxml2/-/commit/c2e233fc1b341685fc99621b2768b503f777a72e"
+          ]
+        }
+      ]
+    },
+    {
+      "tag": "libxml2-2.10.4-8",
+      "upstream": {
+        "repository": "GNOME/libxml2",
+        "tag": "v2.10.4",
+        "version": "2.10.4"
+      },
+      "fork": {
+        "repository": "winlibs/libxml2",
+        "tag": "libxml2-2.10.4-8"
+      },
+      "fixedCves": [
+        {
+          "id": "CVE-2024-25062",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-25062",
+          "detail": "Fixed by the XML Reader XInclude use-after-free backport in winlibs/libxml2 tag libxml2-2.10.4-8.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/1c73a6c376c2d520eaada3b92cfd4f98162356a2"
+          ]
+        },
+        {
+          "id": "CVE-2024-34459",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-34459",
+          "detail": "Fixed by the xmllint --htmlout buffer overread backport in winlibs/libxml2 tag libxml2-2.10.4-8.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/bf8478ae3fadbe0efad786f4770e4e022394b78c"
+          ]
+        },
+        {
+          "id": "CVE-2024-56171",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-56171",
+          "detail": "Fixed by the winlibs/libxml2 backport in tag libxml2-2.10.4-8.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/dd01595fc74d2746ad2888d6440f5343ac2f60dd"
+          ]
+        },
+        {
+          "id": "CVE-2025-24928",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-24928",
+          "detail": "Fixed by the winlibs/libxml2 backport in tag libxml2-2.10.4-8.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/37bebde79cb22b8c55b507c4abf19a953087b749"
+          ]
+        },
+        {
+          "id": "CVE-2025-27113",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-27113",
+          "detail": "Fixed by winlibs/libxml2 backport in tag libxml2-2.10.4-1."
+        },
+        {
+          "id": "CVE-2025-32414",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-32414",
+          "detail": "Fixed by the winlibs/libxml2 backport in tag libxml2-2.10.4-8.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/9bac466bb016cf25ced3b15989a5b850c5991d10"
+          ]
+        },
+        {
+          "id": "CVE-2025-32415",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-32415",
+          "detail": "Fixed by the xmlSchemaIDCFillNodeTables heap buffer overflow backport in winlibs/libxml2 tag libxml2-2.10.4-8.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/d963820501a091df1089d092e08f5d17e52ec537"
+          ]
+        },
+        {
+          "id": "CVE-2025-49794",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-49794",
+          "detail": "Fixed by winlibs/libxml2 schematron backport in tag libxml2-2.10.4-4."
+        },
+        {
+          "id": "CVE-2025-49795",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-49795",
+          "detail": "Fixed by the winlibs/libxml2 backport in tag libxml2-2.10.4-8.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/e5afa4ec2e052e417cd876079f7ba881105ab30d"
+          ]
+        },
+        {
+          "id": "CVE-2025-49796",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-49796",
+          "detail": "Fixed by winlibs/libxml2 schematron backport in tag libxml2-2.10.4-4."
+        },
+        {
+          "id": "CVE-2025-6021",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-6021",
+          "detail": "Fixed by the winlibs/libxml2 backport in tag libxml2-2.10.4-8.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/d723785ce7a425d67989538605469e3e65279ab9"
+          ]
+        },
+        {
+          "id": "CVE-2025-6170",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-6170",
+          "detail": "Fixed by the debugXML interactive shell buffer overflow backport in winlibs/libxml2 tag libxml2-2.10.4-8.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/35c00d862ffa065f5b1d882069e61a2164fc71a0"
+          ]
+        },
+        {
+          "id": "CVE-2025-7425",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-7425",
+          "detail": "Fixed by preserving libxslt private flag bits in winlibs/libxml2 tag libxml2-2.10.4-8.",
+          "references": [
+            "https://gitlab.gnome.org/GNOME/libxslt/-/issues/140",
+            "https://gitlab.gnome.org/GNOME/libxml2/-/commit/f1e1f13b766eb580a8dcc0c4e7a447346dfd862e"
+          ]
+        },
+        {
+          "id": "CVE-2025-8732",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-8732",
+          "detail": "Fixed by SGML catalog recursion limit backport in winlibs/libxml2 tag libxml2-2.10.4-5.",
+          "references": [
+            "https://gitlab.gnome.org/GNOME/libxml2/-/commit/eae9291aa73907694dd3a4274d306e31217e746e"
+          ]
+        },
+        {
+          "id": "CVE-2026-0989",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-0989",
+          "detail": "Fixed by the winlibs/libxml2 backport in tag libxml2-2.10.4-8.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/b5d63abd7cadb4c74497b7ba4168ee4e39c2f87c"
+          ]
+        },
+        {
+          "id": "CVE-2026-0990",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-0990",
+          "detail": "Fixed by the winlibs/libxml2 backport in tag libxml2-2.10.4-8.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/6921e4891853ebcd28288c5877020b7529cf0375"
+          ]
+        },
+        {
+          "id": "CVE-2026-0992",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-0992",
+          "detail": "Fixed by the winlibs/libxml2 backport and compatibility follow-up in tag libxml2-2.10.4-8.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/6f3e673437a625a686dc7ee23153693091cc1173",
+            "https://github.com/winlibs/libxml2/commit/ff42012a0b85a601f20ea4e6ebb988bdbe295a62"
+          ]
+        },
+        {
+          "id": "CVE-2026-1757",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-1757",
+          "detail": "Fixed by the winlibs/libxml2 backport in tag libxml2-2.10.4-8.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/d1ecfeadc65df66837b6f5d2ccec4551b769370e"
+          ]
+        },
+        {
+          "id": "CVE-2022-49043",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-49043",
+          "detail": "Fixed by backporting the upstream fix for the xmlXIncludeAddNode use-after-free in URI error reporting in winlibs/libxml2 tag libxml2-2.10.4-8.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/55cc16e7c4d7ac47a3c36ad573442ed026342062",
+            "https://gitlab.gnome.org/GNOME/libxml2/-/commit/5a19e21605398cef6a8b1452477a8705cb41562b"
+          ]
+        },
+        {
+          "id": "CVE-2023-45322",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2023-45322",
+          "detail": "Fixed by backporting the upstream DTD-copy use-after-free fix in xmlStaticCopyNodeList and its regression follow-up in winlibs/libxml2 tag libxml2-2.10.4-8.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/1ffa4ec5e3dcf0387418975a7a2482c985f1e92b",
+            "https://github.com/winlibs/libxml2/commit/c7dfe471044cb57ff340c6cd18cd7e6d69027865",
+            "https://gitlab.gnome.org/GNOME/libxml2/-/commit/d39f78069dff496ec865c73aa44d7110e429bce9",
+            "https://gitlab.gnome.org/GNOME/libxml2/-/commit/8707838e69f9c6e729c1d1d46bb3681d9e622be5"
+          ]
+        },
+        {
+          "id": "CVE-2026-11979",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-11979",
+          "detail": "Fixed by backporting the upstream bounds checks for xmlcatalog --shell command and argument parsing in winlibs/libxml2 tag libxml2-2.10.4-8.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/4b5f545c1f7a26d19d05737ea573751342046053",
+            "https://gitlab.gnome.org/GNOME/libxml2/-/commit/c2e233fc1b341685fc99621b2768b503f777a72e"
+          ]
+        },
+        {
+          "id": "CVE-2026-6653",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-6653",
+          "detail": "Fixed by backporting the upstream entity amplification accounting changes in winlibs/libxml2 tag libxml2-2.10.4-8.",
+          "references": [
+            "https://github.com/winlibs/libxml2/commit/53d3ad9aa8a1fa570ae06c05647a8930448818e2",
+            "https://gitlab.gnome.org/GNOME/libxml2/-/commit/463bbeeca1805b5c4828f50d0fefc4eebaf620df",
+            "https://gitlab.gnome.org/GNOME/libxml2/-/issues/1058"
+          ]
+        }
+      ]
+    }
+  ]
+}

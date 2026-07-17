@@ -60,6 +60,18 @@ jobs:
           del %GITHUB_WORKSPACE%\install\include\png*.h
           rmdir /s /q %GITHUB_WORKSPACE%\install\lib\libpng
           rmdir /s /q %GITHUB_WORKSPACE%\install\share
+      - name: Copy license files
+        run: xcopy libpng\LICENSE install\share\licenses\libpng\*
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library libpng
+          -Version '${{ github.event.inputs.version }}'
+          -InstallRoot 'install'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ github.event.inputs.php }}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

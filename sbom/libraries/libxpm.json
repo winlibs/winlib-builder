@@ -1,0 +1,18 @@
+{
+  "$schema": "../schema.json",
+  "component": "libxpm",
+  "version": {
+    "stripPrefixes": [
+      "libxpm-"
+    ]
+  },
+  "upstream": {
+    "url": "https://gitlab.freedesktop.org/xorg/lib/libxpm",
+    "tagTemplate": "libXpm-{version}",
+    "tagUrlTemplate": "https://gitlab.freedesktop.org/xorg/lib/libxpm/-/tree/{sourceTag}"
+  },
+  "license": {
+    "id": "MIT"
+  },
+  "purl": "pkg:generic/libxpm@{upstreamVersion}"
+}

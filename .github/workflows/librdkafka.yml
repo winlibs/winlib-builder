@@ -57,9 +57,17 @@ jobs:
           cd librdkafka
           cmake --install . --config RelWithDebInfo --prefix ${{github.workspace}}\install
           del /s /q ..\install\lib\pkgconfig
-          move ..\install\share\licenses\librdkafka\LICENSES.txt ..\install
-          ren ..\install\LICENSES.txt LICENSE
-          del /s /q ..\install\share
+          copy ..\install\share\licenses\librdkafka\LICENSES.txt ..\install\LICENSE
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library librdkafka
+          -Version '${{ inputs.version }}'
+          -InstallRoot 'install'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ inputs.php }}'
       - name: Normalize version
         id: normalize_version
         shell: pwsh

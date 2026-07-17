@@ -117,6 +117,11 @@ jobs:
       - name: Verify pkg-config files
         run: |
           powershell -NoProfile -Command "$ErrorActionPreference = 'Stop'; Get-ChildItem 'install\lib\pkgconfig\*.pc' | ForEach-Object { $text = Get-Content -Raw $_.FullName; if ($text.IndexOf('/winlib-builder/', [StringComparison]::OrdinalIgnoreCase) -ge 0) { throw ($_.Name + ' contains the runner workspace path') }; if ($text.IndexOf('prefix=${pcfiledir}/../..', [StringComparison]::Ordinal) -lt 0) { throw ($_.Name + ' does not use a relocatable prefix') } }"
+      - name: Copy license files
+        run: |
+          xcopy openldap\COPYRIGHT install\share\licenses\openldap\*
+          xcopy openldap\LICENSE install\share\licenses\openldap\*
+          xcopy rxspencer\COPYRIGHT install\share\licenses\rxspencer\*
       - name: Upload failure logs
         if: failure()
         uses: actions/upload-artifact@v4
@@ -126,6 +131,16 @@ jobs:
           path: |
             openldap/config.log
             openldap/winlibs.sh
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library openldap
+          -Version '${{ github.event.inputs.version }}'
+          -InstallRoot 'install'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ github.event.inputs.php }}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

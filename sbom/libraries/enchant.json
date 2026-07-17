@@ -1,0 +1,21 @@
+{
+  "$schema": "../schema.json",
+  "component": "libenchant2",
+  "aliases": [
+    "libenchant2"
+  ],
+  "version": {
+    "stripPrefixes": [
+      "libenchant2-",
+      "enchant-"
+    ]
+  },
+  "upstream": {
+    "repository": "AbiWord/enchant",
+    "tagTemplate": "v{version}"
+  },
+  "license": {
+    "id": "LGPL-2.1-or-later"
+  },
+  "purl": "pkg:generic/enchant@{upstreamVersion}"
+}

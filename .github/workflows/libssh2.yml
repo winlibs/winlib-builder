@@ -60,6 +60,18 @@ jobs:
           move ..\build\include1 ..\build\include\libssh2
           del /s /q ..\build\lib\pkgconfig\*
           del /s /q ..\build\share\*
+      - name: Copy license files
+        run: xcopy libssh2\COPYING build\share\licenses\libssh2\*
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library libssh2
+          -Version '${{ github.event.inputs.version }}'
+          -InstallRoot 'build'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ github.event.inputs.php }}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
