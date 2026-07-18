@@ -447,6 +447,23 @@ function Complete-VcpkgSpdxPackages {
         $override = Get-JsonProperty $Overrides $name
         $comment = [string](Get-JsonProperty $package 'comment')
 
+        $purpose = [string](Get-JsonProperty $package 'primaryPackagePurpose')
+        if ([string]::IsNullOrWhiteSpace($purpose)) {
+            $purpose = if ($comment -eq 'This is a binary package built by vcpkg.' -or $name -match ':[^:]+$') { 'LIBRARY' } else { 'SOURCE' }
+            $package | Add-Member -NotePropertyName primaryPackagePurpose -NotePropertyValue $purpose -Force
+        }
+
+        if ($package -eq $portPackage) {
+            $externalRefs = @(ConvertTo-Array (Get-JsonProperty $package 'externalRefs'))
+            if (-not ($externalRefs | Where-Object { (Get-JsonProperty $_ 'referenceType') -eq 'purl' })) {
+                $externalRefs += New-ExternalReference `
+                    -Category 'PACKAGE-MANAGER' `
+                    -Type 'purl' `
+                    -Locator "pkg:github/microsoft/vcpkg#ports/$(ConvertTo-Slug $name)"
+                $package | Add-Member -NotePropertyName externalRefs -NotePropertyValue $externalRefs -Force
+            }
+        }
+
         $version = [string](Get-JsonProperty $package 'versionInfo')
         if ([string]::IsNullOrWhiteSpace($version)) {
             $downloadLocation = [string](Get-JsonProperty $package 'downloadLocation')
