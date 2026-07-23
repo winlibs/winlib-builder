@@ -55,7 +55,6 @@ static int require_encoder(const char *id) {
 int main(void) {
 	int failed = 0;
 
-	failed |= require_format(heif_compression_HEVC, "HEVC");
 	failed |= require_format(heif_compression_AV1, "AV1");
 	failed |= require_format(heif_compression_JPEG, "JPEG-in-HEIF");
 	failed |= require_format(heif_compression_uncompressed, "uncompressed");

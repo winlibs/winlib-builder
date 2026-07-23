@@ -15,27 +15,6 @@
   "cpe": "cpe:2.3:a:struktur:libheif:{upstreamVersion}:*:*:*:*:*:*:*",
   "components": [
     {
-      "component": "libde265",
-      "sourcePath": "libde265",
-      "version": { "stripPrefixes": ["v"] },
-      "upstream": {
-        "repository": "strukturag/libde265",
-        "tagTemplate": "v{version}"
-      },
-      "license": { "id": "LGPL-3.0-only" },
-      "purl": "pkg:generic/libde265@{upstreamVersion}"
-    },
-    {
-      "component": "x265",
-      "sourcePath": "x265",
-      "upstream": {
-        "repository": "Multicorewareinc/x265",
-        "tagTemplate": "{tag}"
-      },
-      "license": { "id": "GPL-2.0-only" },
-      "purl": "pkg:generic/x265@{upstreamVersion}"
-    },
-    {
       "component": "aom",
       "sourcePath": "aom",
       "version": { "stripPrefixes": ["v"] },

@@ -11,14 +11,6 @@ on:
         description: PHP version to build for
         required: true
         default: '8.6'
-      libde265:
-        description: libde265 tag to build
-        required: true
-        default: v1.1.1
-      x265:
-        description: x265 tag to build
-        required: true
-        default: '4.2'
       aom:
         description: AOM tag to build
         required: true
@@ -51,18 +43,6 @@ jobs:
           path: libheif
           repository: winlibs/libheif
           ref: ${{ inputs.version }}
-      - name: Checkout libde265
-        uses: actions/checkout@v5
-        with:
-          path: libde265
-          repository: strukturag/libde265
-          ref: ${{ inputs.libde265 }}
-      - name: Checkout x265
-        uses: actions/checkout@v5
-        with:
-          path: x265
-          repository: Multicorewareinc/x265
-          ref: ${{ inputs.x265 }}
       - name: Checkout libjpeg-turbo
         uses: actions/checkout@v5
         with:
@@ -88,17 +68,6 @@ jobs:
           arch: ${{ matrix.arch }}
       - name: Setup Meson
         run: python -m pip install meson
-      - name: Build libde265
-        run: |
-          cmake -S libde265 -B libde265\build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="%GITHUB_WORKSPACE%\deps" -DBUILD_SHARED_LIBS=OFF -DFORCE_FULL_VISIBILITY=ON -DENABLE_SDL=OFF -DENABLE_DECODER=ON -DENABLE_ENCODER=OFF -DENABLE_SHERLOCK265=OFF -DENABLE_INTERNAL_DEVELOPMENT_TOOLS=OFF -DWITH_FUZZERS=OFF
-          cmake --build libde265\build --config Release
-          cmake --install libde265\build --config Release
-      - name: Build x265
-        run: |
-          cmake -S x265\source -B x265\build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="%GITHUB_WORKSPACE%\deps" -DENABLE_SHARED=OFF -DENABLE_CLI=OFF -DSTATIC_LINK_CRT=OFF -DENABLE_LIBNUMA=OFF
-          cmake --build x265\build --config Release
-          cmake --install x265\build --config Release
-          copy /Y x265\build\x265-static.lib deps\lib\x265.lib
       - name: Configure AOM
         run: cmake -S aom -B aom\build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="%GITHUB_WORKSPACE%\deps" -DBUILD_SHARED_LIBS=OFF -DENABLE_DOCS=OFF -DENABLE_EXAMPLES=OFF -DENABLE_TESTDATA=OFF -DENABLE_TESTS=OFF -DENABLE_TOOLS=OFF -DENABLE_NASM=ON
       - name: Build AOM
@@ -127,7 +96,6 @@ jobs:
           -DCMAKE_PREFIX_PATH="%GITHUB_WORKSPACE%\deps"
           -DCMAKE_INCLUDE_PATH="%GITHUB_WORKSPACE%\deps\include"
           -DCMAKE_LIBRARY_PATH="%GITHUB_WORKSPACE%\deps\lib"
-          -DCMAKE_CXX_FLAGS=/DLIBDE265_STATIC_BUILD
           -DBUILD_SHARED_LIBS=ON
           -DBUILD_TESTING=OFF
           -DBUILD_DOCUMENTATION=OFF
@@ -137,14 +105,6 @@ jobs:
           -DWITH_EXAMPLES=OFF
           -DWITH_GDK_PIXBUF=OFF
           -DWITH_FUZZERS=OFF
-          -DWITH_LIBDE265=ON
-          -DWITH_LIBDE265_PLUGIN=OFF
-          -DLIBDE265_INCLUDE_DIR="%CMAKE_WORKSPACE%/deps/include"
-          -DLIBDE265_LIBRARY="%CMAKE_WORKSPACE%/deps/lib/libde265.lib"
-          -DWITH_X265=ON
-          -DWITH_X265_PLUGIN=OFF
-          -DX265_INCLUDE_DIR="%CMAKE_WORKSPACE%/deps/include"
-          -DX265_LIBRARY="%CMAKE_WORKSPACE%/deps/lib/x265.lib"
           -DWITH_AOM_DECODER=ON
           -DWITH_AOM_DECODER_PLUGIN=OFF
           -DWITH_AOM_ENCODER=ON
@@ -185,7 +145,7 @@ jobs:
           -DCMAKE_PREFIX_PATH="%GITHUB_WORKSPACE%\deps"
           -DCMAKE_INCLUDE_PATH="%GITHUB_WORKSPACE%\deps\include"
           -DCMAKE_LIBRARY_PATH="%GITHUB_WORKSPACE%\deps\lib"
-          "-DCMAKE_CXX_FLAGS=/DLIBDE265_STATIC_BUILD /DLIBHEIF_STATIC_BUILD"
+          "-DCMAKE_CXX_FLAGS=/DLIBHEIF_STATIC_BUILD"
           -DBUILD_SHARED_LIBS=OFF
           -DBUILD_TESTING=OFF
           -DBUILD_DOCUMENTATION=OFF
@@ -195,14 +155,6 @@ jobs:
           -DWITH_EXAMPLES=OFF
           -DWITH_GDK_PIXBUF=OFF
           -DWITH_FUZZERS=OFF
-          -DWITH_LIBDE265=ON
-          -DWITH_LIBDE265_PLUGIN=OFF
-          -DLIBDE265_INCLUDE_DIR="%CMAKE_WORKSPACE%/deps/include"
-          -DLIBDE265_LIBRARY="%CMAKE_WORKSPACE%/deps/lib/libde265.lib"
-          -DWITH_X265=ON
-          -DWITH_X265_PLUGIN=OFF
-          -DX265_INCLUDE_DIR="%CMAKE_WORKSPACE%/deps/include"
-          -DX265_LIBRARY="%CMAKE_WORKSPACE%/deps/lib/x265.lib"
           -DWITH_AOM_DECODER=ON
           -DWITH_AOM_DECODER_PLUGIN=OFF
           -DWITH_AOM_ENCODER=ON
@@ -247,8 +199,6 @@ jobs:
           copy /Y libheif\build-static\libheif\heif.lib install\lib\heif_a.lib
           if errorlevel 1 exit /b %errorlevel%
           if exist libheif\build-static\libheif\heif.pdb copy /Y libheif\build-static\libheif\heif.pdb install\lib\heif_a.pdb
-          copy /Y deps\lib\libde265.lib install\lib\libde265_a.lib
-          copy /Y deps\lib\x265.lib install\lib\x265_a.lib
           copy /Y deps\lib\aom.lib install\lib\aom_a.lib
           copy /Y deps\lib\libdav1d.a install\lib\dav1d_a.lib
       - name: Verify libheif codecs
@@ -262,7 +212,7 @@ jobs:
           set PATH=%GITHUB_WORKSPACE%\install\bin;%PATH%
           check-libheif-shared.exe
           if errorlevel 1 exit /b %errorlevel%
-          cl /nologo /W3 /MD /DLIBHEIF_STATIC_BUILD /Iinstall\include winlib-builder\.github\ci\check-libheif.c /link /LIBPATH:install\lib /LIBPATH:deps\lib heif_a.lib libde265_a.lib x265_a.lib aom_a.lib dav1d_a.lib jpeg.lib Advapi32.lib /OUT:check-libheif-static.exe
+          cl /nologo /W3 /MD /DLIBHEIF_STATIC_BUILD /Iinstall\include winlib-builder\.github\ci\check-libheif.c /link /LIBPATH:install\lib /LIBPATH:deps\lib heif_a.lib aom_a.lib dav1d_a.lib jpeg.lib Advapi32.lib /OUT:check-libheif-static.exe
           if errorlevel 1 exit /b %errorlevel%
           check-libheif-static.exe
       - name: Remove private metadata
@@ -270,8 +220,6 @@ jobs:
       - name: Copy license files
         run: |
           xcopy libheif\COPYING install\share\licenses\libheif\*
-          xcopy libde265\COPYING install\share\licenses\libde265\*
-          xcopy x265\COPYING install\share\licenses\x265\*
           xcopy aom\LICENSE install\share\licenses\aom\*
           xcopy aom\PATENTS install\share\licenses\aom\*
           xcopy dav1d\COPYING install\share\licenses\dav1d\*
