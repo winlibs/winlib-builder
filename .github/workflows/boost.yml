@@ -43,7 +43,13 @@ jobs:
           if ($release -notmatch '^\d+\.\d+\.\d+$') {
               throw "Unsupported Boost tag: $env:BOOST_TAG"
           }
-          $msvc = if ('${{ steps.virtuals.outputs.vs }}' -eq 'vs16') { '14.2' } else { '14.3' }
+          $msvc = switch ('${{ steps.virtuals.outputs.vs }}') {
+              'vc15' { '14.1' }
+              'vs16' { '14.2' }
+              'vs17' { '14.3' }
+              'vs18' { '14.5' }
+              default { throw "Unsupported Visual Studio ABI: ${{ steps.virtuals.outputs.vs }}" }
+          }
           $addressModel = if ('${{ matrix.arch }}' -eq 'x64') { '64' } else { '32' }
           "release=$release" >> $env:GITHUB_OUTPUT
           "directory=boost_$($release -replace '\.', '_')" >> $env:GITHUB_OUTPUT
