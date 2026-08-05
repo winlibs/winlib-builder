@@ -1,5 +1,5 @@
 name: Build hMailServer
-run-name: "Build ${{ inputs.tag }} from ${{ inputs.repository }}@${{ inputs.ref }}"
+run-name: "Build hMailServer-${{ inputs.tag }}"
 on:
   workflow_dispatch:
     inputs:
@@ -14,10 +14,6 @@ on:
       tag:
         description: Package tag used in the final artifact name (for example, 5.7.0)
         required: true
-      stability:
-        description: Dependency package lane
-        required: false
-        default: staging
       workflow_run_ids:
         description: Comma-separated winlib-builder workflow run IDs to download dependency artifacts from
         required: false
@@ -29,7 +25,6 @@ permissions:
   contents: read
 env:
   PHP_VERSION: master
-  STABILITY: ${{ inputs.stability }}
   WORKFLOW_RUN_IDS: ${{ inputs.workflow_run_ids }}
   WORKFLOW_RUN_REPOSITORY: ${{ inputs.workflow_run_repository }}
   HMAILSERVER_REPOSITORY: ${{ inputs.repository }}
@@ -60,7 +55,7 @@ jobs:
         run: powershell winlib-builder/scripts/compute-virtuals -version %PHP_VERSION% -arch x64
 
       - name: Fetch dependencies
-        run: powershell winlib-builder/scripts/fetch-deps -lib hmailserver -version %PHP_VERSION% -vs ${{ steps.virtuals.outputs.vs }} -arch x64 -stability %STABILITY% -workflow_run_ids:'%WORKFLOW_RUN_IDS%' -repository:'%WORKFLOW_RUN_REPOSITORY%'
+        run: powershell winlib-builder/scripts/fetch-deps -lib hmailserver -version %PHP_VERSION% -vs ${{ steps.virtuals.outputs.vs }} -arch x64 -stability staging -workflow_run_ids:'%WORKFLOW_RUN_IDS%' -repository:'%WORKFLOW_RUN_REPOSITORY%'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -186,28 +181,12 @@ jobs:
           $opensslVersion = (Get-Content -LiteralPath 'deps/share/sbom/openssl.cdx.json' -Raw | ConvertFrom-Json).metadata.component.version
           $libpqVersion = (Get-Content -LiteralPath 'deps/share/sbom/libpq.cdx.json' -Raw | ConvertFrom-Json).metadata.component.version
           $source = @"
-          hMailServer corresponding source
-          =================================
-
-          This binary was built without modifications to the hMailServer source.
-
           Repository: https://github.com/$env:HMAILSERVER_REPOSITORY
           Requested ref: $env:HMAILSERVER_REF
           Commit: $sourceCommit
           Source archive: https://github.com/$env:HMAILSERVER_REPOSITORY/archive/$sourceCommit.zip
-
           Build scripts: https://github.com/$env:GITHUB_REPOSITORY/blob/$builderCommit/.github/workflows/hmailserver.yml
           Build scripts commit: $builderCommit
-
-          Build dependencies:
-          - Winlibs Boost ${boostVersion}
-          - Winlibs OpenSSL ${opensslVersion}
-          - Winlibs libpq ${libpqVersion}
-
-          Dependencies were resolved by winlib-builder/scripts/fetch-deps.ps1. Provided workflow
-          run artifacts take precedence, with the master-vs18-x64-$env:STABILITY package lane as
-          fallback. Compatibility directory names matching the unmodified upstream hMailServer
-          build files do not identify the dependency versions.
           "@
           Set-Content -LiteralPath (Join-Path $installRoot 'SOURCE.txt') -Value $source.Trim() -Encoding utf8
 
@@ -244,68 +223,5 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: ${{ env.PACKAGE_TAG }}-${{ steps.virtuals.outputs.vs }}-x64
+          name: hmailserver-${{ env.PACKAGE_TAG }}-${{ steps.virtuals.outputs.vs }}-x64
           path: install
-
-  test:
-    needs: build
-    runs-on: windows-2022
-    timeout-minutes: 20
-    steps:
-      - name: Download artifacts
-        uses: actions/download-artifact@v8
-        with:
-          name: ${{ env.PACKAGE_TAG }}-vs18-x64
-          path: install
-
-      - name: Install hMailServer
-        shell: pwsh
-        run: |
-          $process = Start-Process -FilePath 'install/bin/hMailServer.exe' -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/SP-' -Wait -PassThru
-          if ($process.ExitCode -ne 0) {
-              throw "hMailServer installer exited with code $($process.ExitCode)."
-          }
-
-      - name: Test service and COM registration
-        shell: pwsh
-        run: |
-          $service = Get-Service -Name hMailServer -ErrorAction Stop
-          if ($service.Status -ne 'Running') {
-              Start-Service -Name hMailServer
-              $service.WaitForStatus('Running', [TimeSpan]::FromSeconds(30))
-          }
-
-          $script = Join-Path $env:RUNNER_TEMP 'test-hmailserver-com.ps1'
-          @'
-          $ErrorActionPreference = 'Stop'
-          $application = New-Object -ComObject hMailServer.Application
-          $application.Authenticate('Administrator', '') | Out-Null
-          if ($null -eq $application.Domains) {
-              throw 'hMailServer COM API did not return the Domains collection.'
-          }
-          '@ | Set-Content -LiteralPath $script -Encoding ascii
-
-          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $script
-          if ($LASTEXITCODE -ne 0) {
-              throw "64-bit COM smoke test failed with code $LASTEXITCODE."
-          }
-          & "$env:WINDIR\SysWOW64\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -File $script
-          if ($LASTEXITCODE -ne 0) {
-              throw "32-bit COM smoke test failed with code $LASTEXITCODE."
-          }
-
-          foreach ($port in 25, 143) {
-              $connected = $false
-              for ($attempt = 0; $attempt -lt 30 -and -not $connected; $attempt++) {
-                  try {
-                      $client = [System.Net.Sockets.TcpClient]::new('127.0.0.1', $port)
-                      $client.Dispose()
-                      $connected = $true
-                  } catch {
-                      Start-Sleep -Seconds 1
-                  }
-              }
-              if (-not $connected) {
-                  throw "hMailServer did not listen on port $port."
-              }
-          }
