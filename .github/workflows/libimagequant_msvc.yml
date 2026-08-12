@@ -1,0 +1,49 @@
+name: Build libimagequant_msvc
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: libimagequant tag to build
+        required: true
+      php:
+        description: PHP version to build for
+        required: true
+defaults:
+  run:
+    shell: cmd
+jobs:
+  build:
+    strategy:
+      matrix:
+          arch: [x64, x86]
+    runs-on: windows-2022
+    steps:
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v4
+        with:
+          path: winlib-builder
+      - name: Checkout libimagequant
+        uses: actions/checkout@v4
+        with:
+          path: libimagequant
+          repository: ImageOptim/libimagequant
+          ref: ${{github.event.inputs.version}}
+      - name: Patch libimagequant
+        run: cd libimagequant && git apply --ignore-whitespace ..\winlib-builder\patches\libimagequant_msvc.patch
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+      - name: Configure libimagequant
+        run: cd libimagequant && md build && cd build && cmake -G "Visual Studio 17 2022" -A ${{steps.virtuals.outputs.msarch}} -T ${{steps.virtuals.outputs.msts}} -DCMAKE_SYSTEM_VERSION=${{steps.virtuals.outputs.winsdk}} --install-prefix ${{github.workspace}}\install ..
+      - name: Build libimagequant
+        run: cd libimagequant\build && cmake --build . --config RelWithDebInfo
+      - name: Install libimagequant
+        run: |
+          cd libimagequant\build
+          cmake --install . --config RelWithDebInfo
+          xcopy RelWithDebInfo\imagequant.pdb ..\..\install\bin\*
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{github.event.inputs.version}}-${{steps.virtuals.outputs.vs}}-${{matrix.arch}}
+          path: install
