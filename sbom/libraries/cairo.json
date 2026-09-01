@@ -1,0 +1,36 @@
+{
+  "$schema": "../schema.json",
+  "component": "cairo",
+  "sourcePath": "cairo",
+  "version": {
+    "stripPrefixes": ["cairo-", "v"]
+  },
+  "upstream": {
+    "url": "https://gitlab.freedesktop.org/cairo/cairo",
+    "tagTemplate": "{version}",
+    "tagUrlTemplate": "https://gitlab.freedesktop.org/cairo/cairo/-/tree/{sourceTag}"
+  },
+  "license": {
+    "expression": "LGPL-2.1-only OR MPL-1.1"
+  },
+  "purl": "pkg:generic/cairo@{upstreamVersion}",
+  "cpe": "cpe:2.3:a:cairographics:cairo:{upstreamVersion}:*:*:*:*:*:*:*",
+  "components": [
+    {
+      "component": "pixman",
+      "sourcePath": "cairo/subprojects/pixman",
+      "version": {
+        "stripPrefixes": ["pixman-", "v"]
+      },
+      "upstream": {
+        "url": "https://gitlab.freedesktop.org/pixman/pixman",
+        "tagTemplate": "pixman-{version}",
+        "tagUrlTemplate": "https://gitlab.freedesktop.org/pixman/pixman/-/tree/{sourceTag}"
+      },
+      "license": {
+        "id": "MIT"
+      },
+      "purl": "pkg:generic/pixman@{upstreamVersion}"
+    }
+  ]
+}

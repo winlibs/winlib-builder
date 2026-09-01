@@ -1,0 +1,49 @@
+{
+  "$schema": "../schema.json",
+  "component": "pango",
+  "sourcePath": "pango",
+  "version": {
+    "stripPrefixes": ["pango-", "v"]
+  },
+  "upstream": {
+    "repository": "GNOME/pango",
+    "tagTemplate": "{version}"
+  },
+  "license": {
+    "id": "LGPL-2.1-or-later"
+  },
+  "purl": "pkg:generic/pango@{upstreamVersion}",
+  "cpe": "cpe:2.3:a:gnome:pango:{upstreamVersion}:*:*:*:*:*:*:*",
+  "components": [
+    {
+      "component": "harfbuzz",
+      "sourcePath": "pango/subprojects/harfbuzz",
+      "version": {
+        "stripPrefixes": ["harfbuzz-", "v"]
+      },
+      "upstream": {
+        "repository": "harfbuzz/harfbuzz",
+        "tagTemplate": "{version}"
+      },
+      "license": {
+        "id": "MIT"
+      },
+      "purl": "pkg:generic/harfbuzz@{upstreamVersion}"
+    },
+    {
+      "component": "fribidi",
+      "sourcePath": "pango/subprojects/fribidi",
+      "version": {
+        "stripPrefixes": ["fribidi-", "v"]
+      },
+      "upstream": {
+        "repository": "fribidi/fribidi",
+        "tagTemplate": "v{version}"
+      },
+      "license": {
+        "id": "LGPL-2.1-or-later"
+      },
+      "purl": "pkg:generic/fribidi@{upstreamVersion}"
+    }
+  ]
+}

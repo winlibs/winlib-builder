@@ -11,12 +11,14 @@ param (
 $ErrorActionPreference = "Stop"
 
 $deps = @{
+    "cairo" = "libpng", "zlib";
     "curl" = "brotli", "libssh2", "libzstd", "nghttp2", "openssl", "zlib";
     "cyrus-sasl" = "liblmdb", "openssl", "sqlite3";
     "enchant" = "glib";
     "glib" = "libffi", "libintl", "zlib";
     "hmailserver" = "boost", "openssl", "libpq";
     "libpng" = "zlib";
+    "librrd" = "cairo", "glib", "libffi", "libiconv", "libintl", "libpng", "libxml2", "pango", "zlib";
     "libjxl" = "brotli";
     "librdkafka" = "libzstd", "openssl", "zlib";
     "libssh2" = "openssl", "zlib";
@@ -27,6 +29,7 @@ $deps = @{
     "libzip" = "libbzip2", "zlib";
     "net-snmp" = "openssl";
     "openldap" = "openssl", "libsasl";
+    "pango" = "cairo", "glib", "libpng", "zlib";
     "postgresql" = "openssl"
 }
 if ($version -ge "8.0") {

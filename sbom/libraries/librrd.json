@@ -1,0 +1,19 @@
+{
+  "$schema": "../schema.json",
+  "component": "librrd",
+  "aliases": ["rrdtool", "rrdtool-1.x"],
+  "sourcePath": "rrdtool",
+  "version": {
+    "stripPrefixes": ["librrd-", "rrdtool-", "v"]
+  },
+  "upstream": {
+    "repository": "oetiker/rrdtool-1.x",
+    "tagTemplate": "v{version}"
+  },
+  "license": {
+    "licenseRef": "LicenseRef-RRDtool-GPL-2.0-or-later-with-FLOSS-exception",
+    "name": "GNU GPL 2.0 or later with RRDtool FLOSS exception",
+    "textFiles": ["COPYRIGHT"]
+  },
+  "purl": "pkg:generic/librrd@{upstreamVersion}"
+}

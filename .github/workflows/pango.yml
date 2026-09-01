@@ -1,0 +1,324 @@
+name: Build pango
+run-name: "Build pango-${{ inputs.version }} for PHP ${{ inputs.php }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Pango tag to build
+        required: true
+        default: 1.58.0
+      harfbuzz:
+        description: HarfBuzz tag to embed
+        required: true
+        default: 14.2.1
+      fribidi:
+        description: FriBidi tag to embed
+        required: true
+        default: v1.0.16
+      php:
+        description: PHP version to build for
+        required: true
+        default: '8.6'
+      stability:
+        description: The dependency series stability
+        required: false
+        default: staging
+      workflow_run_ids:
+        description: Comma-separated winlib-builder workflow run IDs to download dependency artifacts from
+        required: false
+
+permissions:
+  actions: read
+  contents: read
+
+defaults:
+  run:
+    shell: cmd
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x64, x86]
+    runs-on: ${{ (inputs.php == '8.6' || inputs.php == 'master') && 'windows-2025-vs2026' || 'windows-2022' }}
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v6
+        with:
+          path: winlib-builder
+
+      - name: Checkout Pango
+        uses: actions/checkout@v6
+        with:
+          repository: GNOME/pango
+          ref: ${{ inputs.version }}
+          path: pango
+
+      - name: Checkout HarfBuzz
+        uses: actions/checkout@v6
+        with:
+          repository: harfbuzz/harfbuzz
+          ref: ${{ inputs.harfbuzz }}
+          path: pango/subprojects/harfbuzz
+
+      - name: Checkout FriBidi
+        uses: actions/checkout@v6
+        with:
+          repository: fribidi/fribidi
+          ref: ${{ inputs.fribidi }}
+          path: pango/subprojects/fribidi
+
+      - name: Checkout legacy GLib build tools
+        if: inputs.php == '8.0' || inputs.php == '8.1'
+        uses: actions/checkout@v6
+        with:
+          repository: winlibs/glib
+          ref: glib-2.53.3-1
+          path: legacy-glib
+
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{ inputs.php }} -arch ${{ matrix.arch }}
+
+      - name: Fetch dependencies
+        run: powershell winlib-builder/scripts/fetch-deps -lib pango -version ${{ inputs.php }} -vs ${{ steps.virtuals.outputs.vs }} -arch ${{ matrix.arch }} -stability ${{ inputs.stability }} -workflow_run_ids:'${{ inputs.workflow_run_ids }}'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup MSVC development environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.arch }}
+          toolset: ${{ steps.virtuals.outputs.toolset }}
+
+      - name: Setup Meson and pkg-config
+        run: |
+          python -m pip install meson
+          choco install pkgconfiglite --no-progress -y
+
+      - name: Prepare Meson dependencies
+        shell: pwsh
+        run: |
+          .\winlib-builder\.github\ci\prepare-meson-deps.ps1 -Library pango
+          "PKG_CONFIG_PATH=$((Resolve-Path deps\lib\pkgconfig).Path)" >> $env:GITHUB_ENV
+
+      - name: Provide missing legacy glib-mkenums
+        if: inputs.php == '8.0' || inputs.php == '8.1'
+        shell: pwsh
+        run: |
+          $target = 'deps/bin/glib-mkenums'
+          if (-not (Test-Path -LiteralPath $target)) {
+              $content = Get-Content -LiteralPath 'legacy-glib/gobject/glib-mkenums.in' -Raw
+              $content = $content.Replace('@PERL_PATH@', 'perl').Replace('@GLIB_VERSION@', '2.53.3')
+              Set-Content -LiteralPath $target -Value $content -Encoding ASCII
+          }
+
+      - name: Adapt Pango to the legacy GLib runtime
+        if: inputs.php == '8.0' || inputs.php == '8.1'
+        shell: pwsh
+        run: |
+          $path = 'pango/meson.build'
+          $content = Get-Content -LiteralPath $path -Raw
+          $content = $content.Replace('glib_minor_req = 82', 'glib_minor_req = 52')
+          Set-Content -LiteralPath $path -Value $content -Encoding UTF8
+
+      - name: Configure Pango
+        run: >-
+          meson setup pango\build pango
+          --backend ninja
+          --buildtype debugoptimized
+          --default-library shared
+          --prefix "%GITHUB_WORKSPACE%\stage"
+          --libdir lib
+          --includedir include
+          --force-fallback-for=harfbuzz,fribidi
+          -Dc_std=${{ (inputs.php == '8.0' || inputs.php == '8.1') && 'c99' || 'gnu11' }}
+          -Db_ndebug=true
+          -Ddocumentation=false
+          -Dman-pages=false
+          -Dintrospection=disabled
+          -Dbuild-testsuite=false
+          -Dbuild-examples=false
+          -Dfontconfig=disabled
+          -Dsysprof=disabled
+          -Dlibthai=disabled
+          -Dcairo=enabled
+          -Dxft=disabled
+          -Dfreetype=disabled
+          -Dfribidi:default_library=static
+          -Dfribidi:docs=false
+          -Dfribidi:bin=false
+          -Dfribidi:tests=false
+          -Dharfbuzz:default_library=static
+          -Dharfbuzz:glib=disabled
+          -Dharfbuzz:gobject=disabled
+          -Dharfbuzz:cairo=disabled
+          -Dharfbuzz:chafa=disabled
+          -Dharfbuzz:png=disabled
+          -Dharfbuzz:zlib=disabled
+          -Dharfbuzz:icu=disabled
+          -Dharfbuzz:graphite=disabled
+          -Dharfbuzz:graphite2=disabled
+          -Dharfbuzz:freetype=disabled
+          -Dharfbuzz:coretext=disabled
+          -Dharfbuzz:directwrite=enabled
+          -Dharfbuzz:gdi=enabled
+          -Dharfbuzz:raster=disabled
+          -Dharfbuzz:vector=disabled
+          -Dharfbuzz:gpu=disabled
+          -Dharfbuzz:gpu_demo=disabled
+          -Dharfbuzz:subset=disabled
+          -Dharfbuzz:tests=disabled
+          -Dharfbuzz:introspection=disabled
+          -Dharfbuzz:docs=disabled
+          -Dharfbuzz:utilities=disabled
+          -Dharfbuzz:benchmark=disabled
+
+      - name: Configure static Pango
+        env:
+          CFLAGS: /DGIO_STATIC_COMPILATION /DGOBJECT_STATIC_COMPILATION /DCAIRO_WIN32_STATIC_BUILD
+          CXXFLAGS: /DGIO_STATIC_COMPILATION /DGOBJECT_STATIC_COMPILATION /DCAIRO_WIN32_STATIC_BUILD
+        run: >-
+          meson setup pango\build-static pango
+          --backend ninja
+          --buildtype debugoptimized
+          --default-library static
+          --prefix "%GITHUB_WORKSPACE%\stage-static"
+          --libdir lib
+          --includedir include
+          --force-fallback-for=harfbuzz,fribidi
+          -Dc_std=${{ (inputs.php == '8.0' || inputs.php == '8.1') && 'c99' || 'gnu11' }}
+          -Db_ndebug=true
+          -Ddocumentation=false
+          -Dman-pages=false
+          -Dintrospection=disabled
+          -Dbuild-testsuite=false
+          -Dbuild-examples=false
+          -Dfontconfig=disabled
+          -Dsysprof=disabled
+          -Dlibthai=disabled
+          -Dcairo=enabled
+          -Dxft=disabled
+          -Dfreetype=disabled
+          -Dfribidi:default_library=static
+          -Dfribidi:docs=false
+          -Dfribidi:bin=false
+          -Dfribidi:tests=false
+          -Dharfbuzz:default_library=static
+          -Dharfbuzz:glib=disabled
+          -Dharfbuzz:gobject=disabled
+          -Dharfbuzz:cairo=disabled
+          -Dharfbuzz:chafa=disabled
+          -Dharfbuzz:png=disabled
+          -Dharfbuzz:zlib=disabled
+          -Dharfbuzz:icu=disabled
+          -Dharfbuzz:graphite=disabled
+          -Dharfbuzz:graphite2=disabled
+          -Dharfbuzz:freetype=disabled
+          -Dharfbuzz:coretext=disabled
+          -Dharfbuzz:directwrite=enabled
+          -Dharfbuzz:gdi=enabled
+          -Dharfbuzz:raster=disabled
+          -Dharfbuzz:vector=disabled
+          -Dharfbuzz:gpu=disabled
+          -Dharfbuzz:gpu_demo=disabled
+          -Dharfbuzz:subset=disabled
+          -Dharfbuzz:tests=disabled
+          -Dharfbuzz:introspection=disabled
+          -Dharfbuzz:docs=disabled
+          -Dharfbuzz:utilities=disabled
+          -Dharfbuzz:benchmark=disabled
+
+      - name: Add legacy GLib compatibility definitions
+        if: inputs.php == '8.0' || inputs.php == '8.1'
+        shell: pwsh
+        run: |
+          $compat = Get-Content -LiteralPath 'winlib-builder/.github/ci/pango-glib-compat.h' -Raw
+          foreach ($path in @('pango/build/config.h', 'pango/build-static/config.h')) {
+              Add-Content -LiteralPath $path -Value $compat -Encoding UTF8
+          }
+
+      - name: Build and install Pango
+        run: |
+          meson compile -C pango\build
+          if errorlevel 1 exit /b %errorlevel%
+          meson install -C pango\build
+          if errorlevel 1 exit /b %errorlevel%
+          meson compile -C pango\build-static
+          if errorlevel 1 exit /b %errorlevel%
+          meson install -C pango\build-static
+
+      - name: Stage Pango artifact
+        shell: pwsh
+        run: |
+          New-Item install/bin, install/include, install/lib -ItemType Directory -Force | Out-Null
+          Copy-Item pango/COPYING install/COPYING
+          Copy-Item stage/include/pango-1.0 install/include/pango-1.0 -Recurse
+          Copy-Item stage/include/harfbuzz install/include/harfbuzz -Recurse
+          foreach ($name in @('pango-1.0-0', 'pangowin32-1.0-0', 'pangocairo-1.0-0')) {
+              Copy-Item "stage/bin/$name.dll" "install/bin/$name.dll"
+              $pdb = @(Get-ChildItem pango/build -Filter "$name.pdb" -Recurse)
+              if ($pdb.Count -ne 1) {
+                  throw "Expected one $name linker PDB, found $($pdb.Count)"
+              }
+              Copy-Item $pdb[0].FullName "install/bin/$name.pdb"
+          }
+          foreach ($name in @('pango-1.0', 'pangowin32-1.0', 'pangocairo-1.0')) {
+              Copy-Item "stage/lib/$name.lib" "install/lib/$name.lib"
+              $candidates = @(
+                  "stage-static/lib/$name.lib"
+                  "stage-static/lib/lib$name.a"
+              ) | Where-Object { Test-Path $_ }
+              if ($candidates.Count -ne 1) {
+                  throw "Expected one static $name library, found $($candidates.Count)"
+              }
+              Copy-Item $candidates "install/lib/${name}_a.lib"
+          }
+          foreach ($library in @('harfbuzz', 'fribidi')) {
+              $archives = @(
+                  "stage-static/lib/$library.lib"
+                  "stage-static/lib/lib$library.a"
+              ) | Where-Object { Test-Path $_ }
+              if ($archives.Count -ne 1) {
+                  throw "Expected one static $library library, found $($archives.Count)"
+              }
+              Copy-Item $archives "install/lib/${library}_a.lib"
+          }
+
+      - name: Normalize version
+        id: version
+        shell: pwsh
+        run: |
+          $version = '${{ inputs.version }}' -replace '^pango-', '' -replace '^v', ''
+          if ($version -notmatch '^\d+\.\d+\.\d+$') {
+              throw "Unsupported Pango tag: ${{ inputs.version }}"
+          }
+          "value=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Copy license files
+        run: |
+          xcopy /I /Y pango\COPYING install\share\licenses\pango\*
+          xcopy /I /Y pango\subprojects\harfbuzz\COPYING install\share\licenses\harfbuzz\*
+          xcopy /I /Y pango\subprojects\fribidi\COPYING install\share\licenses\fribidi\*
+
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library pango
+          -Version '${{ inputs.version }}'
+          -InstallRoot 'install'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ inputs.php }}'
+          -DependencyRoot 'deps'
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: pango-${{ steps.version.outputs.value }}-${{ steps.virtuals.outputs.vs }}-${{ matrix.arch }}
+          path: install

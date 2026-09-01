@@ -1,0 +1,216 @@
+name: Build cairo
+run-name: "Build cairo-${{ inputs.version }} for PHP ${{ inputs.php }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Cairo tag to build
+        required: true
+        default: 1.18.4
+      pixman:
+        description: Pixman tag to embed
+        required: true
+        default: pixman-0.46.4
+      php:
+        description: PHP version to build for
+        required: true
+        default: '8.6'
+      stability:
+        description: The dependency series stability
+        required: false
+        default: staging
+      workflow_run_ids:
+        description: Comma-separated winlib-builder workflow run IDs to download dependency artifacts from
+        required: false
+
+permissions:
+  actions: read
+  contents: read
+
+defaults:
+  run:
+    shell: cmd
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x64, x86]
+    runs-on: ${{ (inputs.php == '8.6' || inputs.php == 'master') && 'windows-2025-vs2026' || 'windows-2022' }}
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v6
+        with:
+          path: winlib-builder
+
+      - name: Checkout Cairo and Pixman
+        run: |
+          git clone --depth 1 --branch ${{ inputs.version }} https://gitlab.freedesktop.org/cairo/cairo.git cairo
+          git clone --depth 1 --branch ${{ inputs.pixman }} https://gitlab.freedesktop.org/pixman/pixman.git cairo\subprojects\pixman
+
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{ inputs.php }} -arch ${{ matrix.arch }}
+
+      - name: Fetch dependencies
+        run: powershell winlib-builder/scripts/fetch-deps -lib cairo -version ${{ inputs.php }} -vs ${{ steps.virtuals.outputs.vs }} -arch ${{ matrix.arch }} -stability ${{ inputs.stability }} -workflow_run_ids:'${{ inputs.workflow_run_ids }}'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup MSVC development environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.arch }}
+          toolset: ${{ steps.virtuals.outputs.toolset }}
+
+      - name: Setup Meson and pkg-config
+        run: |
+          python -m pip install meson
+          choco install pkgconfiglite --no-progress -y
+
+      - name: Prepare Meson dependencies
+        shell: pwsh
+        run: |
+          .\winlib-builder\.github\ci\prepare-meson-deps.ps1 -Library cairo
+          "PKG_CONFIG_PATH=$((Resolve-Path deps\lib\pkgconfig).Path)" >> $env:GITHUB_ENV
+
+      - name: Configure Cairo
+        run: >-
+          meson setup cairo\build cairo
+          --backend ninja
+          --buildtype debugoptimized
+          --default-library shared
+          --prefix "%GITHUB_WORKSPACE%\stage"
+          --libdir lib
+          --includedir include
+          --force-fallback-for=pixman-1
+          -Db_ndebug=true
+          -Ddwrite=enabled
+          -Dfontconfig=disabled
+          -Dfreetype=disabled
+          -Dpng=enabled
+          -Dquartz=disabled
+          -Dtee=disabled
+          -Dxcb=disabled
+          -Dxlib=disabled
+          -Dxlib-xcb=disabled
+          -Dzlib=enabled
+          -Dtests=disabled
+          -Dlzo=disabled
+          -Dgtk2-utils=disabled
+          -Dglib=disabled
+          -Dspectre=disabled
+          -Dsymbol-lookup=disabled
+          -Dgtk_doc=false
+          -Dpixman:default_library=static
+          -Dpixman:tests=disabled
+          -Dpixman:demos=disabled
+          -Dpixman:gtk=disabled
+          -Dpixman:libpng=disabled
+          -Dpixman:openmp=disabled
+          -Dpixman:mmx=enabled
+          -Dpixman:sse2=enabled
+          -Dpixman:ssse3=enabled
+
+      - name: Configure static Cairo
+        run: >-
+          meson setup cairo\build-static cairo
+          --backend ninja
+          --buildtype debugoptimized
+          --default-library static
+          --prefix "%GITHUB_WORKSPACE%\stage-static"
+          --libdir lib
+          --includedir include
+          --force-fallback-for=pixman-1
+          -Db_ndebug=true
+          -Ddwrite=enabled
+          -Dfontconfig=disabled
+          -Dfreetype=disabled
+          -Dpng=enabled
+          -Dquartz=disabled
+          -Dtee=disabled
+          -Dxcb=disabled
+          -Dxlib=disabled
+          -Dxlib-xcb=disabled
+          -Dzlib=enabled
+          -Dtests=disabled
+          -Dlzo=disabled
+          -Dgtk2-utils=disabled
+          -Dglib=disabled
+          -Dspectre=disabled
+          -Dsymbol-lookup=disabled
+          -Dgtk_doc=false
+          -Dpixman:default_library=static
+          -Dpixman:tests=disabled
+          -Dpixman:demos=disabled
+          -Dpixman:gtk=disabled
+          -Dpixman:libpng=disabled
+          -Dpixman:openmp=disabled
+          -Dpixman:mmx=enabled
+          -Dpixman:sse2=enabled
+          -Dpixman:ssse3=enabled
+
+      - name: Build and install Cairo
+        run: |
+          meson compile -C cairo\build
+          if errorlevel 1 exit /b %errorlevel%
+          meson install -C cairo\build
+          if errorlevel 1 exit /b %errorlevel%
+          meson compile -C cairo\build-static
+          if errorlevel 1 exit /b %errorlevel%
+          meson install -C cairo\build-static
+
+      - name: Stage Cairo artifact
+        shell: pwsh
+        run: |
+          New-Item install/bin, install/include, install/lib -ItemType Directory -Force | Out-Null
+          Copy-Item cairo/COPYING install/COPYING
+          Copy-Item stage/bin/cairo-2.dll install/bin/cairo-2.dll
+          Copy-Item stage/include/cairo install/include/cairo -Recurse
+          Copy-Item stage/lib/cairo.lib install/lib/cairo.lib
+          Copy-Item stage-static/lib/libcairo.a install/lib/cairo_a.lib
+          Copy-Item stage-static/lib/libpixman-1.a install/lib/pixman-1_a.lib
+          $pdb = @(Get-ChildItem cairo/build -Filter cairo-2.pdb -Recurse)
+          if ($pdb.Count -ne 1) {
+              throw "Expected one Cairo linker PDB, found $($pdb.Count)"
+          }
+          Copy-Item $pdb[0].FullName install/bin/cairo-2.pdb
+
+      - name: Normalize version
+        id: version
+        shell: pwsh
+        run: |
+          $version = '${{ inputs.version }}' -replace '^cairo-', '' -replace '^v', ''
+          if ($version -notmatch '^\d+\.\d+\.\d+$') {
+              throw "Unsupported Cairo tag: ${{ inputs.version }}"
+          }
+          "value=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Copy license files
+        run: |
+          xcopy /I /Y cairo\COPYING install\share\licenses\cairo\*
+          xcopy /I /Y cairo\COPYING-LGPL-2.1 install\share\licenses\cairo\*
+          xcopy /I /Y cairo\COPYING-MPL-1.1 install\share\licenses\cairo\*
+          xcopy /I /Y cairo\subprojects\pixman\COPYING install\share\licenses\pixman\*
+
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library cairo
+          -Version '${{ inputs.version }}'
+          -InstallRoot 'install'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ inputs.php }}'
+          -DependencyRoot 'deps'
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: cairo-${{ steps.version.outputs.value }}-${{ steps.virtuals.outputs.vs }}-${{ matrix.arch }}
+          path: install

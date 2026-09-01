@@ -1,0 +1,244 @@
+name: Build librrd
+run-name: "Build librrd-${{ inputs.version }} for PHP ${{ inputs.php }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: RRDtool tag to build
+        required: true
+        default: v1.11.0
+      glib:
+        description: GLib tag used to build private static GIO
+        required: true
+        default: glib-2.88.3
+      php:
+        description: PHP version to build for
+        required: true
+        default: '8.6'
+      stability:
+        description: The dependency series stability
+        required: false
+        default: staging
+      workflow_run_ids:
+        description: Comma-separated Cairo and Pango workflow run IDs
+        required: false
+
+permissions:
+  actions: read
+  contents: read
+
+defaults:
+  run:
+    shell: cmd
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            triplet: x64-windows
+            nmake_options: USE_64BIT=1
+          - arch: x86
+            triplet: x86-windows
+            nmake_options: ''
+    runs-on: ${{ (inputs.php == '8.6' || inputs.php == 'master') && 'windows-2025-vs2026' || 'windows-2022' }}
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v6
+        with:
+          path: winlib-builder
+
+      - name: Checkout RRDtool
+        uses: actions/checkout@v6
+        with:
+          repository: oetiker/rrdtool-1.x
+          ref: ${{ inputs.version }}
+          path: rrdtool
+          submodules: recursive
+
+      - name: Checkout GLib
+        uses: actions/checkout@v6
+        with:
+          repository: winlibs/glib
+          ref: ${{ inputs.glib }}
+          path: glib
+
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{ inputs.php }} -arch ${{ matrix.arch }}
+
+      - name: Fetch dependencies
+        run: powershell winlib-builder/scripts/fetch-deps -lib librrd -version ${{ inputs.php }} -vs ${{ steps.virtuals.outputs.vs }} -arch ${{ matrix.arch }} -stability ${{ inputs.stability }} -workflow_run_ids:'${{ inputs.workflow_run_ids }}'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup MSVC development environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.arch }}
+          toolset: ${{ steps.virtuals.outputs.toolset }}
+
+      - name: Setup Meson
+        run: python -m pip install meson
+
+      - name: Configure private static GIO
+        if: inputs.php != '8.0' && inputs.php != '8.1'
+        run: >-
+          meson setup glib\build-static glib
+          --backend ninja
+          --buildtype debugoptimized
+          --default-library static
+          -Db_ndebug=true
+          -Dwinlib_deps_root="%GITHUB_WORKSPACE%\deps"
+          -Dtests=false
+          -Dinstalled_tests=false
+          -Dnls=disabled
+          -Dman-pages=disabled
+          -Ddocumentation=false
+          -Dintrospection=disabled
+          -Dglib_debug=disabled
+          -Dlibmount=disabled
+          -Dselinux=disabled
+          -Dxattr=false
+          -Ddtrace=disabled
+          -Dsystemtap=disabled
+          -Dsysprof=disabled
+
+      - name: Use PHP shared GLib from private static GObject and GIO
+        if: inputs.php != '8.0' && inputs.php != '8.1'
+        shell: pwsh
+        run: |
+          $path = 'glib/build-static/glib/glibconfig.h'
+          $content = Get-Content -LiteralPath $path -Raw
+          foreach ($macro in @(
+              'GLIB_STATIC_COMPILATION',
+              'GMODULE_STATIC_COMPILATION',
+              'G_INTL_STATIC_COMPILATION'
+          )) {
+              $content = $content.Replace("#define $macro 1", "/* #undef $macro */")
+          }
+          Set-Content -LiteralPath $path -Value $content -Encoding ASCII
+
+      - name: Build private static GIO
+        if: inputs.php != '8.0' && inputs.php != '8.1'
+        run: |
+          ninja -C glib\build-static gobject/libgobject-2.0.a gio/libgio-2.0.a
+
+      - name: Build legacy private static GObject
+        if: inputs.php == '8.0' || inputs.php == '8.1'
+        shell: pwsh
+        run: >-
+          .\winlib-builder\.github\ci\build-static-gobject.ps1
+          -SourceRoot glib
+          -DependencyRoot deps
+          -OutputDirectory glib\build-static-gobject
+
+      - name: Build legacy private static GIO subset
+        if: inputs.php == '8.0' || inputs.php == '8.1'
+        run: |
+          mkdir glib\build-static-gio
+          cl /nologo /c /MD /O2 /Zi /DGIO_COMPILATION /DGIO_STATIC_COMPILATION /DGOBJECT_STATIC_COMPILATION /DHAVE_CONFIG_H /Iglib /Iglib\glib /Iglib\gobject /Iglib\gio /Ideps\include /Ideps\include\glib-2.0 /Ideps\lib\glib-2.0\include /Foglib\build-static-gio\glistmodel.obj glib\gio\glistmodel.c
+          if errorlevel 1 exit /b %errorlevel%
+          cl /nologo /c /MD /O2 /Zi /DGIO_COMPILATION /DGIO_STATIC_COMPILATION /DGOBJECT_STATIC_COMPILATION /DHAVE_CONFIG_H /Iglib /Iglib\glib /Iglib\gobject /Iglib\gio /Ideps\include /Ideps\include\glib-2.0 /Ideps\lib\glib-2.0\include /Foglib\build-static-gio\gioerror.obj glib\gio\gioerror.c
+          if errorlevel 1 exit /b %errorlevel%
+          lib /nologo /out:glib\build-static-gio\gio-2.0.lib glib\build-static-gio\glistmodel.obj glib\build-static-gio\gioerror.obj
+          if errorlevel 1 exit /b %errorlevel%
+
+      - name: Stage private static GLib libraries
+        shell: pwsh
+        run: |
+          New-Item glib/private-static -ItemType Directory -Force | Out-Null
+          if ('${{ inputs.php }}' -in @('8.0', '8.1')) {
+              Copy-Item glib/build-static-gobject/gobject-2.0.lib glib/private-static/gobject-2.0.lib
+              Copy-Item glib/build-static-gio/gio-2.0.lib glib/private-static/gio-2.0.lib
+          } else {
+              Copy-Item glib/build-static/gobject/libgobject-2.0.a glib/private-static/gobject-2.0.lib
+              Copy-Item glib/build-static/gio/libgio-2.0.a glib/private-static/gio-2.0.lib
+          }
+
+      - name: Prepare RRDtool dependencies
+        run: |
+          xcopy /E /I /Y deps rrdtool\vcpkg\installed\${{ matrix.triplet }}\*
+          copy /Y deps\include\libpng16\*.h rrdtool\vcpkg\installed\${{ matrix.triplet }}\include\
+          copy /Y deps\lib\libpng_a.lib rrdtool\vcpkg\installed\${{ matrix.triplet }}\lib\libpng16.lib
+          copy /Y deps\lib\libxml2_a_dll.lib rrdtool\vcpkg\installed\${{ matrix.triplet }}\lib\libxml2.lib
+          copy /Y deps\lib\libiconv_a.lib rrdtool\vcpkg\installed\${{ matrix.triplet }}\lib\libiconv.lib
+          copy /Y deps\lib\libintl_a.lib rrdtool\vcpkg\installed\${{ matrix.triplet }}\lib\libintl.lib
+          copy /Y deps\lib\zlib_a.lib rrdtool\vcpkg\installed\${{ matrix.triplet }}\lib\zlib.lib
+          copy /Y deps\lib\cairo_a.lib rrdtool\vcpkg\installed\${{ matrix.triplet }}\lib\cairo.lib
+          copy /Y deps\lib\pixman-1_a.lib rrdtool\vcpkg\installed\${{ matrix.triplet }}\lib\pixman-1.lib
+          copy /Y deps\lib\pango-1.0_a.lib rrdtool\vcpkg\installed\${{ matrix.triplet }}\lib\pango-1.0.lib
+          copy /Y deps\lib\pangowin32-1.0_a.lib rrdtool\vcpkg\installed\${{ matrix.triplet }}\lib\pangowin32-1.0.lib
+          copy /Y deps\lib\pangocairo-1.0_a.lib rrdtool\vcpkg\installed\${{ matrix.triplet }}\lib\pangocairo-1.0.lib
+          copy /Y deps\lib\harfbuzz_a.lib rrdtool\vcpkg\installed\${{ matrix.triplet }}\lib\harfbuzz.lib
+          copy /Y deps\lib\fribidi_a.lib rrdtool\vcpkg\installed\${{ matrix.triplet }}\lib\fribidi.lib
+          copy /Y glib\private-static\gobject-2.0.lib rrdtool\vcpkg\installed\${{ matrix.triplet }}\lib\gobject-2.0.lib
+          copy /Y glib\private-static\gio-2.0.lib rrdtool\vcpkg\installed\${{ matrix.triplet }}\lib\gio-2.0.lib
+
+      - name: Configure static dependency linking
+        shell: pwsh
+        run: |
+          $path = 'rrdtool/win32/Makefile_vcpkg.msc'
+          $content = Get-Content -LiteralPath $path -Raw
+          $content = $content.Replace(
+              'CPPFLAGS = $(CPPFLAGS) /TC',
+              'CPPFLAGS = $(CPPFLAGS) /DCAIRO_WIN32_STATIC_BUILD /DGIO_STATIC_COMPILATION /DGOBJECT_STATIC_COMPILATION /DLIBXML_STATIC /TC'
+          )
+          $content = $content.Replace(
+              'pango-1.0.lib pangocairo-1.0.lib cairo.lib \',
+              "pango-1.0.lib pangocairo-1.0.lib pangowin32-1.0.lib cairo.lib \`r`n        harfbuzz.lib fribidi.lib pixman-1.lib gio-2.0.lib libffi.lib \`r`n        gmodule-2.0.lib libiconv.lib libintl.lib advapi32.lib bcrypt.lib \`r`n        dnsapi.lib dwrite.lib gdi32.lib iphlpapi.lib msimg32.lib ole32.lib \`r`n        rpcrt4.lib shell32.lib shlwapi.lib user32.lib usp10.lib uuid.lib \`r`n        windowscodecs.lib \"
+          )
+          $linkLine = '$(RRD_LIB_OBJ_LIST) /link $(THIRD_PARTY_LIB) $(LD_FLAGS)'
+          $content = $content.Replace(
+              $linkLine,
+              "$linkLine /PDBSTRIPPED:`$(TOP)/win32/`$(RRD_LIB_NAME)-public.pdb"
+          )
+          Set-Content -LiteralPath $path -Value $content -Encoding ASCII
+
+      - name: Build librrd
+        run: cd rrdtool && nmake /f win32\Makefile_vcpkg.msc ${{ matrix.nmake_options }} win32/librrd-8.dll
+
+      - name: Install librrd
+        run: |
+          mkdir install\bin install\include install\lib
+          copy /Y rrdtool\COPYRIGHT install\COPYRIGHT
+          copy /Y rrdtool\win32\librrd-8.dll install\bin\librrd-8.dll
+          copy /Y rrdtool\win32\librrd-8-public.pdb install\bin\librrd-8.pdb
+          copy /Y rrdtool\src\rrd.h install\include\rrd.h
+          copy /Y rrdtool\win32\librrd-8.lib install\lib\librrd-8.lib
+
+      - name: Normalize version
+        id: version
+        shell: pwsh
+        run: |
+          $version = '${{ inputs.version }}' -replace '^librrd-', '' -replace '^rrdtool-', '' -replace '^v', ''
+          if ($version -notmatch '^\d+\.\d+\.\d+$') {
+              throw "Unsupported RRDtool tag: ${{ inputs.version }}"
+          }
+          "value=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Copy license files
+        run: xcopy /I /Y rrdtool\COPYRIGHT install\share\licenses\librrd\*
+
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          .\winlib-builder\scripts\generate-sbom.ps1
+          -Library librrd
+          -Version '${{ inputs.version }}'
+          -InstallRoot 'install'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ inputs.php }}'
+          -DependencyRoot 'deps'
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: librrd-${{ steps.version.outputs.value }}-${{ steps.virtuals.outputs.vs }}-${{ matrix.arch }}
+          path: install
