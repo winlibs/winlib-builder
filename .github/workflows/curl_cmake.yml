@@ -68,7 +68,6 @@ jobs:
             -DCURL_WINDOWS_SSPI=ON^
             -DCURL_ENABLE_NTLM=ON^
             -DCURL_ENABLE_SMB=ON^
-            -DCURL_DISABLE_SRP=ON^
             -DCURL_DISABLE_MQTT=ON^
             -DCURL_USE_OPENSSL=ON^
             -DCURL_ZSTD=ON^
