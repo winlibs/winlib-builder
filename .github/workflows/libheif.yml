@@ -29,6 +29,7 @@ defaults:
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
         arch: [x64, x86]
     runs-on: ${{ (inputs.php == '8.6' || inputs.php == 'master') && 'windows-2025-vs2026' || 'windows-2022' }}
@@ -83,7 +84,7 @@ jobs:
           meson install -C dav1d\build
       - name: Build libjpeg-turbo
         run: |
-          cmake -S libjpeg-turbo -B libjpeg-turbo\build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="%GITHUB_WORKSPACE%\deps" -DENABLE_SHARED=OFF -DENABLE_STATIC=ON -DWITH_CRT_DLL=ON -DWITH_TURBOJPEG=OFF -DWITH_TOOLS=OFF -DWITH_TESTS=OFF
+          cmake -S libjpeg-turbo -B libjpeg-turbo\build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="%GITHUB_WORKSPACE%\deps" -DENABLE_SHARED=OFF -DENABLE_STATIC=ON -DWITH_CRT_DLL=ON -DWITH_JPEG8=ON -DWITH_TURBOJPEG=OFF -DWITH_TOOLS=OFF -DWITH_TESTS=OFF
           cmake --build libjpeg-turbo\build --config Release
           cmake --install libjpeg-turbo\build --config Release
           copy /Y deps\lib\jpeg-static.lib deps\lib\jpeg.lib
@@ -221,6 +222,25 @@ jobs:
           cl /nologo /W3 /MD /Zi /Fdcheck-libheif-static-compile.pdb /DLIBHEIF_STATIC_BUILD /Iinstall\include winlib-builder\.github\ci\check-libheif.c /link /DEBUG /WX /PDB:check-libheif-static.pdb /LIBPATH:install\lib /LIBPATH:deps\lib heif_a.lib aom_a.lib dav1d_a.lib jpeg.lib Advapi32.lib /OUT:check-libheif-static.exe
           if errorlevel 1 exit /b %errorlevel%
           check-libheif-static.exe
+      - name: Verify static libheif with PHP SDK JPEG
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $vs = '${{ steps.virtuals.outputs.vs }}'
+          $arch = '${{ matrix.arch }}'
+          $base = 'https://downloads.php.net/~windows/php-sdk/deps'
+          $series = (Invoke-WebRequest "$base/series/packages-${{ inputs.php }}-$vs-$arch-staging.txt").Content
+          $jpegPackages = @($series -split '[\r\n]+' | Where-Object { $_ -match "^libjpeg-turbo-[0-9][0-9A-Za-z.\-]*-$vs-$arch\.zip$" })
+          if ($jpegPackages.Count -ne 1) { throw 'Expected one SDK JPEG package in the staging series' }
+          Write-Host "Validating static libheif with SDK package $($jpegPackages[0])"
+          Invoke-WebRequest "$base/$vs/$arch/$($jpegPackages[0])" -OutFile sdk-jpeg.zip
+          Expand-Archive sdk-jpeg.zip -DestinationPath sdk-jpeg -Force
+          $config = Get-Content sdk-jpeg/include/jconfig.h -Raw
+          if ($config -notmatch '#define\s+JPEG_LIB_VERSION\s+80\b') { throw 'SDK JPEG ABI changed; review libheif JPEG configuration' }
+          & cl /nologo /W3 /MD /Zi /Fdcheck-libheif-sdk-compile.pdb /DLIBHEIF_STATIC_BUILD /Iinstall\include winlib-builder\.github\ci\check-libheif.c /link /DEBUG /WX /PDB:check-libheif-sdk.pdb /LIBPATH:install\lib /LIBPATH:sdk-jpeg\lib heif_a.lib aom_a.lib dav1d_a.lib libjpeg_a.lib Advapi32.lib /OUT:check-libheif-sdk.exe
+          if ($LASTEXITCODE -ne 0) { throw 'Static libheif SDK link check failed' }
+          & .\check-libheif-sdk.exe
+          if ($LASTEXITCODE -ne 0) { throw 'Static libheif SDK codec roundtrips failed' }
       - name: Remove private metadata
         run: if exist install\lib\pkgconfig rmdir /s /q install\lib\pkgconfig
       - name: Copy license files
