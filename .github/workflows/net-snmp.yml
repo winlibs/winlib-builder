@@ -72,6 +72,19 @@ jobs:
           xcopy win32\lib\release\netsnmp.lib ..\install\lib\*
           xcopy win32\libsnmp\release\libsnmp.pdb ..\install\lib\*
           xcopy mibs\* ..\install\share\mibs\*
+      - name: Verify snmptrapd code is excluded
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if (Get-ChildItem install -Recurse -File -Filter '*snmptrapd*') {
+            throw 'snmptrapd is packaged; review the CVE-2025-68615 VEX disposition.'
+          }
+          $symbols = & dumpbin /nologo /linkermember:1 install/lib/netsnmp.lib
+          if ($LASTEXITCODE -ne 0) { throw 'Unable to inspect netsnmp.lib symbols.' }
+          if (($symbols -join "`n") -match '(?m)\b_?snmp_input(?:@\d+)?\s*$') {
+            throw 'The snmptrapd input handler is linked; review the CVE-2025-68615 VEX disposition.'
+          }
+          Write-Host 'Verified snmptrapd and its vulnerable input handler are absent.'
       - name: Copy license files
         run: xcopy net-snmp\COPYING install\share\licenses\net-snmp\*
       - name: Generate SBOMs

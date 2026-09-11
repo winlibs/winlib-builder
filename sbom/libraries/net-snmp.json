@@ -99,5 +99,19 @@
         }
       ]
     }
+  ],
+  "notAffectedCves": [
+    {
+      "id": "CVE-2025-68615",
+      "source": "NVD",
+      "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-68615",
+      "detail": "CVE-2025-68615 affects snmptrapd trap handling in apps/snmptrapd_handlers.c. The Winlibs Windows package builds and ships snmpd.exe and netsnmp.lib; it does not build or ship snmptrapd, and the vulnerable snmp_input handler is absent from the library used by PHP.",
+      "justification": "vulnerable_code_not_present",
+      "references": [
+        "https://github.com/net-snmp/net-snmp/security/advisories/GHSA-4389-rwqf-q9gq",
+        "https://github.com/net-snmp/net-snmp/commit/b4e6f826d9ddcc2d72eac432746807e1234266db",
+        "https://github.com/winlibs/winlib-builder/blob/311f099/.github/workflows/net-snmp.yml"
+      ]
+    }
   ]
 }
