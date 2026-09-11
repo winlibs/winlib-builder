@@ -34,6 +34,24 @@
           "detail": "Backport Ubuntu's PKCS#1 implicit-rejection patch."
         }
       ]
+    },
+    {
+      "tag": "openssl-3.0.22.pl1",
+      "upstream": {
+        "repository": "openssl/openssl",
+        "tag": "openssl-3.0.22",
+        "version": "3.0.22"
+      },
+      "fork": {
+        "repository": "winlibs/openssl",
+        "tag": "openssl-3.0.22.pl1"
+      },
+      "patches": [
+        {
+          "url": "https://github.com/winlibs/openssl/commit/8b89dd78b48339632e3f655b030290a0f9484bb4",
+          "detail": "Backport Ubuntu's PKCS#1 implicit-rejection patch."
+        }
+      ]
     }
   ]
 }
