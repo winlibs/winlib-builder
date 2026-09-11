@@ -13,5 +13,91 @@
   "license": {
     "id": "BSD-3-Clause"
   },
-  "purl": "pkg:generic/net-snmp@{upstreamVersion}"
+  "purl": "pkg:generic/net-snmp@{upstreamVersion}",
+  "patchedBuilds": [
+    {
+      "tag": "net-snmp-5.7.3-2",
+      "upstream": {
+        "repository": "net-snmp/net-snmp",
+        "tag": "v5.7.3",
+        "version": "5.7.3"
+      },
+      "fork": {
+        "repository": "winlibs/net-snmp",
+        "tag": "net-snmp-5.7.3-2"
+      },
+      "patches": [
+        {
+          "url": "https://github.com/winlibs/net-snmp/commit/c536634195c5359d20e3ae78efffbab3336f1d0a",
+          "detail": "Only define SIZEOF_* macros if not already defined."
+        },
+        {
+          "url": "https://github.com/winlibs/net-snmp/commit/3cdec74894985d67753772b72a07064c3ed2e336",
+          "detail": "Use Windows's inet_ntop() and inet_pton()."
+        }
+      ]
+    },
+    {
+      "tag": "net-snmp-5.7.3-3",
+      "upstream": {
+        "repository": "net-snmp/net-snmp",
+        "tag": "v5.7.3",
+        "version": "5.7.3"
+      },
+      "fork": {
+        "repository": "winlibs/net-snmp",
+        "tag": "net-snmp-5.7.3-3"
+      },
+      "patches": [
+        {
+          "url": "https://github.com/winlibs/net-snmp/commit/c536634195c5359d20e3ae78efffbab3336f1d0a",
+          "detail": "Only define SIZEOF_* macros if not already defined."
+        },
+        {
+          "url": "https://github.com/winlibs/net-snmp/commit/3cdec74894985d67753772b72a07064c3ed2e336",
+          "detail": "Use Windows's inet_ntop() and inet_pton()."
+        }
+      ]
+    },
+    {
+      "tag": "net-snmp-5.9.4-1",
+      "upstream": {
+        "repository": "net-snmp/net-snmp",
+        "tag": "v5.9.4",
+        "version": "5.9.4"
+      },
+      "fork": {
+        "repository": "winlibs/net-snmp",
+        "tag": "net-snmp-5.9.4-1"
+      },
+      "patches": [
+        {
+          "url": "https://github.com/winlibs/net-snmp/commit/ff80f5e62b670f473b4ebde812468170cc0bf283",
+          "detail": "Fix OpenSSL 4 ASN.1 access."
+        }
+      ]
+    },
+    {
+      "tag": "net-snmp-5.9.5.2-1",
+      "upstream": {
+        "repository": "net-snmp/net-snmp",
+        "tag": "v5.9.5.2",
+        "version": "5.9.5.2"
+      },
+      "fork": {
+        "repository": "winlibs/net-snmp",
+        "tag": "net-snmp-5.9.5.2-1"
+      },
+      "patches": [
+        {
+          "url": "https://github.com/winlibs/net-snmp/commit/76cb3dacd8caadf8ea9b9c54aab698de25e2ad24",
+          "detail": "libsnmp: Call .f_setup_session() later."
+        },
+        {
+          "url": "https://github.com/winlibs/net-snmp/commit/b11c4fc82d71bff9f03466c5a5a622b408ea6b04",
+          "detail": "libsnmp: Fix OpenSSL 4 build."
+        }
+      ]
+    }
+  ]
 }
