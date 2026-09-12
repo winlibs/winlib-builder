@@ -17,5 +17,170 @@
   "license": {
     "id": "Unicode-DFS-2016"
   },
-  "purl": "pkg:generic/icu@{upstreamVersion}"
+  "purl": "pkg:generic/icu@{upstreamVersion}",
+  "patchedBuilds": [
+    {
+      "tag": "icu4c-71.1-1",
+      "upstream": {
+        "repository": "unicode-org/icu",
+        "tag": "release-71-1",
+        "version": "71.1"
+      },
+      "fork": {
+        "repository": "winlibs/icu4c",
+        "tag": "icu4c-71.1-1"
+      },
+      "patches": [
+        {
+          "url": "https://github.com/winlibs/icu4c/commit/707e311c6c78efb721d431953c6f0f7df4ccb82b",
+          "detail": "Preserve the existing CVE-2025-5222 genrb buffer hardening backport."
+        }
+      ],
+      "fixedCves": [
+        {
+          "id": "CVE-2025-5222",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-5222",
+          "detail": "icu4c-71.1-1 includes the existing Winlibs genrb buffer hardening for CVE-2025-5222.",
+          "references": [
+            "https://github.com/winlibs/icu4c/commit/707e311c6c78efb721d431953c6f0f7df4ccb82b",
+            "https://github.com/unicode-org/icu/commit/2c667e31cfd0b6bb1923627a932fd3453a5bac77",
+            "https://github.com/unicode-org/icu/commit/76a06f2f03630a9e4a677f8ce4e4a7d36b425aa8"
+          ]
+        }
+      ]
+    },
+    {
+      "tag": "icu4c-71.1-2",
+      "upstream": {
+        "repository": "unicode-org/icu",
+        "tag": "release-71-1",
+        "version": "71.1"
+      },
+      "fork": {
+        "repository": "winlibs/icu4c",
+        "tag": "icu4c-71.1-2"
+      },
+      "patches": [
+        {
+          "url": "https://github.com/winlibs/icu4c/commit/707e311c6c78efb721d431953c6f0f7df4ccb82b",
+          "detail": "Preserve the existing CVE-2025-5222 genrb buffer hardening backport."
+        },
+        {
+          "url": "https://github.com/winlibs/icu4c/commit/38b181c5322d0d28ace5951eafc8308933e7cbd9",
+          "detail": "Backport ICU-20715 to invalidate stale collation prefix/contraction contexts, including the upstream ICU4C regression test."
+        }
+      ],
+      "fixedCves": [
+        {
+          "id": "CVE-2025-5222",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-5222",
+          "detail": "icu4c-71.1-2 retains the CVE-2025-5222 genrb buffer hardening from icu4c-71.1-1.",
+          "references": [
+            "https://github.com/winlibs/icu4c/commit/707e311c6c78efb721d431953c6f0f7df4ccb82b",
+            "https://github.com/unicode-org/icu/commit/2c667e31cfd0b6bb1923627a932fd3453a5bac77",
+            "https://github.com/unicode-org/icu/commit/76a06f2f03630a9e4a677f8ce4e4a7d36b425aa8"
+          ]
+        }
+      ],
+      "fixedVulnerabilities": [
+        {
+          "id": "OSV-2020-866",
+          "source": "OSV",
+          "url": "https://osv.dev/vulnerability/OSV-2020-866",
+          "detail": "Fixed in icu4c-71.1-2 by backporting ICU-20715, which resets outdated collation prefix and contraction context values.",
+          "references": [
+            "https://github.com/winlibs/icu4c/commit/38b181c5322d0d28ace5951eafc8308933e7cbd9",
+            "https://github.com/unicode-org/icu/commit/4833cc89b2fae2e8863b46bf1dc785964847e882",
+            "https://github.com/unicode-org/icu/pull/2052"
+          ]
+        },
+        {
+          "id": "OSV-2020-867",
+          "source": "OSV",
+          "url": "https://osv.dev/vulnerability/OSV-2020-867",
+          "detail": "Fixed in icu4c-71.1-2 by backporting ICU-20715, which resets outdated collation prefix and contraction context values.",
+          "references": [
+            "https://github.com/winlibs/icu4c/commit/38b181c5322d0d28ace5951eafc8308933e7cbd9",
+            "https://github.com/unicode-org/icu/commit/4833cc89b2fae2e8863b46bf1dc785964847e882",
+            "https://github.com/unicode-org/icu/pull/2052"
+          ]
+        },
+        {
+          "id": "OSV-2021-1236",
+          "source": "OSV",
+          "url": "https://osv.dev/vulnerability/OSV-2021-1236",
+          "detail": "Fixed in icu4c-71.1-2 by backporting ICU-20715, which resets outdated collation prefix and contraction context values.",
+          "references": [
+            "https://github.com/winlibs/icu4c/commit/38b181c5322d0d28ace5951eafc8308933e7cbd9",
+            "https://github.com/unicode-org/icu/commit/4833cc89b2fae2e8863b46bf1dc785964847e882",
+            "https://github.com/unicode-org/icu/pull/2052"
+          ]
+        }
+      ]
+    },
+    {
+      "tag": "icu4c-72.1-1",
+      "upstream": {
+        "repository": "unicode-org/icu",
+        "tag": "release-72-1",
+        "version": "72.1"
+      },
+      "fork": {
+        "repository": "winlibs/icu4c",
+        "tag": "icu4c-72.1-1"
+      },
+      "patches": [
+        {
+          "url": "https://github.com/winlibs/icu4c/commit/c4b64c7513cd7c94c19eb2745f721be4bff194de",
+          "detail": "Preserve the existing CVE-2025-5222 genrb buffer hardening backport."
+        }
+      ],
+      "fixedCves": [
+        {
+          "id": "CVE-2025-5222",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-5222",
+          "detail": "icu4c-72.1-1 includes the existing Winlibs genrb buffer hardening for CVE-2025-5222.",
+          "references": [
+            "https://github.com/winlibs/icu4c/commit/c4b64c7513cd7c94c19eb2745f721be4bff194de",
+            "https://github.com/unicode-org/icu/commit/2c667e31cfd0b6bb1923627a932fd3453a5bac77",
+            "https://github.com/unicode-org/icu/commit/76a06f2f03630a9e4a677f8ce4e4a7d36b425aa8"
+          ]
+        }
+      ]
+    },
+    {
+      "tag": "icu4c-77.1-1",
+      "upstream": {
+        "repository": "unicode-org/icu",
+        "tag": "release-77-1",
+        "version": "77.1"
+      },
+      "fork": {
+        "repository": "winlibs/icu4c",
+        "tag": "icu4c-77.1-1"
+      },
+      "patches": [
+        {
+          "url": "https://github.com/winlibs/icu4c/commit/11bca20cc331c2ad3d38e240e5921ebfad8fe523",
+          "detail": "Preserve the existing CVE-2025-5222 genrb buffer hardening backport."
+        }
+      ],
+      "fixedCves": [
+        {
+          "id": "CVE-2025-5222",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-5222",
+          "detail": "icu4c-77.1-1 includes the existing Winlibs genrb buffer hardening for CVE-2025-5222.",
+          "references": [
+            "https://github.com/winlibs/icu4c/commit/11bca20cc331c2ad3d38e240e5921ebfad8fe523",
+            "https://github.com/unicode-org/icu/commit/2c667e31cfd0b6bb1923627a932fd3453a5bac77",
+            "https://github.com/unicode-org/icu/commit/76a06f2f03630a9e4a677f8ce4e4a7d36b425aa8"
+          ]
+        }
+      ]
+    }
+  ]
 }

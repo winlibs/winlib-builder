@@ -60,6 +60,45 @@
       ]
     },
     {
+      "tag": "net-snmp-5.7.3-4",
+      "upstream": {
+        "repository": "net-snmp/net-snmp",
+        "tag": "v5.7.3",
+        "version": "5.7.3"
+      },
+      "fork": {
+        "repository": "winlibs/net-snmp",
+        "tag": "net-snmp-5.7.3-4"
+      },
+      "patches": [
+        {
+          "url": "https://github.com/winlibs/net-snmp/commit/c536634195c5359d20e3ae78efffbab3336f1d0a",
+          "detail": "Only define SIZEOF_* macros if not already defined."
+        },
+        {
+          "url": "https://github.com/winlibs/net-snmp/commit/3cdec74894985d67753772b72a07064c3ed2e336",
+          "detail": "Use Windows's inet_ntop() and inet_pton()."
+        },
+        {
+          "url": "https://github.com/winlibs/net-snmp/commit/2ef6429c7f820a25ddd653e8ee6ecd53f9208067",
+          "detail": "Backport CVE-2020-15861: remove unsafe persistent MIB index cache reads and writes."
+        }
+      ],
+      "fixedCves": [
+        {
+          "id": "CVE-2020-15861",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2020-15861",
+          "detail": "Fixed in net-snmp-5.7.3-4 by backporting upstream removal of persistent MIB index cache reads and writes. The 5.7 MIB directory scanner and existing Winlibs compatibility patches are retained.",
+          "references": [
+            "https://github.com/winlibs/net-snmp/commit/2ef6429c7f820a25ddd653e8ee6ecd53f9208067",
+            "https://github.com/net-snmp/net-snmp/commit/4fd9a450444a434a993bc72f7c3486ccce41f602",
+            "https://github.com/net-snmp/net-snmp/issues/145"
+          ]
+        }
+      ]
+    },
+    {
       "tag": "net-snmp-5.9.4-1",
       "upstream": {
         "repository": "net-snmp/net-snmp",
