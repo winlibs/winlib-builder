@@ -212,6 +212,10 @@
           "type": "array",
           "items": { "$ref": "#/$defs/fixedCve" }
         },
+        "fixedVulnerabilities": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/fixedVulnerability" }
+        },
         "notAffectedCves": {
           "type": "array",
           "items": { "$ref": "#/$defs/notAffectedCve" }
@@ -230,6 +234,42 @@
       "properties": {
         "url": { "type": "string", "format": "uri" },
         "detail": { "type": "string", "minLength": 1 }
+      }
+    },
+    "fixedVulnerability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "source",
+        "url",
+        "detail"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "detail": {
+          "type": "string",
+          "minLength": 1
+        },
+        "references": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uri"
+          },
+          "uniqueItems": true
+        }
       }
     },
     "fixedCve": {

@@ -686,7 +686,7 @@ if ([string]::IsNullOrWhiteSpace($sourceTag)) {
 }
 $forkRepository = $null
 $forkTag = $null
-$fixedCves = @()
+$fixedVulnerabilities = @()
 $notAffectedCves = @(ConvertTo-Array (Get-JsonProperty $entry 'notAffectedCves'))
 
 if ($null -ne $patchedBuild) {
@@ -712,7 +712,8 @@ if ($null -ne $patchedBuild) {
         $forkTag = $Version
     }
 
-    $fixedCves = @(ConvertTo-Array (Get-JsonProperty $patchedBuild 'fixedCves'))
+    $fixedVulnerabilities = @(ConvertTo-Array (Get-JsonProperty $patchedBuild 'fixedCves'))
+    $fixedVulnerabilities += @(ConvertTo-Array (Get-JsonProperty $patchedBuild 'fixedVulnerabilities'))
     $notAffectedCves += @(ConvertTo-Array (Get-JsonProperty $patchedBuild 'notAffectedCves'))
 }
 
@@ -870,7 +871,7 @@ if (-not [string]::IsNullOrWhiteSpace($cpe)) {
 
 if ($sourceOrigin -ne 'upstream') {
     $patchIssues = [System.Collections.Generic.List[object]]::new()
-    foreach ($cve in $fixedCves) {
+    foreach ($cve in $fixedVulnerabilities) {
         $issue = [ordered]@{
             type = 'security'
             id = [string](Get-JsonProperty $cve 'id')
@@ -940,7 +941,7 @@ $cycloneDxJustifications = @{
     vulnerable_code_cannot_be_controlled_by_adversary = 'protected_by_mitigating_control'
     inline_mitigations_already_exist = 'protected_by_mitigating_control'
 }
-foreach ($cve in $fixedCves) {
+foreach ($cve in $fixedVulnerabilities) {
     $cveId = [string](Get-JsonProperty $cve 'id')
     $detail = [string](Get-JsonProperty $cve 'detail')
     if ([string]::IsNullOrWhiteSpace($detail)) {
@@ -1261,8 +1262,12 @@ if ([string]::IsNullOrWhiteSpace($sourceRepository) -and -not [string]::IsNullOr
 if (-not [string]::IsNullOrWhiteSpace($checkoutRepository)) { $annotationParts.Add("source=$checkoutRepository@$checkoutRef") | Out-Null }
 if ([string]::IsNullOrWhiteSpace($checkoutRepository) -and -not [string]::IsNullOrWhiteSpace($checkoutUrl)) { $annotationParts.Add("source=$checkoutUrl") | Out-Null }
 if (-not [string]::IsNullOrWhiteSpace($checkoutCommit)) { $annotationParts.Add("source-commit=$checkoutCommit") | Out-Null }
-if ($fixedCves.Count -gt 0) {
-    $annotationParts.Add("fixed-cves=$([string]::Join(',', @($fixedCves | ForEach-Object { Get-JsonProperty $_ 'id' })))") | Out-Null
+if ($fixedVulnerabilities.Count -gt 0) {
+    $annotationParts.Add("fixed-vulnerabilities=$([string]::Join(',', @($fixedVulnerabilities | ForEach-Object { Get-JsonProperty $_ 'id' })))") | Out-Null
+    $cveIds = @($fixedVulnerabilities | ForEach-Object { Get-JsonProperty $_ 'id' } | Where-Object { $_ -match '^CVE-' })
+    if ($cveIds.Count -gt 0) {
+        $annotationParts.Add("fixed-cves=$([string]::Join(',', $cveIds))") | Out-Null
+    }
 }
 if ($notAffectedCves.Count -gt 0) {
     $annotationParts.Add("not-affected-cves=$([string]::Join(',', @($notAffectedCves | ForEach-Object { Get-JsonProperty $_ 'id' })))") | Out-Null
@@ -1413,9 +1418,9 @@ if ($extractedLicenses.Count -gt 0) {
     $spdx.hasExtractedLicensingInfos = @($extractedLicenses)
 }
 
-if ($fixedCves.Count -gt 0 -or $notAffectedCves.Count -gt 0) {
+if ($fixedVulnerabilities.Count -gt 0 -or $notAffectedCves.Count -gt 0) {
     $openVexStatements = [System.Collections.Generic.List[object]]::new()
-    foreach ($cve in $fixedCves) {
+    foreach ($cve in $fixedVulnerabilities) {
         $cveId = [string](Get-JsonProperty $cve 'id')
         $detail = [string](Get-JsonProperty $cve 'detail')
         if ([string]::IsNullOrWhiteSpace($detail)) {
@@ -1467,7 +1472,7 @@ $openVexPath = Join-Path $sbomRoot "$baseName.openvex.json"
 ConvertTo-JsonFile -Object $cycloneDx -Path $cycloneDxPath
 ConvertTo-JsonFile -Object $spdx -Path $spdxPath
 
-if ($fixedCves.Count -gt 0 -or $notAffectedCves.Count -gt 0) {
+if ($fixedVulnerabilities.Count -gt 0 -or $notAffectedCves.Count -gt 0) {
     ConvertTo-JsonFile -Object $openVex -Path $openVexPath
 } elseif (Test-Path -LiteralPath $openVexPath -PathType Leaf) {
     Remove-Item -LiteralPath $openVexPath -Force
@@ -1476,6 +1481,6 @@ if ($fixedCves.Count -gt 0 -or $notAffectedCves.Count -gt 0) {
 Write-Host "Generated SBOMs for $componentName $packageVersion"
 Write-Host "CycloneDX: $cycloneDxPath"
 Write-Host "SPDX: $spdxPath"
-if ($fixedCves.Count -gt 0 -or $notAffectedCves.Count -gt 0) {
+if ($fixedVulnerabilities.Count -gt 0 -or $notAffectedCves.Count -gt 0) {
     Write-Host "OpenVEX: $openVexPath"
 }
