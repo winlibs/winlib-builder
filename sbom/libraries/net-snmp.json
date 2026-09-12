@@ -99,6 +99,115 @@
       ]
     },
     {
+      "tag": "net-snmp-5.7.3-5",
+      "upstream": {
+        "repository": "net-snmp/net-snmp",
+        "tag": "v5.7.3",
+        "version": "5.7.3"
+      },
+      "fork": {
+        "repository": "winlibs/net-snmp",
+        "tag": "net-snmp-5.7.3-5"
+      },
+      "patches": [
+        {
+          "url": "https://github.com/winlibs/net-snmp/commit/c536634195c5359d20e3ae78efffbab3336f1d0a",
+          "detail": "Only define SIZEOF_* macros if not already defined."
+        },
+        {
+          "url": "https://github.com/winlibs/net-snmp/commit/3cdec74894985d67753772b72a07064c3ed2e336",
+          "detail": "Use Windows's inet_ntop() and inet_pton()."
+        },
+        {
+          "url": "https://github.com/winlibs/net-snmp/commit/2ef6429c7f820a25ddd653e8ee6ecd53f9208067",
+          "detail": "Backport CVE-2020-15861: remove unsafe persistent MIB index cache reads and writes."
+        },
+        {
+          "url": "https://github.com/winlibs/net-snmp/commit/c29ca8d86c9259ff25b19338fbb8ceb5eedcd5e9",
+          "detail": "Backport CVE-2022-24805 through CVE-2022-24810: complete upstream agent table bounds, null checks and USM index lifetime fixes."
+        }
+      ],
+      "fixedCves": [
+        {
+          "id": "CVE-2020-15861",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2020-15861",
+          "detail": "Fixed in net-snmp-5.7.3-5 by backporting upstream removal of persistent MIB index cache reads and writes. The 5.7 MIB directory scanner and existing Winlibs compatibility patches are retained.",
+          "references": [
+            "https://github.com/winlibs/net-snmp/commit/2ef6429c7f820a25ddd653e8ee6ecd53f9208067",
+            "https://github.com/net-snmp/net-snmp/commit/4fd9a450444a434a993bc72f7c3486ccce41f602",
+            "https://github.com/net-snmp/net-snmp/issues/145"
+          ]
+        },
+        {
+          "id": "CVE-2022-24805",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-24805",
+          "detail": "Fixed in net-snmp-5.7.3-5 by backporting the complete upstream Net-SNMP agent table bounds, null checks and USM index lifetime fix. Existing CVE-2020-15861 and Windows compatibility patches are preserved.",
+          "references": [
+            "https://github.com/winlibs/net-snmp/commit/c29ca8d86c9259ff25b19338fbb8ceb5eedcd5e9",
+            "https://github.com/net-snmp/net-snmp/commit/67ebb43e9038b2dae6e74ae8838b36fcc10fc937",
+            "https://github.com/net-snmp/net-snmp/commit/ce66eb97c17aa9a48bc079be7b65895266fa6775"
+          ]
+        },
+        {
+          "id": "CVE-2022-24806",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-24806",
+          "detail": "Fixed in net-snmp-5.7.3-5 by backporting the complete upstream Net-SNMP agent table bounds, null checks and USM index lifetime fix. Existing CVE-2020-15861 and Windows compatibility patches are preserved.",
+          "references": [
+            "https://github.com/winlibs/net-snmp/commit/c29ca8d86c9259ff25b19338fbb8ceb5eedcd5e9",
+            "https://github.com/net-snmp/net-snmp/commit/67ebb43e9038b2dae6e74ae8838b36fcc10fc937",
+            "https://github.com/net-snmp/net-snmp/commit/ce66eb97c17aa9a48bc079be7b65895266fa6775"
+          ]
+        },
+        {
+          "id": "CVE-2022-24807",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-24807",
+          "detail": "Fixed in net-snmp-5.7.3-5 by backporting the complete upstream Net-SNMP agent table bounds, null checks and USM index lifetime fix. Existing CVE-2020-15861 and Windows compatibility patches are preserved.",
+          "references": [
+            "https://github.com/winlibs/net-snmp/commit/c29ca8d86c9259ff25b19338fbb8ceb5eedcd5e9",
+            "https://github.com/net-snmp/net-snmp/commit/67ebb43e9038b2dae6e74ae8838b36fcc10fc937",
+            "https://github.com/net-snmp/net-snmp/commit/ce66eb97c17aa9a48bc079be7b65895266fa6775"
+          ]
+        },
+        {
+          "id": "CVE-2022-24808",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-24808",
+          "detail": "Fixed in net-snmp-5.7.3-5 by backporting the complete upstream Net-SNMP agent table bounds, null checks and USM index lifetime fix. Existing CVE-2020-15861 and Windows compatibility patches are preserved.",
+          "references": [
+            "https://github.com/winlibs/net-snmp/commit/c29ca8d86c9259ff25b19338fbb8ceb5eedcd5e9",
+            "https://github.com/net-snmp/net-snmp/commit/67ebb43e9038b2dae6e74ae8838b36fcc10fc937",
+            "https://github.com/net-snmp/net-snmp/commit/ce66eb97c17aa9a48bc079be7b65895266fa6775"
+          ]
+        },
+        {
+          "id": "CVE-2022-24809",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-24809",
+          "detail": "Fixed in net-snmp-5.7.3-5 by backporting the complete upstream Net-SNMP agent table bounds, null checks and USM index lifetime fix. Existing CVE-2020-15861 and Windows compatibility patches are preserved.",
+          "references": [
+            "https://github.com/winlibs/net-snmp/commit/c29ca8d86c9259ff25b19338fbb8ceb5eedcd5e9",
+            "https://github.com/net-snmp/net-snmp/commit/67ebb43e9038b2dae6e74ae8838b36fcc10fc937",
+            "https://github.com/net-snmp/net-snmp/commit/ce66eb97c17aa9a48bc079be7b65895266fa6775"
+          ]
+        },
+        {
+          "id": "CVE-2022-24810",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-24810",
+          "detail": "Fixed in net-snmp-5.7.3-5 by backporting the complete upstream Net-SNMP agent table bounds, null checks and USM index lifetime fix. Existing CVE-2020-15861 and Windows compatibility patches are preserved.",
+          "references": [
+            "https://github.com/winlibs/net-snmp/commit/c29ca8d86c9259ff25b19338fbb8ceb5eedcd5e9",
+            "https://github.com/net-snmp/net-snmp/commit/67ebb43e9038b2dae6e74ae8838b36fcc10fc937",
+            "https://github.com/net-snmp/net-snmp/commit/ce66eb97c17aa9a48bc079be7b65895266fa6775"
+          ]
+        }
+      ]
+    },
+    {
       "tag": "net-snmp-5.9.4-1",
       "upstream": {
         "repository": "net-snmp/net-snmp",
@@ -152,5 +261,6 @@
         "https://github.com/winlibs/winlib-builder/blob/311f099/.github/workflows/net-snmp.yml"
       ]
     }
-  ]
+  ],
+  "cpe": "cpe:2.3:a:net-snmp:net-snmp:{upstreamVersion}:*:*:*:*:*:*:*"
 }
