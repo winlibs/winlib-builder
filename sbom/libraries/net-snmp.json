@@ -125,9 +125,41 @@
         {
           "url": "https://github.com/winlibs/net-snmp/commit/c29ca8d86c9259ff25b19338fbb8ceb5eedcd5e9",
           "detail": "Backport CVE-2022-24805 through CVE-2022-24810: complete upstream agent table bounds, null checks and USM index lifetime fixes."
+        },
+        {
+          "url": "https://github.com/winlibs/net-snmp/commit/985fe4155d0d05c2ef00137f6375b11ea4eee05f",
+          "detail": "Backport CVE-2018-18065: mark out-of-range non-GET table requests as processed before invoking the next handler."
+        },
+        {
+          "url": "https://github.com/winlibs/net-snmp/commit/540eb48ac1c055f739d00459f942ac0d677f2f23",
+          "detail": "Backport CVE-2018-18066: attach varbinds only after successful parsing and free incomplete varbinds on every 5.7 parse failure path."
+        },
+        {
+          "url": "https://github.com/winlibs/net-snmp/commit/106c51bea5ae2efeb6e6659a5ebc610ffe0e3e89",
+          "detail": "Backport CVE-2020-15862: disable write access to the extend MIB by default while retaining read-only operation."
         }
       ],
       "fixedCves": [
+        {
+          "id": "CVE-2018-18065",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2018-18065",
+          "detail": "Fixed in net-snmp-5.7.3-5 by backporting the upstream table helper fix that prevents a crafted multi-varbind GetNext request from reaching the next handler with an unprocessed out-of-range request.",
+          "references": [
+            "https://github.com/winlibs/net-snmp/commit/985fe4155d0d05c2ef00137f6375b11ea4eee05f",
+            "https://github.com/net-snmp/net-snmp/commit/7ffb8e25a0db851953155de91f0170e9bf8c457d"
+          ]
+        },
+        {
+          "id": "CVE-2018-18066",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2018-18066",
+          "detail": "Fixed in net-snmp-5.7.3-5 by backporting the upstream varbind parser cleanup and applying it to every parse failure path present in the 5.7 branch.",
+          "references": [
+            "https://github.com/winlibs/net-snmp/commit/540eb48ac1c055f739d00459f942ac0d677f2f23",
+            "https://github.com/net-snmp/net-snmp/commit/f23bcd3ac6ddee5d0a48f9703007ccc738914791"
+          ]
+        },
         {
           "id": "CVE-2020-15861",
           "source": "NVD",
@@ -137,6 +169,16 @@
             "https://github.com/winlibs/net-snmp/commit/2ef6429c7f820a25ddd653e8ee6ecd53f9208067",
             "https://github.com/net-snmp/net-snmp/commit/4fd9a450444a434a993bc72f7c3486ccce41f602",
             "https://github.com/net-snmp/net-snmp/issues/145"
+          ]
+        },
+        {
+          "id": "CVE-2020-15862",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2020-15862",
+          "detail": "Fixed in net-snmp-5.7.3-5 by backporting the upstream change that disables write access to the extend MIB by default while preserving its read-only command execution path.",
+          "references": [
+            "https://github.com/winlibs/net-snmp/commit/106c51bea5ae2efeb6e6659a5ebc610ffe0e3e89",
+            "https://github.com/net-snmp/net-snmp/commit/77f6c60f57dba0aaea5d8ef1dd94bcd0c8e6d205"
           ]
         },
         {
@@ -249,6 +291,53 @@
     }
   ],
   "notAffectedCves": [
+    {
+      "id": "CVE-2014-2285",
+      "source": "NVD",
+      "url": "https://nvd.nist.gov/vuln/detail/CVE-2014-2285",
+      "detail": "CVE-2014-2285 affects the Perl TrapReceiver handler used by snmptrapd in Net-SNMP 5.7.3.pre3 and earlier. The Winlibs package is based on the final 5.7.3 release and its workflow does not build or ship Perl modules or snmptrapd.",
+      "justification": "vulnerable_code_not_present",
+      "references": [
+        "https://nvd.nist.gov/vuln/detail/CVE-2014-2285",
+        "https://github.com/winlibs/winlib-builder/blob/361a5e78e722b05c9c9004c776f04dc732b2a7e1/.github/workflows/net-snmp.yml"
+      ]
+    },
+    {
+      "id": "CVE-2015-8100",
+      "source": "NVD",
+      "url": "https://nvd.nist.gov/vuln/detail/CVE-2015-8100",
+      "detail": "CVE-2015-8100 concerns OpenBSD package permissions for snmpd.conf. Winlibs builds Windows binaries and does not install an OpenBSD configuration file or apply OpenBSD file modes.",
+      "justification": "vulnerable_code_not_present",
+      "references": [
+        "https://nvd.nist.gov/vuln/detail/CVE-2015-8100",
+        "https://www.openwall.com/lists/oss-security/2015/11/09/6",
+        "https://github.com/winlibs/winlib-builder/blob/361a5e78e722b05c9c9004c776f04dc732b2a7e1/.github/workflows/net-snmp.yml"
+      ]
+    },
+    {
+      "id": "CVE-2019-20892",
+      "source": "NVD",
+      "url": "https://nvd.nist.gov/vuln/detail/CVE-2019-20892",
+      "detail": "CVE-2019-20892 was introduced by upstream development commit adc9b71 and affected distro packages that incorporated that unreleased change. Winlibs 5.7.3 predates and does not contain that commit, including its explicit securityStateRef cleanup in free_agent_snmp_session and changed USM ownership rules.",
+      "justification": "vulnerable_code_not_present",
+      "references": [
+        "https://www.openwall.com/lists/oss-security/2020/06/25/4",
+        "https://github.com/net-snmp/net-snmp/commit/adc9b71aba9168ec64149345ea37a1acc11875c6",
+        "https://github.com/net-snmp/net-snmp/commit/5f881d3bf24599b90d67a45cae7a3eb099cd71c9"
+      ]
+    },
+    {
+      "id": "CVE-2022-44793",
+      "source": "NVD",
+      "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-44793",
+      "detail": "CVE-2022-44793 affects handle_ipv6IpForwarding in agent/mibgroup/ip-mib/ip_scalars.c. The Winlibs Windows netsnmpmibs build does not compile ip_scalars.c, so the vulnerable handler is absent from snmpd.exe and netsnmp.lib.",
+      "justification": "vulnerable_code_not_present",
+      "references": [
+        "https://github.com/net-snmp/net-snmp/issues/475",
+        "https://github.com/net-snmp/net-snmp/commit/be804106fd0771a7d05236cff36e199af077af57",
+        "https://github.com/winlibs/winlib-builder/blob/361a5e78e722b05c9c9004c776f04dc732b2a7e1/.github/workflows/net-snmp.yml"
+      ]
+    },
     {
       "id": "CVE-2025-68615",
       "source": "NVD",
