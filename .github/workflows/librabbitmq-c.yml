@@ -13,8 +13,18 @@ on:
         description: OpenSSL Version to build with
         required: false
         type: choice
-        options: ['1.1', '3']
-        default: '3'
+        options: ['series', '1.1', '3']
+        default: 'series'
+      stability:
+        description: PHP dependency series stability
+        required: false
+        default: staging
+      workflow_run_ids:
+        description: Winlib-builder dependency workflow run IDs
+        required: false
+permissions:
+  contents: read
+  actions: read
 jobs:
   build:
     strategy:
@@ -41,6 +51,7 @@ jobs:
         run: powershell winlib-builder/scripts/compute-virtuals -version ${{ inputs.php }} -arch ${{ matrix.arch }}
 
       - name: Install OpenSSL
+        if: inputs.openssl-version != 'series'
         shell: pwsh
         run: |
           $archName = '${{ steps.virtuals.outputs.msarch }}'
@@ -59,10 +70,27 @@ jobs:
             choco install openssl --version=1.1.1.2100 -y -f $x86Flag --install-arguments="'/DIR=C:\OpenSSL-$archName'"
           }
 
+      - name: Fetch PHP series OpenSSL
+        if: inputs.openssl-version == 'series'
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: >-
+          ./winlib-builder/scripts/fetch-deps.ps1
+          -lib librabbitmq-c
+          -version '${{ inputs.php }}'
+          -vs '${{ steps.virtuals.outputs.vs }}'
+          -arch '${{ matrix.arch }}'
+          -stability '${{ inputs.stability }}'
+          -workflow_run_ids '${{ inputs.workflow_run_ids }}'
+
       - name: Configure with CMake
         shell: pwsh
         run: |
           $opensslRoot = 'C:\OpenSSL-${{ steps.virtuals.outputs.msarch == 'Win32' && 'Win32' || 'Win64' }}'
+          if ('${{ inputs.openssl-version }}' -eq 'series') {
+            $opensslRoot = (Resolve-Path deps).Path
+          }
           New-Item -Path build -ItemType Directory -Force | Out-Null
           Set-Location build
           cmake ../rabbitmq-c `
@@ -72,6 +100,7 @@ jobs:
             -DCMAKE_C_FLAGS=" /W4" `
             -DOPENSSL_ROOT_DIR="$opensslRoot" `
             -DOPENSSL_INCLUDE_DIR="$opensslRoot\include" `
+            -DCMAKE_LIBRARY_PATH="$opensslRoot\lib" `
             -DCMAKE_BUILD_TYPE=Debug `
             -DBUILD_SHARED_LIBS=ON `
             -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/build/install"
@@ -93,6 +122,7 @@ jobs:
           -Vs '${{ steps.virtuals.outputs.vs }}'
           -Arch '${{ matrix.arch }}'
           -PhpVersion '${{ inputs.php }}'
+          -DependencyRoot 'deps'
 
       - name: Normalize version
         id: version
@@ -100,14 +130,14 @@ jobs:
         run: echo "version=$('${{ inputs.librabbitmq-c-ref }}' -replace '^v')" >> $env:GITHUB_OUTPUT
 
       - name: Upload build artifact for VS16
-        if: ${{ steps.virtuals.outputs.vs == 'vs16' }}
+        if: ${{ steps.virtuals.outputs.vs == 'vs16' && inputs.openssl-version != 'series' }}
         uses: actions/upload-artifact@v4
         with:
           name: rabbitmq-c.openssl${{ inputs.openssl-version }}-${{ steps.virtuals.outputs.vs }}-${{ matrix.arch == 'x86' && 'Win32' || matrix.arch }}
           path: ${{github.workspace}}/build/install
 
       - name: Upload build artifact
-        if: ${{ steps.virtuals.outputs.vs != 'vs16' }}
+        if: ${{ steps.virtuals.outputs.vs != 'vs16' || inputs.openssl-version == 'series' }}
         uses: actions/upload-artifact@v4
         with:
           name: librabbitmq-${{ steps.version.outputs.version }}-${{ steps.virtuals.outputs.vs }}-${{ matrix.arch }}

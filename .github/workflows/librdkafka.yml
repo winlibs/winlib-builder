@@ -68,6 +68,7 @@ jobs:
           -Vs '${{ steps.virtuals.outputs.vs }}'
           -Arch '${{ matrix.arch }}'
           -PhpVersion '${{ inputs.php }}'
+          -DependencyRoot 'deps'
       - name: Normalize version
         id: normalize_version
         shell: pwsh

@@ -21,6 +21,7 @@ $deps = @{
     "librrd" = "cairo", "glib", "libffi", "libiconv", "libintl", "libpng", "libxml2", "pango", "zlib";
     "libjxl" = "brotli";
     "librdkafka" = "libzstd", "openssl", "zlib";
+    "librabbitmq-c" = "openssl";
     "libssh2" = "openssl", "zlib";
     "libtiff" = "zlib", "libjpeg-turbo", "libwebp", "libzstd", "liblzma";
     "libultrahdr" = "libjpeg-turbo";
