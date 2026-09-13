@@ -6,6 +6,10 @@ on:
       version:
         description: libxml2 tag to build
         required: true
+      source_repository:
+        description: Repository containing the libxml2 source tag
+        required: false
+        default: 'winlibs/libxml2'
       php:
         description: PHP version to build for
         required: true
@@ -42,7 +46,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           path: libxml2
-          repository: winlibs/libxml2
+          repository: ${{ inputs.source_repository }}
           ref: ${{github.event.inputs.version}}
       - name: Compute virtual inputs
         id: virtuals
@@ -78,7 +82,7 @@ jobs:
             -DCMAKE_INSTALL_PREFIX=%GITHUB_WORKSPACE%\install^
             -DBUILD_SHARED_LIBS=ON^
             -DLIBXML2_WITH_PROGRAMS=ON^
-            -DLIBXML2_WITH_TESTS=OFF^
+            -DLIBXML2_WITH_TESTS=ON^
             -DLIBXML2_WITH_PYTHON=OFF^
             -DLIBXML2_WITH_ICONV=ON^
             -DCMAKE_INCLUDE_PATH:PATH=%GITHUB_WORKSPACE%\deps\include^
@@ -89,6 +93,8 @@ jobs:
             -DLIBXML2_WITH_ZLIB=OFF
       - name: Build shared libxml2
         run: cmake --build libxml2\build-shared --config RelWithDebInfo
+      - name: Test shared libxml2
+        run: ctest --test-dir libxml2\build-shared -C RelWithDebInfo --output-on-failure
       - name: Install shared libxml2
         run: cmake --install libxml2\build-shared --config RelWithDebInfo
       - name: Configure static libxml2
