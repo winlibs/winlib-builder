@@ -38,6 +38,10 @@ jobs:
           arch: [x64, x86]
     runs-on: ${{ (inputs.php == '8.6' || inputs.php == 'master') && 'windows-2025-vs2026' || 'windows-2022' }}
     steps:
+      - name: Preserve source line endings
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.eol lf
       - name: Checkout winlib-builder
         uses: actions/checkout@v5
         with:
@@ -154,6 +158,15 @@ jobs:
           -Vs '${{ steps.virtuals.outputs.vs }}'
           -Arch '${{ matrix.arch }}'
           -PhpVersion '${{ github.event.inputs.php }}'
+      - name: Upload failed native test evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-test-failures-${{ matrix.arch }}
+          path: |
+            libxml2/build-shared/Testing
+            libxml2/build-shared/test-output
+            libxml2/build-shared/catalog_add_del_work
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
