@@ -94,7 +94,9 @@ jobs:
       - name: Build shared libxml2
         run: cmake --build libxml2\build-shared --config RelWithDebInfo
       - name: Test shared libxml2
-        run: ctest --test-dir libxml2\build-shared -C RelWithDebInfo --output-on-failure
+        run: |
+          set "PATH=%GITHUB_WORKSPACE%\deps\bin;%PATH%"
+          ctest --test-dir libxml2\build-shared -C RelWithDebInfo --output-on-failure --timeout 180
       - name: Install shared libxml2
         run: cmake --install libxml2\build-shared --config RelWithDebInfo
       - name: Configure static libxml2
