@@ -268,6 +268,37 @@
       ]
     },
     {
+      "tag": "net-snmp-5.9.4-2",
+      "upstream": {
+        "repository": "net-snmp/net-snmp",
+        "tag": "v5.9.4",
+        "version": "5.9.4"
+      },
+      "fork": {
+        "repository": "winlibs/net-snmp",
+        "tag": "net-snmp-5.9.4-2"
+      },
+      "patches": [
+        {
+          "url": "https://github.com/winlibs/net-snmp/commit/7662537b29b1e278c65ab786ac4641cd6fb5b9d4",
+          "detail": "Fix CVE-2026-89147: bound the unauthenticated SMUX OpenPDU read with a platform-correct receive timeout."
+        }
+      ],
+      "fixedCves": [
+        {
+          "id": "CVE-2026-89147",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-89147",
+          "detail": "Fixed in net-snmp-5.9.4-2 by installing the receive timeout before the unauthenticated SMUX OpenPDU read, treating timeout as terminal instead of retrying EAGAIN, and failing closed when the timeout cannot be installed.",
+          "references": [
+            "https://github.com/winlibs/net-snmp/commit/7662537b29b1e278c65ab786ac4641cd6fb5b9d4",
+            "https://gist.github.com/thesmartshadow/001cea595e75fed6aaea7389666dc9eb",
+            "https://github.com/CVEProject/cvelistV5/blob/main/cves/2026/89xxx/CVE-2026-89147.json"
+          ]
+        }
+      ]
+    },
+    {
       "tag": "net-snmp-5.9.5.2-1",
       "upstream": {
         "repository": "net-snmp/net-snmp",
