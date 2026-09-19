@@ -1,0 +1,47 @@
+{
+  "$schema": "../schema.json",
+  "component": "OpenBLAS",
+  "aliases": ["openblas"],
+  "version": { "stripPrefixes": ["OpenBLAS-", "v"] },
+  "upstream": { "repository": "OpenMathLib/OpenBLAS", "tagTemplate": "v{version}" },
+  "license": { "id": "BSD-3-Clause" },
+  "purl": "pkg:generic/openblas@{upstreamVersion}",
+  "components": [
+    {
+      "component": "lapack",
+      "sourcePath": "openblas/lapack-netlib",
+      "version": { "value": "resolved-by-workflow" },
+      "upstream": { "repository": "Reference-LAPACK/lapack", "tagTemplate": "v{version}" },
+      "license": { "id": "BSD-3-Clause" },
+      "purl": "pkg:generic/lapack@{upstreamVersion}"
+    },
+    {
+      "component": "gcc-runtime",
+      "sourcePath": "install/share/licenses/gcc-libs",
+      "version": { "value": "resolved-by-workflow" },
+      "upstream": { "repository": "gcc-mirror/gcc", "tagTemplate": "releases/gcc-{version}" },
+      "license": { "expression": "(GPL-3.0-or-later WITH GCC-exception-3.1) AND LGPL-2.1-or-later AND BSD-3-Clause" },
+      "purl": "pkg:generic/gcc-runtime@{upstreamVersion}"
+    },
+    {
+      "component": "mingw-w64-runtime",
+      "sourcePath": "install/share/licenses/mingw-w64",
+      "version": { "value": "resolved-by-workflow" },
+      "upstream": { "repository": "mingw-w64/mingw-w64", "tagTemplate": "v{version}" },
+      "license": {
+        "licenseRef": "LicenseRef-MinGW-w64-runtime",
+        "name": "MinGW-w64 runtime notices",
+        "textFiles": ["share/licenses/mingw-w64/LICENSE.OpenBLAS-MinGW-runtime"]
+      },
+      "purl": "pkg:generic/mingw-w64-runtime@{upstreamVersion}"
+    },
+    {
+      "component": "winpthreads",
+      "sourcePath": "install/share/licenses/winpthreads",
+      "version": { "value": "resolved-by-workflow" },
+      "upstream": { "repository": "mingw-w64/mingw-w64", "tagTemplate": "v{version}" },
+      "license": { "expression": "MIT AND BSD-3-Clause" },
+      "purl": "pkg:generic/winpthreads@{upstreamVersion}"
+    }
+  ]
+}
