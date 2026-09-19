@@ -1,0 +1,112 @@
+name: Build OpenBLAS
+run-name: "Build OpenBLAS ${{ inputs.version }} for PHP ${{ inputs.php }}"
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: OpenBLAS tag to build
+        required: true
+        default: v0.3.34
+      php:
+        description: PHP version to build for
+        required: true
+        default: '8.6'
+permissions:
+  contents: read
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x64, x86]
+    runs-on: ${{ (inputs.php == '8.6' || inputs.php == 'master') && 'windows-2025-vs2026' || 'windows-2022' }}
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Set git to use LF
+        run: git config --global core.autocrlf false
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v6
+        with:
+          path: winlib-builder
+      - name: Checkout OpenBLAS
+        uses: actions/checkout@v6
+        with:
+          repository: OpenMathLib/OpenBLAS
+          ref: ${{ inputs.version }}
+          path: openblas
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell ./winlib-builder/scripts/compute-virtuals.ps1 -version '${{ inputs.php }}' -arch '${{ matrix.arch }}'
+      - name: Setup MSVC development environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.arch }}
+          toolset: ${{ steps.virtuals.outputs.toolset }}
+      - name: Install build tools
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MSYS
+          update: true
+          install: make perl
+      - name: Install MinGW toolchain
+        env:
+          RELEASE: ${{ matrix.arch == 'x64' && '9.3.0-7.0.0-r2' || '9.3.0-7.0.0-sjlj-r3' }}
+          PACKAGE: ${{ matrix.arch == 'x64' && 'winlibs-mingw-w64-x86_64-9.3.0-7.0.0-r2' || 'winlibs-mingw-w64-i686-9.3.0-7.0.0-r3-sjlj' }}
+          SHA256: ${{ matrix.arch == 'x64' && 'd8d5530b03b6c994eedc3228f51ea77f20ae090e7ae911229eabe9cdfc9dc928' || '36eb373d178c2e7499a4650ea5d1608255b8fefba7151e8a5d7c001bd68f1501' }}
+        run: |
+          Invoke-WebRequest "https://github.com/brechtsanders/winlibs_mingw/releases/download/$env:RELEASE/$env:PACKAGE.7z" -OutFile mingw.7z
+          if ((Get-FileHash mingw.7z).Hash -ne $env:SHA256) { throw 'MinGW checksum mismatch' }
+          7z x mingw.7z -otoolchain -y
+          if ($LASTEXITCODE) { throw 'MinGW extraction failed' }
+      - name: Build OpenBLAS
+        shell: msys2 {0}
+        working-directory: openblas
+        env:
+          BINARY: ${{ matrix.arch == 'x64' && '64' || '32' }}
+        run: |
+          export PATH="$(cygpath -u "$GITHUB_WORKSPACE")/toolchain/mingw$BINARY/bin:$PATH"
+          # Match the MinGW release options documented in OpenBLAS docs/install.md.
+          options=("CC=gcc -static" "FC=gfortran -static"
+            "LDFLAGS=-Wl,-Map,$PWD/../install/share/build/OpenBLAS/link.map"
+            "BINARY=$BINARY" TARGET=GENERIC DYNAMIC_ARCH=1 DYNAMIC_OLDER=1
+            NUM_THREADS=64 CONSISTENT_FPCSR=1 INTERFACE64=0 USE_THREAD=1 USE_OPENMP=0)
+          mkdir -p ../install/share/build/OpenBLAS
+          printf '%s\n' "${options[@]}" > ../install/share/build/OpenBLAS/options.txt
+          for target in libs netlib shared; do
+            make -j"$(nproc)" "${options[@]}" "$target"
+          done
+          gcc -dumpfullversion > ../install/share/build/OpenBLAS/gcc-version.txt
+          gcc -v 2> ../install/share/build/OpenBLAS/compiler.txt
+      - name: Install OpenBLAS
+        shell: msys2 {0}
+        working-directory: openblas
+        env:
+          BINARY: ${{ matrix.arch == 'x64' && '64' || '32' }}
+        run: |
+          export PATH="$(cygpath -u "$GITHUB_WORKSPACE")/toolchain/mingw$BINARY/bin:$PATH"
+          mapfile -t options < ../install/share/build/OpenBLAS/options.txt
+          make "${options[@]}" "PREFIX=$PWD/../install" install
+          cp exports/libopenblas.def ../install/lib/
+          cp config_last.h ../install/share/build/OpenBLAS/
+          objdump -t ../install/bin/libopenblas.dll > ../install/share/build/OpenBLAS/symbols.txt
+      - name: Copy license files
+        run: ./winlib-builder/scripts/openblas/copy-licenses.ps1
+      - name: Prepare MSVC package
+        id: package
+        run: ./winlib-builder/scripts/openblas/prepare-package.ps1 -Arch '${{ matrix.arch }}'
+      - name: Resolve embedded SBOM versions
+        run: ./winlib-builder/scripts/openblas/resolve-sbom-versions.ps1
+      - name: Generate SBOMs
+        run: >-
+          ./winlib-builder/scripts/generate-sbom.ps1
+          -Library OpenBLAS -Version '${{ steps.package.outputs.version }}' -InstallRoot install
+          -Vs '${{ steps.virtuals.outputs.vs }}' -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ inputs.php }}'
+          -DownloadLocation 'https://downloads.php.net/~windows/pecl/deps/OpenBLAS-${{ steps.package.outputs.version }}-${{ steps.virtuals.outputs.vs }}-${{ matrix.arch }}.zip'
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: OpenBLAS-${{ steps.package.outputs.version }}-${{ steps.virtuals.outputs.vs }}-${{ matrix.arch }}
+          path: install

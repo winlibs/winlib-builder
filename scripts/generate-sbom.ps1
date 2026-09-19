@@ -15,6 +15,8 @@ param(
 
     [string]$PhpVersion,
 
+    [string]$DownloadLocation,
+
     [string[]]$DependencyRoot = @(),
 
     [string]$MetadataPath = (Join-Path $PSScriptRoot '..\sbom')
@@ -817,6 +819,9 @@ $artifactNameParts = @($componentName, $packageVersion) + @($Vs, $Arch | Where-O
 $artifactFileName = [string]::Join('-', $artifactNameParts) + '.zip'
 $artifactPathParts = @($Vs, $Arch | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }) + @($artifactFileName)
 $artifactDownloadLocation = $downloadBaseUrl.TrimEnd('/') + '/' + [string]::Join('/', $artifactPathParts)
+if (-not [string]::IsNullOrWhiteSpace($DownloadLocation)) {
+    $artifactDownloadLocation = $DownloadLocation
+}
 $originator = Get-SpdxOriginator -Repository $sourceRepository -Url $sourceBaseUrl
 $baseName = $componentName -replace '[^A-Za-z0-9_.-]', '-'
 $properties = [System.Collections.Generic.List[object]]::new()
