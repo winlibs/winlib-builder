@@ -69,16 +69,13 @@ jobs:
           export PATH="$(cygpath -u "$GITHUB_WORKSPACE")/toolchain/mingw$BINARY/bin:$PATH"
           # Match the MinGW release options documented in OpenBLAS docs/install.md.
           options=("CC=gcc -static" "FC=gfortran -static"
-            "LDFLAGS=-Wl,-Map,$PWD/../install/share/build/OpenBLAS/link.map"
             "BINARY=$BINARY" TARGET=GENERIC DYNAMIC_ARCH=1 DYNAMIC_OLDER=1
             NUM_THREADS=64 CONSISTENT_FPCSR=1 INTERFACE64=0 USE_THREAD=1 USE_OPENMP=0)
-          mkdir -p ../install/share/build/OpenBLAS
-          printf '%s\n' "${options[@]}" > ../install/share/build/OpenBLAS/options.txt
+          printf '%s\n' "${options[@]}" > build-options.txt
           for target in libs netlib shared; do
             make -j"$(nproc)" "${options[@]}" "$target"
           done
-          gcc -dumpfullversion > ../install/share/build/OpenBLAS/gcc-version.txt
-          gcc -v 2> ../install/share/build/OpenBLAS/compiler.txt
+          gcc -dumpfullversion > gcc-version.txt
       - name: Install OpenBLAS
         shell: msys2 {0}
         working-directory: openblas
@@ -86,11 +83,8 @@ jobs:
           BINARY: ${{ matrix.arch == 'x64' && '64' || '32' }}
         run: |
           export PATH="$(cygpath -u "$GITHUB_WORKSPACE")/toolchain/mingw$BINARY/bin:$PATH"
-          mapfile -t options < ../install/share/build/OpenBLAS/options.txt
+          mapfile -t options < build-options.txt
           make "${options[@]}" "PREFIX=$PWD/../install" install
-          cp exports/libopenblas.def ../install/lib/
-          cp config_last.h ../install/share/build/OpenBLAS/
-          objdump -t ../install/bin/libopenblas.dll > ../install/share/build/OpenBLAS/symbols.txt
       - name: Copy license files
         run: ./winlib-builder/scripts/openblas/copy-licenses.ps1
       - name: Prepare MSVC package

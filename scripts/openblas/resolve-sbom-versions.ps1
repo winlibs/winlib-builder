@@ -7,7 +7,7 @@ $versions = @{
     lapack = (@('MAJOR', 'MINOR', 'PATCH') | ForEach-Object {
         [regex]::Match($lapack, "set\(LAPACK_$($_)_VERSION\s+(\d+)\)").Groups[1].Value
     }) -join '.'
-    'gcc-runtime' = (Get-Content install/share/build/OpenBLAS/gcc-version.txt).Trim()
+    'gcc-runtime' = (Get-Content openblas/gcc-version.txt).Trim()
     'mingw-w64-runtime' = '7.0.0'
     winpthreads = '7.0.0'
 }
