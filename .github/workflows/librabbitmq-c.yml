@@ -108,6 +108,12 @@ jobs:
       - name: Build & install
         run: cmake --build build --config Release --target install
 
+      - name: Test librabbitmq-c
+        shell: pwsh
+        run: |
+          $env:PATH = "$env:GITHUB_WORKSPACE\deps\bin;$env:GITHUB_WORKSPACE\build\install\bin;$env:PATH"
+          ctest --test-dir build -C Release --output-on-failure --no-tests=error
+
       - name: Copy license files
         shell: cmd
         run: xcopy rabbitmq-c\LICENSE build\install\share\licenses\librabbitmq-c\*

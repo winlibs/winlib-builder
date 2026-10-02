@@ -52,6 +52,11 @@ jobs:
         run: cd librdkafka && cmake -G "Visual Studio ${{steps.virtuals.outputs.vsinst}}" -A ${{steps.virtuals.outputs.msarch}} -T ${{steps.virtuals.outputs.msts}} -DCMAKE_SYSTEM_VERSION=${{steps.virtuals.outputs.winsdk}} -DWITH_ZSTD=ON -DWITH_SSL=ON -DWITH_ZLIB=ON -DRDKAFKA_BUILD_EXAMPLES=OFF -DCMAKE_INCLUDE_PATH:PATH=${{github.workspace}}\deps\include -DCMAKE_LIBRARY_PATH:PATH=${{github.workspace}}\deps\lib -DCMAKE_PROJECT_INCLUDE:FILEPATH=${{github.workspace}}\winlib-builder\cmake\php-sdk-library-suffixes.cmake .
       - name: Build librdkafka
         run: cd librdkafka && cmake --build . --config RelWithDebInfo
+      - name: Test librdkafka without a broker
+        run: |
+          set "PATH=%GITHUB_WORKSPACE%\deps\bin;%GITHUB_WORKSPACE%\librdkafka\src\RelWithDebInfo;%GITHUB_WORKSPACE%\librdkafka\src-cpp\RelWithDebInfo;%PATH%"
+          cd librdkafka
+          ctest -C RelWithDebInfo --output-on-failure --no-tests=error -R "^RdKafkaTestBrokerLessQuick$"
       - name: Install librdkafka
         run: |
           cd librdkafka
