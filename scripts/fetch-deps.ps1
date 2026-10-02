@@ -188,11 +188,14 @@ $needs = Resolve-DownloadDependencies `
 
 $deps = $deps | Where-Object {$needs.Keys -NotContains $_}
 if ($deps.Count -gt 0) {
+    # Legacy PHP lanes retain their existing PECL selections: newer packages
+    # can require prerequisites available only in the maintained PHP series.
+    $useLatestPecl = $version -eq 'master' -or [Version] $version -ge [Version] '8.2'
     $peclNeeds = Resolve-DownloadDependencies `
         -Dependencies $deps `
         -PackagesUrl "https://downloads.php.net/~windows/pecl/deps/packages.txt" `
         -BaseUrl "https://downloads.php.net/~windows/pecl/deps" `
-        -Latest
+        -Latest:$useLatestPecl
 
     foreach ($dep in $peclNeeds.Keys) {
         $needs[$dep] = $peclNeeds[$dep]
