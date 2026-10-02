@@ -56,6 +56,10 @@ jobs:
         id: virtuals
         run: powershell winlib-builder/scripts/compute-virtuals -version ${{ inputs.php }} -arch ${{ matrix.arch }}
 
+      - name: Prepare Cairo source and pinned Pixman
+        shell: pwsh
+        run: .\winlib-builder\.github\ci\prepare-cairo-source.ps1
+
       - name: Fetch dependencies
         run: powershell winlib-builder/scripts/fetch-deps -lib cairo -version ${{ inputs.php }} -vs ${{ steps.virtuals.outputs.vs }} -arch ${{ matrix.arch }} -stability ${{ inputs.stability }} -workflow_run_ids:'${{ inputs.workflow_run_ids }}'
         env:
@@ -88,6 +92,7 @@ jobs:
           --libdir lib
           --includedir include
           --force-fallback-for=pixman-1
+          --wrap-mode=nodownload
           -Db_ndebug=true
           -Ddwrite=enabled
           -Dfontconfig=disabled
@@ -126,6 +131,7 @@ jobs:
           --libdir lib
           --includedir include
           --force-fallback-for=pixman-1
+          --wrap-mode=nodownload
           -Db_ndebug=true
           -Ddwrite=enabled
           -Dfontconfig=disabled

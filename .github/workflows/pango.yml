@@ -136,6 +136,7 @@ jobs:
           --libdir lib
           --includedir include
           --force-fallback-for=harfbuzz,fribidi
+          --wrap-mode=nodownload
           -Dc_std=${{ (inputs.php == '8.0' || inputs.php == '8.1') && 'c99' || 'gnu11' }}
           -Db_ndebug=true
           -Ddocumentation=false
@@ -191,6 +192,7 @@ jobs:
           --libdir lib
           --includedir include
           --force-fallback-for=harfbuzz,fribidi
+          --wrap-mode=nodownload
           -Dc_std=${{ (inputs.php == '8.0' || inputs.php == '8.1') && 'c99' || 'gnu11' }}
           -Db_ndebug=true
           -Ddocumentation=false
