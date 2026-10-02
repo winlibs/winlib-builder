@@ -123,20 +123,42 @@ function Resolve-DownloadDependencies {
     param (
         [String[]] $Dependencies,
         [String] $PackagesUrl,
-        [String] $BaseUrl
+        [String] $BaseUrl,
+        [Switch] $Latest
     )
 
     $resolved = @{}
     $response = Invoke-WebRequest -Uri $PackagesUrl -UseBasicParsing
     foreach ($line in $response.Content -split "\r?\n") {
         foreach ($dep in $Dependencies) {
-            if ($resolved.ContainsKey($dep)) {
+            if ($resolved.ContainsKey($dep) -and -not $Latest) {
                 continue
             }
 
             if ($line -match "^$([regex]::Escape($dep))-(.+)-$([regex]::Escape($vs))-$([regex]::Escape($arch))\.zip$") {
+                $candidateVersion = $matches[1]
+                if ($Latest) {
+                    # The PECL index contains historical packages in filename
+                    # order. Compare stable versions numerically, including a
+                    # Winlibs rebuild suffix, rather than taking its first row.
+                    if ($candidateVersion -notmatch '^(\d+(?:\.\d+){1,3})(?:-(\d+))?$') {
+                        Write-Warning "Skipping non-stable dependency package: $line"
+                        continue
+                    }
+                    $candidateBase = [Version] $matches[1]
+                    $candidateRebuild = if ($matches[2]) { [Int64] $matches[2] } else { 0 }
+                    if ($resolved.ContainsKey($dep)) {
+                        $selectedParts = $resolved[$dep].Version -split '-', 2
+                        $selectedBase = [Version] $selectedParts[0]
+                        $selectedRebuild = if ($selectedParts.Count -gt 1) { [Int64] $selectedParts[1] } else { 0 }
+                        if ($candidateBase -lt $selectedBase -or
+                            ($candidateBase -eq $selectedBase -and $candidateRebuild -le $selectedRebuild)) {
+                            continue
+                        }
+                    }
+                }
                 $resolved[$dep] = @{
-                    Version = $matches[1];
+                    Version = $candidateVersion;
                     BaseUrl = $BaseUrl
                 }
             }
@@ -169,7 +191,8 @@ if ($deps.Count -gt 0) {
     $peclNeeds = Resolve-DownloadDependencies `
         -Dependencies $deps `
         -PackagesUrl "https://downloads.php.net/~windows/pecl/deps/packages.txt" `
-        -BaseUrl "https://downloads.php.net/~windows/pecl/deps"
+        -BaseUrl "https://downloads.php.net/~windows/pecl/deps" `
+        -Latest
 
     foreach ($dep in $peclNeeds.Keys) {
         $needs[$dep] = $peclNeeds[$dep]
