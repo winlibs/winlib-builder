@@ -52,6 +52,116 @@
           "detail": "Backport Ubuntu's PKCS#1 implicit-rejection patch."
         }
       ]
+    },
+    {
+      "tag": "openssl-3.0.22.pl2",
+      "upstream": {
+        "repository": "openssl/openssl",
+        "tag": "openssl-3.0.22",
+        "version": "3.0.22"
+      },
+      "fork": {
+        "repository": "winlibs/openssl",
+        "tag": "openssl-3.0.22.pl2"
+      },
+      "patches": [
+        {
+          "url": "https://github.com/winlibs/openssl/commit/8b89dd78b48339632e3f655b030290a0f9484bb4",
+          "detail": "Backport Ubuntu's PKCS#1 implicit-rejection patch."
+        },
+        {
+          "url": "https://github.com/winlibs/openssl/commit/41b9c5a4b6000f4aef2fa83846e43c79861ad20f",
+          "detail": "Make generic EC scalar padding constant time."
+        },
+        {
+          "url": "https://github.com/winlibs/openssl/commit/8a5224738b2e2e30f048bd3e14ed95f5fb9a128f",
+          "detail": "Defer relative CRL distribution point names until CRL checking."
+        },
+        {
+          "url": "https://github.com/winlibs/openssl/commit/c3622373e45015f992fa31baa5a910beb034c383",
+          "detail": "Guard missing CMP revocation issuer and serial values."
+        },
+        {
+          "url": "https://github.com/winlibs/openssl/commit/29a7aa9f431db0b6f006bf3fdbd5e7eba2586fb8",
+          "detail": "Reject undersized TLS 1.2 AEAD records before processing."
+        },
+        {
+          "url": "https://github.com/winlibs/openssl/commit/b2ab61b434519658143400fb5de815429b13157b",
+          "detail": "Use constant-time fixed-width and Montgomery arithmetic in SM2 signing."
+        },
+        {
+          "url": "https://github.com/winlibs/openssl/commit/94c584bf1803667efc14e9d968547447b70b8592",
+          "detail": "Reset DTLS retransmit offsets and preserve suspended writes."
+        }
+      ],
+      "fixedCves": [
+        {
+          "id": "CVE-2026-54872",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-54872",
+          "detail": "Fixed in openssl-3.0.22.pl2: make generic EC scalar padding constant time.",
+          "references": [
+            "https://github.com/winlibs/openssl/commit/41b9c5a4b6000f4aef2fa83846e43c79861ad20f",
+            "https://github.com/openssl/openssl/commit/7d83bc7764999dfd91b83b4f0815b45390422afd",
+            "https://openssl-library.org/news/secadv/20260929.txt"
+          ]
+        },
+        {
+          "id": "CVE-2026-35189",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-35189",
+          "detail": "Fixed in openssl-3.0.22.pl2: defer relative CRL distribution point names until CRL checking.",
+          "references": [
+            "https://github.com/winlibs/openssl/commit/8a5224738b2e2e30f048bd3e14ed95f5fb9a128f",
+            "https://github.com/openssl/openssl/commit/c72ae182cac17a82e4246c6ecd4e9c4ec3586ec9",
+            "https://openssl-library.org/news/secadv/20260929.txt"
+          ]
+        },
+        {
+          "id": "CVE-2026-75805",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-75805",
+          "detail": "Fixed in openssl-3.0.22.pl2: guard missing CMP revocation issuer and serial values.",
+          "references": [
+            "https://github.com/winlibs/openssl/commit/c3622373e45015f992fa31baa5a910beb034c383",
+            "https://github.com/openssl/openssl/commit/abf02872a4b71767ecc72293424420f5b009190f",
+            "https://openssl-library.org/news/secadv/20260929.txt"
+          ]
+        },
+        {
+          "id": "CVE-2026-75806",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-75806",
+          "detail": "Fixed in openssl-3.0.22.pl2: reject undersized TLS 1.2 AEAD records before processing.",
+          "references": [
+            "https://github.com/winlibs/openssl/commit/29a7aa9f431db0b6f006bf3fdbd5e7eba2586fb8",
+            "https://github.com/openssl/openssl/commit/5af82fefbaf2b5fec2fc0e1d87f112844902f01d",
+            "https://openssl-library.org/news/secadv/20260929.txt"
+          ]
+        },
+        {
+          "id": "CVE-2026-77696",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-77696",
+          "detail": "Fixed in openssl-3.0.22.pl2: use constant-time fixed-width and Montgomery arithmetic in SM2 signing.",
+          "references": [
+            "https://github.com/winlibs/openssl/commit/b2ab61b434519658143400fb5de815429b13157b",
+            "https://github.com/openssl/openssl/commit/419f5cb519721dceed393dbc524d79e487c72e64",
+            "https://openssl-library.org/news/secadv/20260929.txt"
+          ]
+        },
+        {
+          "id": "CVE-2026-84782",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-84782",
+          "detail": "Fixed in openssl-3.0.22.pl2: reset DTLS retransmit offsets and preserve suspended writes.",
+          "references": [
+            "https://github.com/winlibs/openssl/commit/94c584bf1803667efc14e9d968547447b70b8592",
+            "https://github.com/openssl/openssl/commit/9f6b34422af7eb5dac61322e33dac1ae989fa628",
+            "https://openssl-library.org/news/secadv/20260929.txt"
+          ]
+        }
+      ]
     }
   ]
 }
