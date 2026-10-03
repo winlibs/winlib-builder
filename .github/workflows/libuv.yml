@@ -1,0 +1,135 @@
+name: Build libuv
+run-name: "Build libuv-${{ inputs.version }} for PHP ${{ inputs.php }}"
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: libuv version to build
+        required: true
+        default: '1.53.0'
+      php:
+        description: PHP version to build for
+        required: true
+        default: '8.6'
+permissions:
+  contents: read
+defaults:
+  run:
+    shell: cmd
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x64, x86]
+    runs-on: ${{ (inputs.php == '8.6' || inputs.php == 'master') && 'windows-2025-vs2026' || 'windows-2022' }}
+    steps:
+      - name: Checkout winlib-builder
+        uses: actions/checkout@v6
+        with:
+          path: winlib-builder
+
+      - name: Checkout libuv
+        uses: actions/checkout@v6
+        with:
+          repository: libuv/libuv
+          ref: v${{ inputs.version }}
+          path: libuv
+
+      - name: Compute virtual inputs
+        id: virtuals
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{ inputs.php }} -arch ${{ matrix.arch }}
+
+      - name: Setup CMake
+        uses: jwlawson/actions-setup-cmake@v2
+        with:
+          cmake-version: '3.31.x'
+
+      - name: Setup MSVC environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.arch }}
+          toolset: ${{ steps.virtuals.outputs.toolset }}
+          sdk: ${{ steps.virtuals.outputs.winsdk }}
+
+      - name: Configure libuv
+        run: >-
+          cmake -S libuv -B libuv\build -G Ninja
+          -DCMAKE_BUILD_TYPE=RelWithDebInfo
+          -DCMAKE_POLICY_DEFAULT_CMP0141=NEW
+          -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=ProgramDatabase
+          -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreadedDLL
+          -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install"
+          -DCMAKE_PROJECT_INCLUDE="${{ github.workspace }}/winlib-builder/cmake/libuv.cmake"
+          -DLIBUV_BUILD_SHARED=ON
+          -DBUILD_TESTING=ON
+          -DLIBUV_BUILD_TESTS=ON
+          -DENABLE_CLANG_TIDY=OFF
+
+      - name: Build libuv
+        run: cmake --build libuv\build --parallel
+
+      - name: Test libuv
+        run: ctest --test-dir libuv\build -C RelWithDebInfo --output-on-failure --no-tests=error
+
+      - name: Install libuv
+        shell: pwsh
+        run: |
+          cmake --install libuv/build --config RelWithDebInfo
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Copy-Item libuv/build/libuv.pdb install/bin/
+          Copy-Item libuv/build/libuv_a.pdb install/lib/
+          Copy-Item libuv/LICENSE install/
+          New-Item -ItemType Directory -Force install/share/licenses/libuv | Out-Null
+          Copy-Item libuv/LICENSE, libuv/LICENSE-extra install/share/licenses/libuv/
+          foreach ($source in @('include/uv/tree.h', 'src/inet.c')) {
+            $license = [regex]::Match((Get-Content "libuv/$source" -Raw), '(?s)\A/\*.*?\*/').Value
+            if (!$license) { throw "Missing license header in $source" }
+            Set-Content "install/share/licenses/libuv/$(Split-Path $source -Leaf).LICENSE" $license
+          }
+          # Upstream pkg-config files embed build paths and Unix library names.
+          Remove-Item -Recurse install/lib/pkgconfig, install/share/doc
+
+      - name: Verify libuv artifacts
+        shell: pwsh
+        run: |
+          $required = @(
+            'bin/libuv.dll', 'bin/libuv.pdb',
+            'lib/libuv.lib', 'lib/libuv_a.lib', 'lib/libuv_a.pdb',
+            'include/uv.h', 'include/uv/win.h', 'include/uv/version.h',
+            'lib/cmake/libuv/libuvConfig.cmake',
+            'LICENSE', 'share/licenses/libuv/LICENSE', 'share/licenses/libuv/LICENSE-extra'
+          )
+          foreach ($file in $required) {
+            if (!(Test-Path "install/$file") -or (Get-Item "install/$file").Length -eq 0) {
+              throw "Missing or empty libuv artifact: $file"
+            }
+          }
+          $env:PATH = "$env:GITHUB_WORKSPACE\install\bin;$env:PATH"
+          cl /nologo /W3 /MD /Zi /Fdcheck-libuv-shared-compile.pdb /DUSING_UV_SHARED /Iinstall/include winlib-builder/.github/ci/check-libuv.c /link /DEBUG /WX /LIBPATH:install/lib libuv.lib /OUT:check-libuv-shared.exe
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ./check-libuv-shared.exe
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cl /nologo /W3 /MD /Zi /Fdcheck-libuv-static-compile.pdb /Iinstall/include winlib-builder/.github/ci/check-libuv.c /link /DEBUG /WX /LIBPATH:install/lib libuv_a.lib psapi.lib user32.lib advapi32.lib iphlpapi.lib userenv.lib ws2_32.lib dbghelp.lib ole32.lib shell32.lib synchronization.lib /OUT:check-libuv-static.exe
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ./check-libuv-static.exe
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Generate SBOMs
+        shell: pwsh
+        run: >
+          ./winlib-builder/scripts/generate-sbom.ps1
+          -Library libuv
+          -Version '${{ inputs.version }}'
+          -InstallRoot 'install'
+          -Vs '${{ steps.virtuals.outputs.vs }}'
+          -Arch '${{ matrix.arch }}'
+          -PhpVersion '${{ inputs.php }}'
+          -DownloadLocation 'https://downloads.php.net/~windows/pecl/deps/libuv-${{ inputs.version }}-${{ steps.virtuals.outputs.vs }}-${{ matrix.arch }}.zip'
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: libuv-${{ inputs.version }}-${{ steps.virtuals.outputs.vs }}-${{ matrix.arch }}
+          path: install
+          if-no-files-found: error
