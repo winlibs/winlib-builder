@@ -1,0 +1,19 @@
+{
+  "$schema": "../schema.json",
+  "component": "libuv",
+  "version": {
+    "stripPrefixes": [
+      "libuv-",
+      "v"
+    ]
+  },
+  "upstream": {
+    "repository": "libuv/libuv",
+    "tagTemplate": "v{version}"
+  },
+  "license": {
+    "expression": "MIT AND BSD-2-Clause AND ISC"
+  },
+  "purl": "pkg:generic/libuv@{upstreamVersion}",
+  "cpe": "cpe:2.3:a:libuv:libuv:{upstreamVersion}:*:*:*:*:*:*:*"
+}
