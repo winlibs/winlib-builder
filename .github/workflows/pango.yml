@@ -1,5 +1,5 @@
 name: Build pango
-run-name: "Build pango-${{ inputs.version }} for PHP ${{ inputs.php }}"
+run-name: "Build pango-${{ inputs.version }}${{ inputs.revision && format('-{0}', inputs.revision) || '' }} for PHP ${{ inputs.php }}"
 
 on:
   workflow_dispatch:
@@ -7,7 +7,7 @@ on:
       version:
         description: Pango tag to build
         required: true
-        default: 1.58.0
+        default: 1.58.2
       harfbuzz:
         description: HarfBuzz tag to embed
         required: true
@@ -16,6 +16,9 @@ on:
         description: FriBidi tag to embed
         required: true
         default: v1.0.16
+      revision:
+        description: Optional positive Winlibs rebuild revision
+        required: false
       php:
         description: PHP version to build for
         required: true
@@ -299,6 +302,13 @@ jobs:
           if ($version -notmatch '^\d+\.\d+\.\d+$') {
               throw "Unsupported Pango tag: ${{ inputs.version }}"
           }
+          $revision = '${{ inputs.revision }}'
+          if ($revision -ne '') {
+              if ($revision -notmatch '^[1-9][0-9]*$') {
+                  throw "Invalid rebuild revision: $revision"
+              }
+              $version = "$version-$revision"
+          }
           "value=$version" >> $env:GITHUB_OUTPUT
 
       - name: Copy license files
@@ -312,7 +322,7 @@ jobs:
         run: >
           .\winlib-builder\scripts\generate-sbom.ps1
           -Library pango
-          -Version '${{ inputs.version }}'
+          -Version '${{ steps.version.outputs.value }}'
           -InstallRoot 'install'
           -Vs '${{ steps.virtuals.outputs.vs }}'
           -Arch '${{ matrix.arch }}'

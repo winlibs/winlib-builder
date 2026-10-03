@@ -1,5 +1,5 @@
 name: Build librrd
-run-name: "Build librrd-${{ inputs.version }} for PHP ${{ inputs.php }}"
+run-name: "Build librrd-${{ inputs.version }}${{ inputs.revision && format('-{0}', inputs.revision) || '' }} for PHP ${{ inputs.php }}"
 
 on:
   workflow_dispatch:
@@ -11,7 +11,10 @@ on:
       glib:
         description: GLib tag used to build private static GIO
         required: true
-        default: glib-2.88.3
+        default: glib-2.90.0
+      revision:
+        description: Optional positive Winlibs rebuild revision
+        required: false
       php:
         description: PHP version to build for
         required: true
@@ -220,6 +223,13 @@ jobs:
           if ($version -notmatch '^\d+\.\d+\.\d+$') {
               throw "Unsupported RRDtool tag: ${{ inputs.version }}"
           }
+          $revision = '${{ inputs.revision }}'
+          if ($revision -ne '') {
+              if ($revision -notmatch '^[1-9][0-9]*$') {
+                  throw "Invalid rebuild revision: $revision"
+              }
+              $version = "$version-$revision"
+          }
           "value=$version" >> $env:GITHUB_OUTPUT
 
       - name: Copy license files
@@ -230,7 +240,7 @@ jobs:
         run: >
           .\winlib-builder\scripts\generate-sbom.ps1
           -Library librrd
-          -Version '${{ inputs.version }}'
+          -Version '${{ steps.version.outputs.value }}'
           -InstallRoot 'install'
           -Vs '${{ steps.virtuals.outputs.vs }}'
           -Arch '${{ matrix.arch }}'
