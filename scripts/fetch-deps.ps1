@@ -36,6 +36,9 @@ $deps = @{
 if ($version -ge "8.0") {
     $deps."libzip" += "liblzma"
 }
+if ($version -ge "8.2") {
+    $deps."libzip" += "libzstd"
+}
 $deps = $deps.$lib
 if (-not $deps) {
     exit

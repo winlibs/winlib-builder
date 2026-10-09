@@ -25,6 +25,7 @@ defaults:
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
           arch: [x64, x86]
     runs-on: ${{ (inputs.php == '8.6' || inputs.php == 'master') && 'windows-2025-vs2026' || 'windows-2022' }}
@@ -42,6 +43,12 @@ jobs:
       - name: Compute virtual inputs
         id: virtuals
         run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+      - name: Setup MSVC environment
+        if: inputs.php == 'master' || inputs.php >= '8.2'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.arch }}
+          toolset: ${{ steps.virtuals.outputs.toolset }}
       - name: Fetch dependencies
         run: powershell winlib-builder/scripts/fetch-deps -lib libzip -version ${{github.event.inputs.php}} -vs ${{steps.virtuals.outputs.vs}} -arch ${{matrix.arch}} -stability ${{github.event.inputs.stability}} -workflow_run_ids:'${{github.event.inputs.workflow_run_ids}}'
         env:
@@ -49,9 +56,25 @@ jobs:
       - name: Configure libzip for PHP < 8.0
         if: github.event.inputs.php < 8.0
         run: cmake -S libzip -B libzip\build -G "Visual Studio ${{steps.virtuals.outputs.vsinst}}" -A ${{steps.virtuals.outputs.msarch}} -T ${{steps.virtuals.outputs.msts}} -DCMAKE_SYSTEM_VERSION=${{steps.virtuals.outputs.winsdk}} -DCMAKE_INCLUDE_PATH:PATH=${{github.workspace}}\deps\include -DCMAKE_LIBRARY_PATH:PATH=${{github.workspace}}\deps\lib -DCMAKE_PROJECT_INCLUDE:FILEPATH=${{github.workspace}}\winlib-builder\cmake\php-sdk-library-suffixes.cmake -DBUILD_TOOLS=OFF -DBUILD_REGRESS=OFF -DBUILD_EXAMPLES=OFF -DBUILD_DOC=OFF
-      - name: Configure libzip for PHP >= 8.0
-        if: github.event.inputs.php >= 8.0
+      - name: Configure libzip for PHP 8.0 and 8.1
+        if: inputs.php >= '8.0' && inputs.php < '8.2'
         run: cmake -S libzip -B libzip\build -G "Visual Studio ${{steps.virtuals.outputs.vsinst}}" -A ${{steps.virtuals.outputs.msarch}} -T ${{steps.virtuals.outputs.msts}} -DCMAKE_SYSTEM_VERSION=${{steps.virtuals.outputs.winsdk}} -DCMAKE_INCLUDE_PATH:PATH=${{github.workspace}}\deps\include -DCMAKE_LIBRARY_PATH:PATH=${{github.workspace}}\deps\lib -DCMAKE_PROJECT_INCLUDE:FILEPATH=${{github.workspace}}\winlib-builder\cmake\php-sdk-library-suffixes.cmake -DENABLE_COMMONCRYPTO=OFF -DENABLE_GNUTLS=OFF -DENABLE_MBEDTLS=OFF -DENABLE_OPENSSL=OFF -DBUILD_TOOLS=OFF -DBUILD_REGRESS=OFF -DBUILD_OSSFUZZ=OFF -DBUILD_EXAMPLES=OFF -DBUILD_DOC=OFF
+      - name: Configure libzip for PHP >= 8.2
+        if: inputs.php == 'master' || inputs.php >= '8.2'
+        run: >-
+          cmake -S libzip -B libzip\build
+          -G "Visual Studio ${{ steps.virtuals.outputs.vsinst }}"
+          -A ${{ steps.virtuals.outputs.msarch }} -T ${{ steps.virtuals.outputs.msts }}
+          -DCMAKE_SYSTEM_VERSION=${{ steps.virtuals.outputs.winsdk }}
+          -DCMAKE_INCLUDE_PATH:PATH=${{ github.workspace }}\deps\include
+          -DCMAKE_LIBRARY_PATH:PATH=${{ github.workspace }}\deps\lib
+          -DCMAKE_PROJECT_INCLUDE:FILEPATH=${{ github.workspace }}\winlib-builder\cmake\php-sdk-library-suffixes.cmake
+          -DENABLE_COMMONCRYPTO=OFF -DENABLE_GNUTLS=OFF -DENABLE_OPENSSL=OFF
+          -DENABLE_ZSTD=ON -DCMAKE_REQUIRE_FIND_PACKAGE_zstd=ON
+          -Dzstd_SHARED_LIBRARY:FILEPATH=OFF
+          -Dzstd_STATIC_LIBRARY:FILEPATH=${{ github.workspace }}\deps\lib\libzstd_a.lib
+          -DBUILD_TOOLS=OFF -DBUILD_REGRESS=OFF -DBUILD_OSSFUZZ=OFF
+          -DBUILD_EXAMPLES=OFF -DBUILD_DOC=OFF
       - name: Build libzip
         run: cmake --build libzip\build --config RelWithDebInfo
       - name: Install libzip
@@ -63,6 +86,35 @@ jobs:
               xcopy libzip\build\lib\libzip_a.dir\RelWithDebInfo\libzip_a.pdb install\lib\*
           )
           rmdir /s /q install\lib\pkgconfig
+      - name: Bundle static zstd into libzip
+        if: inputs.php == 'master' || inputs.php >= '8.2'
+        run: |
+          lib /NOLOGO /OUT:install\lib\libzip_zstd.lib install\lib\libzip_a.lib deps\lib\libzstd_a.lib
+          if errorlevel 1 exit /b 1
+          move /Y install\lib\libzip_zstd.lib install\lib\libzip_a.lib
+          if errorlevel 1 exit /b 1
+          if exist deps\lib\libzstd_a.pdb copy deps\lib\libzstd_a.pdb install\lib\
+          xcopy /E /I deps\share\licenses\libzstd install\share\licenses\libzstd
+      - name: Test static libzip with PHP extension link inputs
+        if: inputs.php == 'master' || inputs.php >= '8.2'
+        run: |
+          mkdir check-deps
+          for %%L in (libbz2_a.lib zlib_a.lib liblzma_a.lib) do copy /Y deps\lib\%%L check-deps\
+          set ZIP_TIME_FLAGS=
+          if "${{ matrix.arch }}"=="x86" set ZIP_TIME_FLAGS=/D_USE_32BIT_TIME_T=1
+          cl /nologo /W4 /WX /MD /O2 /DZIP_STATIC %ZIP_TIME_FLAGS% /Iinstall\include winlib-builder\.github\ci\check-libzip.c /link /LIBPATH:install\lib /LIBPATH:check-deps libzip_a.lib libbz2_a.lib zlib_a.lib liblzma_a.lib bcrypt.lib advapi32.lib /OUT:check-libzip.exe
+          if errorlevel 1 exit /b 1
+          check-libzip.exe
+      - name: Verify static compression dependencies
+        if: inputs.php == 'master' || inputs.php >= '8.2'
+        shell: pwsh
+        run: |
+          $imports = & dumpbin /DEPENDENTS check-libzip.exe
+          if ($LASTEXITCODE -ne 0) { throw 'Unable to inspect libzip test imports' }
+          $imports | Write-Host
+          if ($imports -match '(?i)(zip|zstd|bz2|lzma|zlib).*\.dll') {
+              throw 'The libzip test unexpectedly imports a compression DLL'
+          }
       - name: Copy license files
         run: xcopy libzip\LICENSE install\share\licenses\libzip\*
       - name: Generate SBOMs
