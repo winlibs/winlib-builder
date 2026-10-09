@@ -95,6 +95,75 @@ static int roundtrip(zip_int32_t method, int encrypted)
     return 0;
 }
 
+static int torrentzip_roundtrip(void)
+{
+    const char *path = "check-torrentzip.zip";
+    const char *payloads[] = {"original", "replacement"};
+    zip_t *archive;
+    zip_source_t *source;
+    zip_file_t *file;
+    char output[32];
+    zip_int64_t count;
+    int pass, error;
+
+    for (pass = 0; pass < 2; pass++) {
+        archive = zip_open(path, pass == 0 ? ZIP_CREATE | ZIP_TRUNCATE : 0, &error);
+        if (archive == NULL) {
+            return 1;
+        }
+        if (zip_set_archive_flag(archive, ZIP_AFL_WANT_TORRENTZIP, 1) != 0) {
+            zip_discard(archive);
+            return 1;
+        }
+        source = zip_source_buffer(archive, payloads[pass], strlen(payloads[pass]), 0);
+        if (source == NULL) {
+            zip_discard(archive);
+            return 1;
+        }
+        if ((pass == 0 && zip_file_add(archive, "payload.txt", source, 0) < 0) ||
+            (pass == 1 && zip_file_replace(archive, 0, source, 0) != 0)) {
+            fprintf(stderr, "torrentzip add/replace failed: %s\n", zip_strerror(archive));
+            zip_source_free(source);
+            zip_discard(archive);
+            return 1;
+        }
+        if (zip_close(archive) != 0) {
+            fprintf(stderr, "torrentzip close failed: %s\n", zip_strerror(archive));
+            zip_discard(archive);
+            return 1;
+        }
+        archive = zip_open(path, ZIP_RDONLY, &error);
+        if (archive == NULL) {
+            return 1;
+        }
+        if (zip_get_archive_flag(archive, ZIP_AFL_IS_TORRENTZIP, 0) != 1) {
+            zip_discard(archive);
+            return 1;
+        }
+        file = zip_fopen_index(archive, 0, 0);
+        if (file == NULL) {
+            zip_discard(archive);
+            return 1;
+        }
+        count = zip_fread(file, output, sizeof(output));
+        error = zip_fclose(file);
+        if (count != (zip_int64_t)strlen(payloads[pass]) || error != 0 ||
+            memcmp(output, payloads[pass], strlen(payloads[pass])) != 0) {
+            zip_discard(archive);
+            return 1;
+        }
+        if (zip_close(archive) != 0) {
+            zip_discard(archive);
+            return 1;
+        }
+    }
+    if (remove(path) != 0) {
+        return 1;
+    }
+    puts("torrentzip add/replace round trips: passed");
+    return 0;
+}
+
 int main(void)
 {
     static const zip_int32_t methods[] = {ZIP_CM_STORE, ZIP_CM_DEFLATE, ZIP_CM_BZIP2, ZIP_CM_LZMA, ZIP_CM_XZ, ZIP_CM_ZSTD};
@@ -109,5 +178,5 @@ int main(void)
             }
         }
     }
-    return 0;
+    return torrentzip_roundtrip();
 }
