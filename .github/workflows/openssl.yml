@@ -76,6 +76,9 @@ jobs:
           xcopy /e C:\usr\local\ssl\include ..\install\include\*
           xcopy /s /e C:\usr\local\ssl\lib ..\install\lib\*
           xcopy apps\openssl.cnf ..\install\*
+      - name: Install applink for ARM64 consumers
+        if: matrix.arch == 'arm64'
+        run: copy openssl\ms\applink.c install\include\openssl\applink.c
       - name: Copy license files
         run: xcopy openssl\LICENSE.txt install\share\licenses\openssl\*
       - name: Generate SBOMs
