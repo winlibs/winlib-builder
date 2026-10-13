@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Cygwin windres preprocesses RC files; MSVC converts the neutral RES to ARM64.
+set -euo pipefail
+original=("$@")
+args=()
+output=
+while (($#)); do
+  case "$1" in
+    -o|--output) output="$2"; shift 2 ;;
+    --output=*) output="${1#*=}"; shift ;;
+    -O|--output-format) shift 2 ;;
+    --output-format=*) shift ;;
+    *) args+=("$1"); shift ;;
+  esac
+done
+if [[ -z "$output" ]]; then exec windres "${original[@]}"; fi
+resource="$(mktemp --suffix=.res)"
+trap 'rm -f "$resource"' EXIT
+windres "${args[@]}" --output-format=res -o "$resource"
+cvtres.exe /NOLOGO /MACHINE:ARM64 "/OUT:$(cygpath -w "$output")" "$(cygpath -w "$resource")"

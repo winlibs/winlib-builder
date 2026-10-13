@@ -1,11 +1,22 @@
-#! /bin/sh
+#!/usr/bin/env bash
+set -eo pipefail
 
 DEFINES=()
+INPUT=
+OUTPUT=
+# vcvarsall exposes the target architecture even when Platform is not exported.
+MACHINE=${Platform:-${VSCMD_ARG_TGT_ARCH:-}}
+case "$MACHINE" in
+  x86|X86|Win32) MACHINE=X86 ;;
+  x64|X64|amd64) MACHINE=X64 ;;
+  arm64|ARM64) MACHINE=ARM64 ;;
+  *) echo "Unsupported or missing MSVC resource target: $MACHINE" >&2; exit 1 ;;
+esac
 
 while [[ $# -gt 0 ]]; do
   case $1 in
     -i)
-      INPUT="`cygpath -w $2`"
+      INPUT="$(cygpath -w "$2")"
       shift
       shift
       ;;
@@ -25,7 +36,7 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     -o)
-      OUTPUT="`cygpath -w $2`"
+      OUTPUT="$(cygpath -w "$2")"
       shift
       shift
       ;;
@@ -38,12 +49,13 @@ while [[ $# -gt 0 ]]; do
       exit 1
       ;;
     *)
-    INPUT="`cygpath -w $1`"
+    INPUT="$(cygpath -w "$1")"
     shift
     ;;
   esac
 done
 
-rc.exe ${DEFINES[@]} -fo ${OUTPUT}.res ${INPUT}
-cvtres.exe -machine:${Platform} -out:${OUTPUT} ${OUTPUT}.res
-rm ${OUTPUT}.res
+: "${INPUT:?Missing resource input}" "${OUTPUT:?Missing resource output}"
+trap 'rm -f "${OUTPUT}.res"' EXIT
+rc.exe "${DEFINES[@]}" -fo "${OUTPUT}.res" "$INPUT"
+cvtres.exe "-machine:${MACHINE}" "-out:${OUTPUT}" "${OUTPUT}.res"

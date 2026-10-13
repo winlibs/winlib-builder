@@ -1,0 +1,243 @@
+--- a/libapriconv.mak
++++ b/libapriconv.mak
+@@ -4,7 +4,7 @@
+ !MESSAGE No configuration specified. Defaulting to libapriconv - Win32 Release.
+ !ENDIF 
+ 
+-!IF "$(CFG)" != "libapriconv - Win32 Release" && "$(CFG)" != "libapriconv - Win32 Debug" && "$(CFG)" != "libapriconv - x64 Release" && "$(CFG)" != "libapriconv - x64 Debug"
++!IF "$(CFG)" != "libapriconv - Win32 Release" && "$(CFG)" != "libapriconv - Win32 Debug" && "$(CFG)" != "libapriconv - ARM64 Release" && "$(CFG)" != "libapriconv - ARM64 Debug"
+ !MESSAGE Invalid configuration "$(CFG)" specified.
+ !MESSAGE You can specify a configuration when running NMAKE
+ !MESSAGE by defining the macro CFG on the command line. For example:
+@@ -15,8 +15,8 @@
+ !MESSAGE 
+ !MESSAGE "libapriconv - Win32 Release" (based on "Win32 (x86) Dynamic-Link Library")
+ !MESSAGE "libapriconv - Win32 Debug" (based on "Win32 (x86) Dynamic-Link Library")
+-!MESSAGE "libapriconv - x64 Release" (based on "Win32 (x86) Dynamic-Link Library")
+-!MESSAGE "libapriconv - x64 Debug" (based on "Win32 (x86) Dynamic-Link Library")
++!MESSAGE "libapriconv - ARM64 Release" (based on "Win32 (x86) Dynamic-Link Library")
++!MESSAGE "libapriconv - ARM64 Debug" (based on "Win32 (x86) Dynamic-Link Library")
+ !MESSAGE 
+ !ERROR An invalid configuration is specified.
+ !ENDIF 
+@@ -257,13 +257,13 @@
+    if exist .\Debug\libapriconv-1.dll.manifest mt.exe -manifest .\Debug\libapriconv-1.dll.manifest -outputresource:.\Debug\libapriconv-1.dll;2
+ 	echo Helper for Post-build step > "$(DS_POSTBUILD_DEP)"
+ 
+-!ELSEIF  "$(CFG)" == "libapriconv - x64 Release"
+-
+-OUTDIR=.\x64\Release
+-INTDIR=.\x64\Release
+-DS_POSTBUILD_DEP=$(INTDIR)\postbld.dep
+-# Begin Custom Macros
+-OutDir=.\x64\Release
++!ELSEIF  "$(CFG)" == "libapriconv - ARM64 Release"
++
++OUTDIR=.\ARM64\Release
++INTDIR=.\ARM64\Release
++DS_POSTBUILD_DEP=$(INTDIR)\postbld.dep
++# Begin Custom Macros
++OutDir=.\ARM64\Release
+ # End Custom Macros
+ 
+ !IF "$(RECURSE)" == "0" 
+@@ -272,12 +272,12 @@
+ 
+ !ELSE 
+ 
+-ALL : "libapr - x64 Release" "$(OUTDIR)\libapriconv-1.dll" "$(DS_POSTBUILD_DEP)"
++ALL : "libapr - ARM64 Release" "$(OUTDIR)\libapriconv-1.dll" "$(DS_POSTBUILD_DEP)"
+ 
+ !ENDIF 
+ 
+ !IF "$(RECURSE)" == "1" 
+-CLEAN :"libapr - x64 ReleaseCLEAN" 
++CLEAN :"libapr - ARM64 ReleaseCLEAN"
+ !ELSE 
+ CLEAN :
+ !ENDIF 
+@@ -342,7 +342,7 @@
+ BSC32_SBRS= \
+ 	
+ LINK32=link.exe
+-LINK32_FLAGS=kernel32.lib advapi32.lib /nologo /base:"0x6EE50000" /subsystem:windows /dll /incremental:no /pdb:"$(OUTDIR)\libapriconv-1.pdb" /debug /out:"$(OUTDIR)\libapriconv-1.dll" /implib:"$(OUTDIR)\libapriconv-1.lib" /MACHINE:X64 /opt:ref 
++LINK32_FLAGS=kernel32.lib advapi32.lib /nologo /subsystem:windows /dll /incremental:no /pdb:"$(OUTDIR)\libapriconv-1.pdb" /debug /out:"$(OUTDIR)\libapriconv-1.dll" /implib:"$(OUTDIR)\libapriconv-1.lib" /MACHINE:ARM64 /opt:ref
+ LINK32_OBJS= \
+ 	"$(INTDIR)\iconv.obj" \
+ 	"$(INTDIR)\iconv_ces.obj" \
+@@ -352,33 +352,33 @@
+ 	"$(INTDIR)\iconv_module.obj" \
+ 	"$(INTDIR)\iconv_uc.obj" \
+ 	"$(INTDIR)\libapriconv.res" \
+-	"..\apr\x64\Release\libapr-1.lib"
++	"..\apr\ARM64\Release\libapr-1.lib"
+ 
+ "$(OUTDIR)\libapriconv-1.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+     $(LINK32) @<<
+   $(LINK32_FLAGS) $(LINK32_OBJS)
+ <<
+ 
+-TargetPath=.\x64\Release\libapriconv-1.dll
++TargetPath=.\ARM64\Release\libapriconv-1.dll
+ SOURCE="$(InputPath)"
+ PostBuild_Desc=Embed .manifest
+ DS_POSTBUILD_DEP=$(INTDIR)\postbld.dep
+ 
+ # Begin Custom Macros
+-OutDir=.\x64\Release
++OutDir=.\ARM64\Release
+ # End Custom Macros
+ 
+ "$(DS_POSTBUILD_DEP)" : "$(OUTDIR)\libapriconv-1.dll"
+-   if exist .\x64\Release\libapriconv-1.dll.manifest mt.exe -manifest .\x64\Release\libapriconv-1.dll.manifest -outputresource:.\x64\Release\libapriconv-1.dll;2
++   if exist .\ARM64\Release\libapriconv-1.dll.manifest mt.exe -manifest .\ARM64\Release\libapriconv-1.dll.manifest -outputresource:.\ARM64\Release\libapriconv-1.dll;2
+ 	echo Helper for Post-build step > "$(DS_POSTBUILD_DEP)"
+ 
+-!ELSEIF  "$(CFG)" == "libapriconv - x64 Debug"
+-
+-OUTDIR=.\x64\Debug
+-INTDIR=.\x64\Debug
+-DS_POSTBUILD_DEP=$(INTDIR)\postbld.dep
+-# Begin Custom Macros
+-OutDir=.\x64\Debug
++!ELSEIF  "$(CFG)" == "libapriconv - ARM64 Debug"
++
++OUTDIR=.\ARM64\Debug
++INTDIR=.\ARM64\Debug
++DS_POSTBUILD_DEP=$(INTDIR)\postbld.dep
++# Begin Custom Macros
++OutDir=.\ARM64\Debug
+ # End Custom Macros
+ 
+ !IF "$(RECURSE)" == "0" 
+@@ -387,12 +387,12 @@
+ 
+ !ELSE 
+ 
+-ALL : "libapr - x64 Debug" "$(OUTDIR)\libapriconv-1.dll" "$(DS_POSTBUILD_DEP)"
++ALL : "libapr - ARM64 Debug" "$(OUTDIR)\libapriconv-1.dll" "$(DS_POSTBUILD_DEP)"
+ 
+ !ENDIF 
+ 
+ !IF "$(RECURSE)" == "1" 
+-CLEAN :"libapr - x64 DebugCLEAN" 
++CLEAN :"libapr - ARM64 DebugCLEAN"
+ !ELSE 
+ CLEAN :
+ !ENDIF 
+@@ -457,7 +457,7 @@
+ BSC32_SBRS= \
+ 	
+ LINK32=link.exe
+-LINK32_FLAGS=kernel32.lib advapi32.lib /nologo /base:"0x6EE50000" /subsystem:windows /dll /incremental:no /pdb:"$(OUTDIR)\libapriconv-1.pdb" /debug /out:"$(OUTDIR)\libapriconv-1.dll" /implib:"$(OUTDIR)\libapriconv-1.lib" /MACHINE:X64 
++LINK32_FLAGS=kernel32.lib advapi32.lib /nologo /subsystem:windows /dll /incremental:no /pdb:"$(OUTDIR)\libapriconv-1.pdb" /debug /out:"$(OUTDIR)\libapriconv-1.dll" /implib:"$(OUTDIR)\libapriconv-1.lib" /MACHINE:ARM64
+ LINK32_OBJS= \
+ 	"$(INTDIR)\iconv.obj" \
+ 	"$(INTDIR)\iconv_ces.obj" \
+@@ -467,24 +467,24 @@
+ 	"$(INTDIR)\iconv_module.obj" \
+ 	"$(INTDIR)\iconv_uc.obj" \
+ 	"$(INTDIR)\libapriconv.res" \
+-	"..\apr\x64\Debug\libapr-1.lib"
++	"..\apr\ARM64\Debug\libapr-1.lib"
+ 
+ "$(OUTDIR)\libapriconv-1.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+     $(LINK32) @<<
+   $(LINK32_FLAGS) $(LINK32_OBJS)
+ <<
+ 
+-TargetPath=.\x64\Debug\libapriconv-1.dll
++TargetPath=.\ARM64\Debug\libapriconv-1.dll
+ SOURCE="$(InputPath)"
+ PostBuild_Desc=Embed .manifest
+ DS_POSTBUILD_DEP=$(INTDIR)\postbld.dep
+ 
+ # Begin Custom Macros
+-OutDir=.\x64\Debug
++OutDir=.\ARM64\Debug
+ # End Custom Macros
+ 
+ "$(DS_POSTBUILD_DEP)" : "$(OUTDIR)\libapriconv-1.dll"
+-   if exist .\x64\Debug\libapriconv-1.dll.manifest mt.exe -manifest .\x64\Debug\libapriconv-1.dll.manifest -outputresource:.\x64\Debug\libapriconv-1.dll;2
++   if exist .\ARM64\Debug\libapriconv-1.dll.manifest mt.exe -manifest .\ARM64\Debug\libapriconv-1.dll.manifest -outputresource:.\ARM64\Debug\libapriconv-1.dll;2
+ 	echo Helper for Post-build step > "$(DS_POSTBUILD_DEP)"
+ 
+ !ENDIF 
+@@ -499,7 +499,7 @@
+ !ENDIF 
+ 
+ 
+-!IF "$(CFG)" == "libapriconv - Win32 Release" || "$(CFG)" == "libapriconv - Win32 Debug" || "$(CFG)" == "libapriconv - x64 Release" || "$(CFG)" == "libapriconv - x64 Debug"
++!IF "$(CFG)" == "libapriconv - Win32 Release" || "$(CFG)" == "libapriconv - Win32 Debug" || "$(CFG)" == "libapriconv - ARM64 Release" || "$(CFG)" == "libapriconv - ARM64 Debug"
+ SOURCE=.\lib\iconv.c
+ 
+ !IF  "$(CFG)" == "libapriconv - Win32 Release"
+@@ -522,7 +522,7 @@
+ <<
+ 
+ 
+-!ELSEIF  "$(CFG)" == "libapriconv - x64 Release"
++!ELSEIF  "$(CFG)" == "libapriconv - ARM64 Release"
+ 
+ CPP_SWITCHES=/nologo /MD /W3 /Zi /O2 /Oy- /I "./include" /I "../apr/include" /D "NDEBUG" /D "API_DECLARE_EXPORT" /D "WIN32" /D "_WINDOWS" /Fp"$(INTDIR)\libapriconv.pch" /Yc"iconv.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\libapriconv_src" /FD /c 
+ 
+@@ -532,7 +532,7 @@
+ <<
+ 
+ 
+-!ELSEIF  "$(CFG)" == "libapriconv - x64 Debug"
++!ELSEIF  "$(CFG)" == "libapriconv - ARM64 Debug"
+ 
+ CPP_SWITCHES=/nologo /MDd /W3 /Zi /Od /I "./include" /I "../apr/include" /D "_DEBUG" /D "API_DECLARE_EXPORT" /D "WIN32" /D "_WINDOWS" /Fp"$(INTDIR)\libapriconv.pch" /Yc"iconv.h" /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\libapriconv_src" /FD /EHsc /c 
+ 
+@@ -604,28 +604,28 @@
+    $(MAKE) /$(MAKEFLAGS) /F ".\libapr.mak" CFG="libapr - Win32 Debug" RECURSE=1 CLEAN 
+    cd "..\apr-iconv"
+ 
+-!ELSEIF  "$(CFG)" == "libapriconv - x64 Release"
+-
+-"libapr - x64 Release" : 
+-   cd ".\..\apr"
+-   $(MAKE) /$(MAKEFLAGS) /F ".\libapr.mak" CFG="libapr - x64 Release" 
+-   cd "..\apr-iconv"
+-
+-"libapr - x64 ReleaseCLEAN" : 
+-   cd ".\..\apr"
+-   $(MAKE) /$(MAKEFLAGS) /F ".\libapr.mak" CFG="libapr - x64 Release" RECURSE=1 CLEAN 
+-   cd "..\apr-iconv"
+-
+-!ELSEIF  "$(CFG)" == "libapriconv - x64 Debug"
+-
+-"libapr - x64 Debug" : 
+-   cd ".\..\apr"
+-   $(MAKE) /$(MAKEFLAGS) /F ".\libapr.mak" CFG="libapr - x64 Debug" 
+-   cd "..\apr-iconv"
+-
+-"libapr - x64 DebugCLEAN" : 
+-   cd ".\..\apr"
+-   $(MAKE) /$(MAKEFLAGS) /F ".\libapr.mak" CFG="libapr - x64 Debug" RECURSE=1 CLEAN 
++!ELSEIF  "$(CFG)" == "libapriconv - ARM64 Release"
++
++"libapr - ARM64 Release" :
++   cd ".\..\apr"
++   $(MAKE) /$(MAKEFLAGS) /F ".\libapr.mak" CFG="libapr - ARM64 Release"
++   cd "..\apr-iconv"
++
++"libapr - ARM64 ReleaseCLEAN" :
++   cd ".\..\apr"
++   $(MAKE) /$(MAKEFLAGS) /F ".\libapr.mak" CFG="libapr - ARM64 Release" RECURSE=1 CLEAN
++   cd "..\apr-iconv"
++
++!ELSEIF  "$(CFG)" == "libapriconv - ARM64 Debug"
++
++"libapr - ARM64 Debug" :
++   cd ".\..\apr"
++   $(MAKE) /$(MAKEFLAGS) /F ".\libapr.mak" CFG="libapr - ARM64 Debug"
++   cd "..\apr-iconv"
++
++"libapr - ARM64 DebugCLEAN" :
++   cd ".\..\apr"
++   $(MAKE) /$(MAKEFLAGS) /F ".\libapr.mak" CFG="libapr - ARM64 Debug" RECURSE=1 CLEAN
+    cd "..\apr-iconv"
+ 
+ !ENDIF 

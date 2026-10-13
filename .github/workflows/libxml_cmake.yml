@@ -27,12 +27,17 @@ defaults:
   run:
     shell: cmd
 jobs:
+  matrix:
+    uses: ./.github/workflows/build-matrix.yml
+    with:
+      php: ${{ inputs.php }}
   build:
+    name: build ${{ matrix.arch }}
+    needs: matrix
     strategy:
       fail-fast: false
-      matrix:
-          arch: [x64, x86]
-    runs-on: ${{ (inputs.php == '8.6' || inputs.php == 'master') && 'windows-2025-vs2026' || 'windows-2022' }}
+      matrix: ${{ fromJSON(needs.matrix.outputs.matrix) }}
+    runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout winlib-builder
         uses: actions/checkout@v5
@@ -40,13 +45,17 @@ jobs:
           path: winlib-builder
       - name: Checkout libxml2
         uses: actions/checkout@v5
+        env:
+          GIT_CONFIG_COUNT: '1'
+          GIT_CONFIG_KEY_0: core.autocrlf
+          GIT_CONFIG_VALUE_0: 'false'
         with:
           path: libxml2
           repository: winlibs/libxml2
           ref: ${{github.event.inputs.version}}
       - name: Compute virtual inputs
         id: virtuals
-        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}} -sdk ${{ matrix.sdk }}
       - name: Fetch dependencies
         shell: powershell
         run: |
@@ -69,8 +78,9 @@ jobs:
       - name: Setup MSVC development environment
         uses: ilammy/msvc-dev-cmd@v1
         with:
-          arch: ${{matrix.arch}}
+          arch: ${{ matrix.msvc_arch }}
           toolset: ${{steps.virtuals.outputs.toolset}}
+          sdk: ${{ matrix.msvc_sdk }}
       - name: Configure shared libxml2
         run: |
           cmake -S libxml2 -B libxml2\build-shared -G "Visual Studio ${{steps.virtuals.outputs.vsinst}}" -A ${{steps.virtuals.outputs.msarch}}^

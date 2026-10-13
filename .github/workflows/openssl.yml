@@ -13,11 +13,17 @@ defaults:
   run:
     shell: cmd
 jobs:
+  matrix:
+    uses: ./.github/workflows/build-matrix.yml
+    with:
+      php: ${{ inputs.php }}
   build:
+    name: build ${{ matrix.arch }}
+    needs: matrix
     strategy:
-      matrix:
-          arch: [x64, x86]
-    runs-on: ${{ (inputs.php == '8.6' || inputs.php == 'master') && 'windows-2025-vs2026' || 'windows-2022' }}
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.matrix.outputs.matrix) }}
+    runs-on: ${{ matrix.runner }}
     steps:
       - name: Set git to use LF
         run: |
@@ -35,13 +41,15 @@ jobs:
           ref: ${{github.event.inputs.version}}
       - name: Compute virtual inputs
         id: virtuals
-        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}} -sdk ${{ matrix.sdk }}
       - name: Setup MSVC development environment
         uses: ilammy/msvc-dev-cmd@v1
         with:
-          arch: ${{matrix.arch}}
+          arch: ${{ matrix.msvc_arch }}
           toolset: ${{steps.virtuals.outputs.toolset}}
+          sdk: ${{ matrix.msvc_sdk }}
       - name: Setup NASM
+        if: matrix.arch != 'arm64'
         uses: ilammy/setup-nasm@v1
       - name: Configure openssl for x64
         if: ${{matrix.arch == 'x64'}}
@@ -49,6 +57,12 @@ jobs:
       - name: Configure openssl for x86
         if: ${{matrix.arch == 'x86'}}
         run: cd openssl && perl Configure VC-WIN32 --prefix=C:\usr\local\ssl --openssldir="C:/Program Files (x86)/Common Files/SSL" no-dynamic-engine
+      - name: Configure openssl for ARM64
+        if: matrix.arch == 'arm64'
+        run: cd openssl && perl Configure VC-WIN64-ARM --prefix=C:\usr\local\ssl --openssldir="C:/Program Files/Common Files/SSL" no-dynamic-engine
+      - name: Work around MSVC ARM64 MD4 optimizer defect
+        if: matrix.arch == 'arm64'
+        run: cd openssl && git apply --ignore-whitespace ..\winlib-builder\patches\openssl-md4-arm64.patch
       - name: Build openssl
         run: cd openssl && nmake
       - name: Test openssl

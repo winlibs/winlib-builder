@@ -1,0 +1,22 @@
+--- a/source/data/makedata.mak
++++ b/source/data/makedata.mak
+@@ -142,7 +142,7 @@
+ ICUTOOLS=$(ICUP)\source\tools
+ !MESSAGE ICU tools path is $(ICUTOOLS)
+ 
+-NATIVE_ARM=
++NATIVE_ARM=ARM64
+ !IF "$(PROCESSOR_ARCHITECTURE)" == "ARM64" || "$(PROCESSOR_ARCHITEW6432)" == "ARM64"
+ NATIVE_ARM=ARM64
+ !ELSE IF "$(PROCESSOR_ARCHITECTURE)" == "ARM" || "$(PROCESSOR_ARCHITEW6432)" == "ARM"
+--- a/source/extra/uconv/makedata.mak
++++ b/source/extra/uconv/makedata.mak
+@@ -51,7 +51,7 @@
+ ICD=$(ICUDATA)^\
+ DATA_PATH=$(ICUP)\data^\
+ 
+-NATIVE_ARM=
++NATIVE_ARM=ARM64
+ !IF "$(PROCESSOR_ARCHITECTURE)" == "ARM64" || "$(PROCESSOR_ARCHITEW6432)" == "ARM64"
+ NATIVE_ARM=ARM64
+ !ELSE IF "$(PROCESSOR_ARCHITECTURE)" == "ARM" || "$(PROCESSOR_ARCHITEW6432)" == "ARM"

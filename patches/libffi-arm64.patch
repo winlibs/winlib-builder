@@ -1,0 +1,13 @@
+--- a/include/ffi.h
++++ b/include/ffi.h
+@@ -50,7 +50,9 @@
+ #endif
+ 
+ /* Specify which architecture libffi is configured for. */
+-#ifdef _WIN64
++#if defined(_M_ARM64)
++#define AARCH64
++#elif defined(_WIN64)
+ #ifndef X86_WIN64
+ #define X86_WIN64
+ #endif

@@ -1,0 +1,23 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -902,6 +902,10 @@
+       SUFFIX .so
+       LINK_FLAGS /base:@${PROJECT_BINARY_DIR}/BaseAddr.ref,${mod_name}.so
+     )
++    IF(CMAKE_GENERATOR_PLATFORM STREQUAL "ARM64")
++      # Let the linker choose a valid 64-bit base instead of the x86 table.
++      SET_PROPERTY(TARGET ${mod_name} PROPERTY LINK_FLAGS "")
++    ENDIF()
+     TARGET_LINK_LIBRARIES(${mod_name} ${${mod_extra_libs}} libhttpd ${EXTRA_LIBS} ${APR_LIBRARIES} ${HTTPD_SYSTEM_LIBS})
+     DEFINE_WITH_BLANKS(define_long_name "LONG_NAME" "${mod_name} for Apache HTTP Server")
+     SET_TARGET_PROPERTIES(${mod_name} PROPERTIES COMPILE_FLAGS "${define_long_name} -DBIN_NAME=${mod_name}.so ${EXTRA_COMPILE_FLAGS}")
+@@ -928,6 +932,9 @@
+ SET_TARGET_PROPERTIES(libhttpd PROPERTIES
+   LINK_FLAGS /base:@${PROJECT_BINARY_DIR}/BaseAddr.ref,libhttpd.dll
+ )
++IF(CMAKE_GENERATOR_PLATFORM STREQUAL "ARM64")
++  SET_PROPERTY(TARGET libhttpd PROPERTY LINK_FLAGS "")
++ENDIF()
+ SET(install_targets ${install_targets} libhttpd)
+ SET(install_bin_pdb ${install_bin_pdb} $<TARGET_PDB_FILE:libhttpd>)
+ TARGET_LINK_LIBRARIES(libhttpd ${EXTRA_LIBS} ${APR_LIBRARIES} ${PCRE_LIBRARIES} ${HTTPD_SYSTEM_LIBS})

@@ -1,0 +1,54 @@
+--- a/MSVC16/libiconv_dll/libiconv_dll.vcxproj
++++ b/MSVC16/libiconv_dll/libiconv_dll.vcxproj
+@@ -102,6 +102,7 @@
+     <LinkIncremental>true</LinkIncremental>
+   </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
++    <OutDir>..\$(Platform)\</OutDir>
+     <IntDir>obj\$(Configuration)\$(Platform)\</IntDir>
+     <LinkIncremental>true</LinkIncremental>
+   </PropertyGroup>
+@@ -116,6 +117,7 @@
+     <LinkIncremental>false</LinkIncremental>
+   </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
++    <OutDir>..\$(Platform)\</OutDir>
+     <IntDir>obj\$(Configuration)\$(Platform)\</IntDir>
+     <LinkIncremental>false</LinkIncremental>
+   </PropertyGroup>
+@@ -199,7 +201,7 @@
+       <OutputFile>$(OutDir)bin\libiconv_debug.dll</OutputFile>
+       <GenerateDebugInformation>true</GenerateDebugInformation>
+       <SubSystem>Windows</SubSystem>
+-      <RandomizedBaseAddress>false</RandomizedBaseAddress>
++      <RandomizedBaseAddress>true</RandomizedBaseAddress>
+       <DataExecutionPrevention>
+       </DataExecutionPrevention>
+       <ImportLibrary>$(OutDir)lib\libiconv_debug.lib</ImportLibrary>
+@@ -289,7 +291,7 @@
+       <SubSystem>Windows</SubSystem>
+       <OptimizeReferences>true</OptimizeReferences>
+       <EnableCOMDATFolding>true</EnableCOMDATFolding>
+-      <RandomizedBaseAddress>false</RandomizedBaseAddress>
++      <RandomizedBaseAddress>true</RandomizedBaseAddress>
+       <DataExecutionPrevention>
+       </DataExecutionPrevention>
+       <ImportLibrary>$(OutDir)lib\libiconv.lib</ImportLibrary>
+--- a/MSVC16/libiconv_static/libiconv_static.vcxproj
++++ b/MSVC16/libiconv_static/libiconv_static.vcxproj
+@@ -100,6 +100,7 @@
+     <IntDir>obj\$(Configuration)\$(Platform)\</IntDir>
+   </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
++    <OutDir>..\$(Platform)\</OutDir>
+     <IntDir>obj\$(Configuration)\$(Platform)\</IntDir>
+   </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+@@ -111,6 +112,7 @@
+     <IntDir>obj\$(Configuration)\$(Platform)\</IntDir>
+   </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
++    <OutDir>..\$(Platform)\</OutDir>
+     <IntDir>obj\$(Configuration)\$(Platform)\</IntDir>
+   </PropertyGroup>
+   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">

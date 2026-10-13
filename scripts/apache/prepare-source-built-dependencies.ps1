@@ -30,7 +30,7 @@ $staticTriplet = "$Arch-windows-static-md"
 $sharedRoot = "C:/vcpkg/installed/$sharedTriplet"
 $staticRoot = "C:/vcpkg/installed/$staticTriplet"
 $depsRoot = Join-Path $env:GITHUB_WORKSPACE 'deps-install'
-$iconvConfigArch = if ($Arch -eq 'x64') { 'x64' } else { 'Win32' }
+$iconvConfigArch = switch ($Arch) { arm64 { 'ARM64' }; x64 { 'x64' }; x86 { 'Win32' }; default { throw "Unsupported architecture: $Arch" } }
 $pcreLibrary = Join-Path $sharedRoot $PcreLibPath
 $curlLibrary = if (Test-Path (Join-Path $sharedRoot 'lib\libcurl_imp.lib')) {
     Join-Path $sharedRoot 'lib\libcurl_imp.lib'
@@ -127,6 +127,9 @@ foreach ($aprCompatReleaseRoot in $aprCompatReleaseRoots) {
 
 Push-Location $apriconvRoot.FullName
 try {
+    if ($Arch -eq 'arm64') {
+        & git apply --ignore-whitespace (Join-Path $PSScriptRoot '../../patches/apr-iconv-arm64.patch')
+    }
     nmake /f libapriconv.mak CFG="libapriconv - $iconvConfigArch Release" RECURSE=0
 } finally {
     Pop-Location

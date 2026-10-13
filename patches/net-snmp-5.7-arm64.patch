@@ -1,0 +1,29 @@
+--- a/win32/net-snmp/net-snmp-config.h.in
++++ b/win32/net-snmp/net-snmp-config.h.in
+@@ -1364,7 +1364,7 @@
+ /* got ssize_t? */
+ # define HAVE_SSIZE_T
+ #elif defined(_MSC_VER)
+-# ifdef _M_X64
++# ifdef _WIN64
+ typedef __int64 ssize_t;
+ # else
+ typedef __int32 ssize_t;
+@@ -1616,7 +1616,7 @@
+ /* (u)intptr_t should only be needed for MSVC 6 32-bit. */
+ /* SDK has it for 64-bit and newer MSVC should also have it in stddef.h. */
+ #ifndef _INTPTR_T_DEFINED
+-#ifdef _M_X64
++#ifdef _WIN64
+ typedef __int64          intptr_t;
+ #else
+ typedef int              intptr_t;
+@@ -1625,7 +1625,7 @@
+ #endif
+ 
+ #ifndef _UINTPTR_T_DEFINED
+-#ifdef _M_X64
++#ifdef _WIN64
+ typedef unsigned __int64 uintptr_t;
+ #else
+ typedef unsigned int     uintptr_t;

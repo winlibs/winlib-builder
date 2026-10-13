@@ -13,12 +13,17 @@ defaults:
   run:
     shell: cmd
 jobs:
+  matrix:
+    uses: ./.github/workflows/build-matrix.yml
+    with:
+      php: ${{ inputs.php }}
   build:
+    name: build ${{ matrix.arch }}
+    needs: matrix
     strategy:
       fail-fast: false
-      matrix:
-        arch: [x64, x86]
-    runs-on: ${{ (inputs.php == '8.6' || inputs.php == 'master') && 'windows-2025-vs2026' || 'windows-2022' }}
+      matrix: ${{ fromJSON(needs.matrix.outputs.matrix) }}
+    runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout winlib-builder
         uses: actions/checkout@v6
@@ -27,8 +32,15 @@ jobs:
 
       - name: Compute virtual inputs
         id: virtuals
-        run: powershell winlib-builder/scripts/compute-virtuals -version ${{ github.event.inputs.php }} -arch ${{ matrix.arch }}
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{ github.event.inputs.php }} -arch ${{ matrix.arch }} -sdk ${{ matrix.sdk }}
 
+      - name: Setup MSVC development environment
+        if: matrix.arch == 'arm64'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.msvc_arch }}
+          toolset: ${{ steps.virtuals.outputs.toolset }}
+          sdk: ${{ matrix.msvc_sdk }}
       - name: Compute package metadata
         id: package
         shell: pwsh
@@ -107,6 +119,21 @@ jobs:
           $licenseRoot = Join-Path $env:GITHUB_WORKSPACE 'install/share/licenses/fbclient'
           New-Item -Path $licenseRoot -ItemType Directory -Force | Out-Null
           Copy-Item -Path (Join-Path $extractRoot 'IDPLicense.txt'), (Join-Path $extractRoot 'IPLicense.txt') -Destination $licenseRoot -Force
+      - name: Checkout Firebird sources for ARM64
+        if: matrix.arch == 'arm64'
+        uses: actions/checkout@v5
+        with:
+          repository: FirebirdSQL/firebird
+          ref: ${{ inputs.version }}
+          path: firebird
+      - name: Generate ARM64 import library
+        if: matrix.arch == 'arm64'
+        run: |
+          echo LIBRARY fbclient.dll>fbclient.def
+          type firebird\builds\win32\defs\firebird.def>>fbclient.def
+          lib.exe /nologo /machine:ARM64 /def:fbclient.def /out:fbclient_ms.lib
+          if errorlevel 1 exit /b %errorlevel%
+          copy /y fbclient_ms.lib install\lib\fbclient_ms.lib
       - name: Generate SBOMs
         shell: pwsh
         run: >

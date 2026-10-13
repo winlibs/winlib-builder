@@ -23,11 +23,17 @@ defaults:
   run:
     shell: cmd
 jobs:
+  matrix:
+    uses: ./.github/workflows/build-matrix.yml
+    with:
+      php: ${{ inputs.php }}
   build:
+    name: build ${{ matrix.arch }}
+    needs: matrix
     strategy:
-      matrix:
-          arch: [x64, x86]
-    runs-on: ${{ (inputs.php == '8.6' || inputs.php == 'master') && 'windows-2025-vs2026' || 'windows-2022' }}
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.matrix.outputs.matrix) }}
+    runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout winlib-builder
         uses: actions/checkout@v5
@@ -41,17 +47,25 @@ jobs:
           ref: ${{github.event.inputs.version}}
       - name: Compute virtual inputs
         id: virtuals
-        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}} -sdk ${{ matrix.sdk }}
+      - name: Setup MSVC development environment
+        if: matrix.arch == 'arm64'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.msvc_arch }}
+          toolset: ${{ steps.virtuals.outputs.toolset }}
+          sdk: ${{ matrix.msvc_sdk }}
       - name: Fetch dependencies
         run: powershell winlib-builder/scripts/fetch-deps -lib cyrus-sasl -version ${{github.event.inputs.php}} -vs ${{steps.virtuals.outputs.vs}} -arch ${{matrix.arch}} -stability ${{github.event.inputs.stability}} -workflow_run_ids:'${{github.event.inputs.workflow_run_ids}}'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Setup msbuild
+        if: matrix.arch != 'arm64'
         uses: microsoft/setup-msbuild@v2
       - name: Build cyrus-sasl-core
-        run: cd cyrus-sasl\win32 && msbuild /p:Configuration=Release;Platform=${{matrix.arch}};PlatformToolset=${{steps.virtuals.outputs.msts}};WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}} cyrus-sasl-core.sln
+        run: cd cyrus-sasl\win32 && msbuild /p:Configuration=Release;Platform=${{ matrix.arch == 'arm64' && 'ARM64' || matrix.arch }};PlatformToolset=${{steps.virtuals.outputs.msts}};WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}} cyrus-sasl-core.sln
       - name: Build cyrus-sasl-sasldb
-        run: cd cyrus-sasl\win32 && msbuild /p:Configuration=Release;Platform=${{matrix.arch}};PlatformToolset=${{steps.virtuals.outputs.msts}};WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}} cyrus-sasl-sasldb.sln
+        run: cd cyrus-sasl\win32 && msbuild /p:Configuration=Release;Platform=${{ matrix.arch == 'arm64' && 'ARM64' || matrix.arch }};PlatformToolset=${{steps.virtuals.outputs.msts}};WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}} cyrus-sasl-sasldb.sln
       - name: Install cyrus-sasl
         run: |
           cd cyrus-sasl\win32

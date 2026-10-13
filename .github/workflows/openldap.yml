@@ -23,11 +23,17 @@ defaults:
   run:
     shell: cmd
 jobs:
+  matrix:
+    uses: ./.github/workflows/build-matrix.yml
+    with:
+      php: ${{ inputs.php }}
   build:
+    name: build ${{ matrix.arch }}
+    needs: matrix
     strategy:
-      matrix:
-          arch: [x64, x86]
-    runs-on: ${{ (inputs.php == '8.6' || inputs.php == 'master') && 'windows-2025-vs2026' || 'windows-2022' }}
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.matrix.outputs.matrix) }}
+    runs-on: ${{ matrix.runner }}
     steps:
       - name: Set git to use LF
         run: |
@@ -45,7 +51,7 @@ jobs:
           ref: ${{github.event.inputs.version}}
       - name: Compute virtual inputs
         id: virtuals
-        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}} -sdk ${{ matrix.sdk }}
       - name: Fetch dependencies
         run: powershell winlib-builder/scripts/fetch-deps -lib openldap -version ${{github.event.inputs.php}} -vs ${{steps.virtuals.outputs.vs}} -arch ${{matrix.arch}} -stability ${{github.event.inputs.stability}} -workflow_run_ids:'${{github.event.inputs.workflow_run_ids}}'
         env:
@@ -59,8 +65,18 @@ jobs:
       - name: Setup MSVC development environment
         uses: ilammy/msvc-dev-cmd@v1
         with:
-          arch: ${{matrix.arch}}
+          arch: ${{ matrix.msvc_arch }}
           toolset: ${{steps.virtuals.outputs.toolset}}
+          sdk: ${{ matrix.msvc_sdk }}
+      - name: Install MSYS2 for ARM64 host
+        if: matrix.arch == 'arm64'
+        id: msys
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MSYS
+          path-type: inherit
+          platform-check-severity: warn
+          install: make groff
       - name: Build and install rxspencer
         run: |
           cd rxspencer
@@ -82,7 +98,9 @@ jobs:
           ) else (
             set HOST_TRIPLET=x86_64-w64-mingw32
           )
-          > winlibs.sh echo export PATH=/usr/local/bin:/usr/bin:/bin:/opt/bin:$PATH
+          if "${{matrix.arch}}" == "arm64" set HOST_TRIPLET=aarch64-w64-mingw32
+          > winlibs.sh echo set -e
+          >>winlibs.sh echo export PATH=/usr/local/bin:/usr/bin:/bin:/opt/bin:$PATH
           >>winlibs.sh echo pacman -S --noconfirm make groff
           >>winlibs.sh echo ./configure --host=%HOST_TRIPLET% --disable-slapd --disable-shared --prefix='${pcfiledir}/../..' --includedir='${prefix}/include/openldap' --sysconfdir=/c/openldap/sysconf --with-subdir=no \
           >>winlibs.sh echo   CC='%WORKSPACE%/winlib-builder/autotools/compile cl -nologo' \
@@ -106,7 +124,7 @@ jobs:
           set MSYS2_ARG_CONV_EXCL=*
           set INCLUDE=${{github.workspace}}\deps\include;%INCLUDE%
           set LIB=${{github.workspace}}\deps\lib;%LIB%
-          C:\msys64\usr\bin\bash.exe -lc ./winlibs.sh
+          "${{ steps.msys.outputs.msys2-location || 'C:\msys64' }}\usr\bin\bash.exe" -lc ./winlibs.sh
       - name: Patch installation
         run: |
           xcopy openldap\libraries\liblber\olber32_a.pdb install\lib\*

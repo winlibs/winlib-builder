@@ -5,7 +5,8 @@ param (
     [Parameter(Mandatory)] [String] $arch,
     [Parameter(Mandatory)] [String] $stability,
     [String] $workflow_run_ids = "",
-    [String] $repository = ""
+    [String] $repository = "",
+    [String] $destination = "deps"
 )
 
 $ErrorActionPreference = "Stop"
@@ -17,6 +18,7 @@ $deps = @{
     "enchant" = "glib";
     "glib" = "libffi", "libintl", "zlib";
     "hmailserver" = "boost", "openssl", "libpq";
+    "libheif" = "libjpeg-turbo";
     "libpng" = "zlib";
     "librrd" = "cairo", "glib", "libffi", "libiconv", "libintl", "libpng", "libxml2", "pango", "zlib";
     "libjxl" = "brotli";
@@ -149,13 +151,13 @@ function Resolve-DownloadDependencies {
     return $resolved
 }
 
-New-Item "deps" -ItemType "directory" -Force | Out-Null
+New-Item $destination -ItemType "directory" -Force | Out-Null
 
 $artifactDeps = Resolve-GitHubArtifactDependencies `
     -Dependencies $deps `
     -RunIds $workflow_run_ids `
     -Repository $repository `
-    -Destination "deps"
+    -Destination $destination
 
 $deps = $deps | Where-Object { -not $artifactDeps.ContainsKey($_) }
 if ($deps.Count -eq 0) {
@@ -191,7 +193,7 @@ foreach ($dep in $needs.Keys) {
     $temp = New-TemporaryFile | Rename-Item -NewName {$_.Name + ".zip"} -PassThru
     try {
         Invoke-WebRequest -Uri $url -OutFile $temp
-        Expand-Archive -Path $temp -DestinationPath "deps" -Force
+        Expand-Archive -Path $temp -DestinationPath $destination -Force
     } finally {
         Remove-Item -LiteralPath $temp.FullName -Force -ErrorAction SilentlyContinue
     }

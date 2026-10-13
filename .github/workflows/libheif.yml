@@ -23,16 +23,30 @@ on:
         description: libjpeg-turbo tag to build
         required: true
         default: 3.2.0
+      stability:
+        description: Dependency series stability
+        default: staging
+      workflow_run_ids:
+        description: Workflow runs containing SDK JPEG dependency artifacts
+        required: false
+permissions:
+  actions: read
+  contents: read
 defaults:
   run:
     shell: cmd
 jobs:
+  matrix:
+    uses: ./.github/workflows/build-matrix.yml
+    with:
+      php: ${{ inputs.php }}
   build:
+    name: build ${{ matrix.arch }}
+    needs: matrix
     strategy:
       fail-fast: false
-      matrix:
-        arch: [x64, x86]
-    runs-on: ${{ (inputs.php == '8.6' || inputs.php == 'master') && 'windows-2025-vs2026' || 'windows-2022' }}
+      matrix: ${{ fromJSON(needs.matrix.outputs.matrix) }}
+    runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout winlib-builder
         uses: actions/checkout@v5
@@ -58,28 +72,31 @@ jobs:
           git clone --depth 1 --branch ${{ inputs.dav1d }} https://code.videolan.org/videolan/dav1d.git dav1d
       - name: Compute virtual inputs
         id: virtuals
-        run: powershell winlib-builder/scripts/compute-virtuals -version ${{ inputs.php }} -arch ${{ matrix.arch }}
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{ inputs.php }} -arch ${{ matrix.arch }} -sdk ${{ matrix.sdk }}
       - name: Setup CMake
         uses: jwlawson/actions-setup-cmake@v2
         with:
           cmake-version: '3.31.x'
       - name: Setup NASM
+        if: matrix.arch != 'arm64'
         uses: ilammy/setup-nasm@v1
       - name: Setup MSVC environment
         uses: ilammy/msvc-dev-cmd@v1
         with:
-          arch: ${{ matrix.arch }}
+          arch: ${{ matrix.msvc_arch }}
+          toolset: ${{ steps.virtuals.outputs.toolset }}
+          sdk: ${{ matrix.msvc_sdk }}
       - name: Setup Meson
         run: python -m pip install meson
       - name: Configure AOM
-        run: cmake -S aom -B aom\build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="%GITHUB_WORKSPACE%\deps" -DBUILD_SHARED_LIBS=OFF -DENABLE_DOCS=OFF -DENABLE_EXAMPLES=OFF -DENABLE_TESTDATA=OFF -DENABLE_TESTS=OFF -DENABLE_TOOLS=OFF -DENABLE_NASM=ON
+        run: cmake -S aom -B aom\build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="%GITHUB_WORKSPACE%\deps" -DBUILD_SHARED_LIBS=OFF -DENABLE_DOCS=OFF -DENABLE_EXAMPLES=OFF -DENABLE_TESTDATA=OFF -DENABLE_TESTS=OFF -DENABLE_TOOLS=OFF ${{ matrix.arch == 'arm64' && '-DAOM_TARGET_CPU=generic -DENABLE_NASM=OFF' || '-DENABLE_NASM=ON' }}
       - name: Build AOM
         run: |
           cmake --build aom\build --config Release
           cmake --install aom\build --config Release
       - name: Build dav1d
         run: |
-          meson setup dav1d\build dav1d --backend ninja --buildtype release --default-library static --prefix "%GITHUB_WORKSPACE%\deps" --libdir lib --includedir include -Db_vscrt=md -Denable_tools=false -Denable_tests=false -Denable_examples=false
+          meson setup dav1d\build dav1d --backend ninja --buildtype release --default-library static --prefix "%GITHUB_WORKSPACE%\deps" --libdir lib --includedir include -Db_vscrt=md -Denable_tools=false -Denable_tests=false -Denable_examples=false ${{ matrix.arch == 'arm64' && '-Denable_asm=false' || '' }}
           meson compile -C dav1d\build
           meson install -C dav1d\build
       - name: Build libjpeg-turbo
@@ -223,18 +240,24 @@ jobs:
           if errorlevel 1 exit /b %errorlevel%
           check-libheif-static.exe
       - name: Verify static libheif with PHP SDK JPEG
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           $vs = '${{ steps.virtuals.outputs.vs }}'
           $arch = '${{ matrix.arch }}'
-          $base = 'https://downloads.php.net/~windows/php-sdk/deps'
-          $series = (Invoke-WebRequest "$base/series/packages-${{ inputs.php }}-$vs-$arch-staging.txt").Content
-          $jpegPackages = @($series -split '[\r\n]+' | Where-Object { $_ -match "^libjpeg-turbo-[0-9][0-9A-Za-z.\-]*-$vs-$arch\.zip$" })
-          if ($jpegPackages.Count -ne 1) { throw 'Expected one SDK JPEG package in the staging series' }
-          Write-Host "Validating static libheif with SDK package $($jpegPackages[0])"
-          Invoke-WebRequest "$base/$vs/$arch/$($jpegPackages[0])" -OutFile sdk-jpeg.zip
-          Expand-Archive sdk-jpeg.zip -DestinationPath sdk-jpeg -Force
+          if ($arch -eq 'arm64') {
+            ./winlib-builder/scripts/fetch-deps.ps1 -lib libheif -version '${{ inputs.php }}' -vs $vs -arch $arch -stability '${{ inputs.stability }}' -workflow_run_ids '${{ inputs.workflow_run_ids }}' -destination sdk-jpeg
+          } else {
+            $base = 'https://downloads.php.net/~windows/php-sdk/deps'
+            $series = (Invoke-WebRequest "$base/series/packages-${{ inputs.php }}-$vs-$arch-staging.txt").Content
+            $jpegPackages = @($series -split '[\r\n]+' | Where-Object { $_ -match "^libjpeg-turbo-[0-9][0-9A-Za-z.\-]*-$vs-$arch\.zip$" })
+            if ($jpegPackages.Count -ne 1) { throw 'Expected one SDK JPEG package in the staging series' }
+            Write-Host "Validating static libheif with SDK package $($jpegPackages[0])"
+            Invoke-WebRequest "$base/$vs/$arch/$($jpegPackages[0])" -OutFile sdk-jpeg.zip
+            Expand-Archive sdk-jpeg.zip -DestinationPath sdk-jpeg -Force
+          }
           $config = Get-Content sdk-jpeg/include/jconfig.h -Raw
           if ($config -notmatch '#define\s+JPEG_LIB_VERSION\s+80\b') { throw 'SDK JPEG ABI changed; review libheif JPEG configuration' }
           & cl /nologo /W3 /MD /Zi /Fdcheck-libheif-sdk-compile.pdb /DLIBHEIF_STATIC_BUILD /Iinstall\include winlib-builder\.github\ci\check-libheif.c /link /DEBUG /WX /PDB:check-libheif-sdk.pdb /LIBPATH:install\lib /LIBPATH:sdk-jpeg\lib heif_a.lib aom_a.lib dav1d_a.lib libjpeg_a.lib Advapi32.lib /OUT:check-libheif-sdk.exe

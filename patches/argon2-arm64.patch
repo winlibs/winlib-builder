@@ -1,0 +1,11 @@
+--- a/Makefile.vc
++++ b/Makefile.vc
+@@ -5,7 +5,7 @@
+ CFLAGS =  /nologo /Isrc /Isrc\blake2 /Iinclude /W3 /D _WINDOWS /D WIN32
+ 
+ !if "$(DEBUG)" == "1"
+-CFLAGS = $(CFLAGS) /D _DEBUG /Od /ZI /RTC1 /MDd /Fdargon2_a_debug.pdb
++CFLAGS = $(CFLAGS) /D _DEBUG /Od /Zi /RTC1 /MDd /Fdargon2_a_debug.pdb
+ OUT_LIB_NAME = argon2_a_debug.lib
+ !else
+ CFLAGS = $(CFLAGS) /D NDebug /D NDEBUG /guard:cf /Zc:inline /Gw /MP /MD /Ox /GF /Zi /Fdargon2_a.pdb

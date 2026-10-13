@@ -16,11 +16,17 @@ defaults:
   run:
     shell: cmd
 jobs:
+  matrix:
+    uses: ./.github/workflows/build-matrix.yml
+    with:
+      php: ${{ inputs.php }}
   build:
+    name: build ${{ matrix.arch }}
+    needs: matrix
     strategy:
-      matrix:
-          arch: [x64, x86]
-    runs-on: ${{ (inputs.php == '8.6' || inputs.php == 'master') && 'windows-2025-vs2026' || 'windows-2022' }}
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.matrix.outputs.matrix) }}
+    runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout winlib-builder
         uses: actions/checkout@v5
@@ -34,10 +40,18 @@ jobs:
           ref: ${{github.event.inputs.version}}
       - name: Compute virtual inputs
         id: virtuals
-        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}} -sdk ${{ matrix.sdk }}
+      - name: Setup MSVC development environment
+        if: matrix.arch == 'arm64'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.msvc_arch }}
+          toolset: ${{ steps.virtuals.outputs.toolset }}
+          sdk: ${{ matrix.msvc_sdk }}
       - name: Checkout aom
         run: cd libavif\ext && git clone -b ${{github.event.inputs.aom}} --depth 1 https://aomedia.googlesource.com/aom
       - name: Setup NASM
+        if: matrix.arch != 'arm64'
         uses: ilammy/setup-nasm@v1
       - name: Configure aom for x64
         if: matrix.arch == 'x64'
@@ -45,6 +59,9 @@ jobs:
       - name: Configure aom for x86
         if: matrix.arch == 'x86'
         run: cd libavif\ext\aom && md build.libavif && cd build.libavif && cmake -G "Visual Studio ${{steps.virtuals.outputs.vsinst}}" -A ${{steps.virtuals.outputs.msarch}} -T ${{steps.virtuals.outputs.msts}} -DCMAKE_SYSTEM_VERSION=${{steps.virtuals.outputs.winsdk}} -DENABLE_DOCS=0 -DENABLE_EXAMPLES=0 -DENABLE_TESTDATA=0 -DENABLE_TESTS=0 -DENABLE_TOOLS=0 -DENABLE_NASM=1 -DENABLE_SSE2=0 -DENABLE_SSE3=0 -DENABLE_SSSE3=0 -DENABLE_SSE4_1=0 -DENABLE_SSE4_2=0 -DENABLE_AVX=0 -DENABLE_AVX2=0 ..
+      - name: Configure aom for ARM64
+        if: matrix.arch == 'arm64'
+        run: cd libavif\ext\aom && cmake -S . -B build.libavif -G "Visual Studio ${{steps.virtuals.outputs.vsinst}}" -A ARM64 -T ${{steps.virtuals.outputs.msts}} -DCMAKE_SYSTEM_VERSION=${{steps.virtuals.outputs.winsdk}} -DAOM_TARGET_CPU=generic -DENABLE_DOCS=0 -DENABLE_EXAMPLES=0 -DENABLE_TESTDATA=0 -DENABLE_TESTS=0 -DENABLE_TOOLS=0
       - name: Build aom
         run: cd libavif\ext\aom\build.libavif && cmake --build . --config Release
       - name: Install aom

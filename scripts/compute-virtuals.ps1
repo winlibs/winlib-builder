@@ -1,6 +1,7 @@
 param(
     [Parameter(Mandatory)] [String] $version,
-    [Parameter(Mandatory)] [String] $arch
+    [Parameter(Mandatory)] [String] $arch,
+    [String] $sdk = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -15,6 +16,7 @@ $versions = @{
     "8.4" = "vs17"
     "8.5" = "vs17"
     "8.6" = "vs18"
+    "8.7" = "vs18"
     "master" = "vs18"
 }
 $vs = $versions.$version
@@ -22,6 +24,9 @@ if (-not $vs) {
     throw "unsupported PHP version"
 }
 $vsnum = $vs.substring(2)
+if ($arch -eq 'arm64' -and $vs -eq 'vs16') {
+    & "$PSScriptRoot/install-vs.ps1" -Version vs16
+}
 
 $years = @{
     "vc15" = "2017"
@@ -42,21 +47,26 @@ $toolsets = @{
     "vc14" = "14.0"
 }
 $dir = vswhere -latest -find "VC\Tools\MSVC"
-foreach ($ts in (Get-ChildItem $dir)) {
-    $tsv = "$ts".split(".")
+foreach ($ts in (Get-ChildItem $dir -Directory | Sort-Object { [version] $_.Name })) {
+    if ($arch -eq 'arm64' -and -not (Test-Path "$($ts.FullName)/bin/Hostx64/arm64/cl.exe")) { continue }
+    $tsv = $ts.Name.split(".")
     if ((14 -eq $tsv[0]) -and (9 -ge $tsv[1])) {
-        $toolsets."vc14" = $ts
+        $toolsets."vc14" = $ts.Name
     } elseif ((14 -eq $tsv[0]) -and (19 -ge $tsv[1])) {
-        $toolsets."vc15" = $ts
-    } elseif ((14 -eq $tsv[0]) -and (39 -ge $tsv[1])) {
-        $toolsets."vs16" = $ts
+        $toolsets."vc15" = $ts.Name
+    } elseif ((14 -eq $tsv[0]) -and (29 -ge $tsv[1])) {
+        $toolsets."vs16" = $ts.Name
     } elseif ((14 -eq $tsv[0]) -and (49 -ge $tsv[1])) {
-        $toolsets."vs17" = $ts
+        $toolsets."vs17" = $ts.Name
     } elseif (14 -eq $tsv[0]) {
-        $toolsets."vs18" = $ts
+        $toolsets."vs18" = $ts.Name
     }
 }
 $toolset = $toolsets.$vs
+if ($arch -eq 'arm64') {
+    $major = ([version] (& vswhere -latest -products '*' -property installationVersion)).Major
+    $vsinst = "$major $($years."vs$major")"
+}
 if (-not $toolset) {
     throw "no suitable toolset available"
 }
@@ -79,6 +89,7 @@ $winsdks = @{
     "vs18" = "10.0.26100.0"
 }
 $winsdk = $winsdks.$vs
+if ($sdk) { $winsdk = $sdk }
 if (-not $winsdk) {
     throw "no suitable Windows SDK available"
 }
@@ -86,6 +97,7 @@ if (-not $winsdk) {
 $msarchs = @{
     "x64" = "x64"
     "x86" = "Win32"
+    "arm64" = "ARM64"
 }
 $msarch = $msarchs.$arch
 if (-not $msarch) {

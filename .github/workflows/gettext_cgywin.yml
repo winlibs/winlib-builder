@@ -13,12 +13,17 @@ defaults:
   run:
     shell: cmd
 jobs:
+  matrix:
+    uses: ./.github/workflows/build-matrix.yml
+    with:
+      php: ${{ inputs.php }}
   build:
+    name: build ${{ matrix.arch }}
+    needs: matrix
     strategy:
       fail-fast: false
-      matrix:
-        arch: [x64, x86]
-    runs-on: ${{ (inputs.php == '8.6' || inputs.php == 'master') && 'windows-2025-vs2026' || 'windows-2022' }}
+      matrix: ${{ fromJSON(needs.matrix.outputs.matrix) }}
+    runs-on: ${{ matrix.runner }}
     steps:
       - name: Disable Git CRLF conversion
         run: |
@@ -36,12 +41,12 @@ jobs:
           ref: ${{github.event.inputs.version}}
       - name: Compute virtual inputs
         id: virtuals
-        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}} -sdk ${{ matrix.sdk }}
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
         with:
-          arch: ${{matrix.arch}}
-          sdk: ${{steps.virtuals.outputs.winsdk}}
+          arch: ${{ matrix.msvc_arch }}
+          sdk: ${{ matrix.sdk }}
           toolset: ${{steps.virtuals.outputs.toolset}}
       - name: Setup Cygwin
         run: |
@@ -50,7 +55,7 @@ jobs:
       - name: Build gettext
         shell: pwsh
         env:
-          HOST_TRIPLET: ${{matrix.arch == 'x64' && 'x86_64-w64-mingw32' || 'i686-w64-mingw32'}}
+          HOST_TRIPLET: ${{ matrix.arch == 'arm64' && 'aarch64-w64-mingw32' || matrix.arch == 'x64' && 'x86_64-w64-mingw32' || 'i686-w64-mingw32' }}
         run: |
           $script = @'
           win_to_cygpath() {
@@ -75,6 +80,10 @@ jobs:
           export PATH="$tool_dir:/usr/bin:$PATH"
           static_pdb="$(cygpath -w "$prefix/lib/libintl_a.pdb" | sed 's/\\/\\\\/g')"
           mkdir -p "$prefix/lib"
+          if [[ "$HOST_TRIPLET" == aarch64-* ]]; then
+            export WINDRES="$workspace/winlib-builder/autotools/windres-arm64"
+            export RC="$WINDRES"
+          fi
           cd "$runtime"
           ./configure \
             --host="$HOST_TRIPLET" \
@@ -108,7 +117,7 @@ jobs:
       - name: Normalize gettext install
         shell: pwsh
         env:
-          LIB_MACHINE: ${{matrix.arch == 'x64' && 'X64' || 'X86'}}
+          LIB_MACHINE: ${{ matrix.arch == 'arm64' && 'ARM64' || matrix.arch == 'x64' && 'X64' || 'X86' }}
         run: |
           $ErrorActionPreference = 'Stop'
           New-Item -ItemType Directory -Force -Path install/bin, install/include, install/lib | Out-Null

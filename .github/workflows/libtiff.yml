@@ -25,12 +25,17 @@ defaults:
   run:
     shell: cmd
 jobs:
+  matrix:
+    uses: ./.github/workflows/build-matrix.yml
+    with:
+      php: ${{ inputs.php }}
   build:
+    name: build ${{ matrix.arch }}
+    needs: matrix
     strategy:
       fail-fast: false
-      matrix:
-        arch: [x64, x86]
-    runs-on: ${{ (inputs.php == '8.6' || inputs.php == 'master') && 'windows-2025-vs2026' || 'windows-2022' }}
+      matrix: ${{ fromJSON(needs.matrix.outputs.matrix) }}
+    runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout winlib-builder
         uses: actions/checkout@v5
@@ -46,7 +51,7 @@ jobs:
         run: cd libtiff && git apply --ignore-whitespace ..\winlib-builder\patches\libtiff.patch
       - name: Compute virtual inputs
         id: virtuals
-        run: powershell winlib-builder/scripts/compute-virtuals -version ${{ inputs.php }} -arch ${{ matrix.arch }}
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{ inputs.php }} -arch ${{ matrix.arch }} -sdk ${{ matrix.sdk }}
       - name: Setup CMake
         uses: jwlawson/actions-setup-cmake@v2
         with:
@@ -54,8 +59,9 @@ jobs:
       - name: Setup MSVC environment
         uses: ilammy/msvc-dev-cmd@v1
         with:
-          arch: ${{ matrix.arch }}
+          arch: ${{ matrix.msvc_arch }}
           toolset: ${{ steps.virtuals.outputs.toolset }}
+          sdk: ${{ matrix.msvc_sdk }}
       - name: Fetch dependencies
         run: powershell winlib-builder/scripts/fetch-deps -lib libtiff -version ${{ inputs.php }} -vs ${{ steps.virtuals.outputs.vs }} -arch ${{ matrix.arch }} -stability ${{ inputs.stability }} -workflow_run_ids:'${{ inputs.workflow_run_ids }}'
         env:
@@ -64,10 +70,13 @@ jobs:
         run: |
           echo CMAKE_WORKSPACE=%GITHUB_WORKSPACE:\=/%>>"%GITHUB_ENV%"
           echo CL=/DLZMA_API_STATIC>>"%GITHUB_ENV%"
+      # Both build trees are configured explicitly from fixed inputs in this job.
+      # Disable Ninja regeneration on ARM64 to avoid repeated manifest rebuilds.
       - name: Configure shared libtiff
         run: >-
           cmake -S libtiff -B libtiff\build-shared
           -G Ninja
+          ${{ matrix.arch == 'arm64' && '-DCMAKE_SUPPRESS_REGENERATION=ON' || '' }}
           -DCMAKE_BUILD_TYPE=RelWithDebInfo
           -DCMAKE_INSTALL_PREFIX="%CMAKE_WORKSPACE%/install"
           -DCMAKE_PREFIX_PATH="%CMAKE_WORKSPACE%/deps"
@@ -102,6 +111,7 @@ jobs:
         run: >-
           cmake -S libtiff -B libtiff\build-static
           -G Ninja
+          ${{ matrix.arch == 'arm64' && '-DCMAKE_SUPPRESS_REGENERATION=ON' || '' }}
           -DCMAKE_BUILD_TYPE=RelWithDebInfo
           -DCMAKE_POLICY_DEFAULT_CMP0141=NEW
           -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=ProgramDatabase

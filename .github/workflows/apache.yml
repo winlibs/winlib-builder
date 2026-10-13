@@ -9,6 +9,9 @@ on:
       php:
         description: PHP version to build for
         required: true
+      vcpkg:
+        description: Optional vcpkg commit for reproducing published dependencies
+        required: false
 env:
   APR_ICONV_VERSION: 1.2.2
   APACHE_VERSION: ${{ github.event.inputs.version }}
@@ -18,12 +21,17 @@ defaults:
   run:
     shell: cmd
 jobs:
+  matrix:
+    uses: ./.github/workflows/build-matrix.yml
+    with:
+      php: ${{ inputs.php }}
   build:
+    name: build ${{ matrix.arch }}
+    needs: matrix
     strategy:
       fail-fast: false
-      matrix:
-        arch: [x64, x86]
-    runs-on: ${{ (inputs.php == '8.6' || inputs.php == 'master') && 'windows-2025-vs2026' || 'windows-2022' }}
+      matrix: ${{ fromJSON(needs.matrix.outputs.matrix) }}
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 90
     steps:
       - name: Checkout winlib-builder
@@ -44,13 +52,23 @@ jobs:
 
       - name: Compute virtual inputs
         id: virtuals
-        run: powershell winlib-builder/scripts/compute-virtuals -version ${{ env.PHP_VERSION }} -arch ${{ matrix.arch }}
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{ env.PHP_VERSION }} -arch ${{ matrix.arch }} -sdk ${{ matrix.sdk }}
 
       - name: Setup MSVC development environment
         uses: ilammy/msvc-dev-cmd@v1
         with:
-          arch: ${{ matrix.arch }}
+          arch: ${{ matrix.msvc_arch }}
           toolset: ${{ steps.virtuals.outputs.toolset }}
+          sdk: ${{ matrix.msvc_sdk }}
+
+      - name: Select vcpkg snapshot
+        if: inputs.vcpkg != ''
+        run: |
+          git -C C:\vcpkg fetch origin ${{ inputs.vcpkg }} --depth 1
+          if errorlevel 1 exit /b %errorlevel%
+          git -C C:\vcpkg checkout --detach FETCH_HEAD
+          if errorlevel 1 exit /b %errorlevel%
+          call C:\vcpkg\bootstrap-vcpkg.bat -disableMetrics
 
       - name: Install Apache build dependencies
         run: >-
@@ -65,6 +83,10 @@ jobs:
           -Arch "${{ matrix.arch }}"
           -PcreLibPath "${{ steps.httpd_profile.outputs.pcre_lib_path }}"
           -AprIconvVersion "${{ env.APR_ICONV_VERSION }}"
+
+      - name: Patch ARM64 image base addresses
+        if: matrix.arch == 'arm64'
+        run: cd httpd && git apply --ignore-whitespace ..\winlib-builder\patches\apache-arm64.patch
 
       - name: Configure apache/httpd
         run: |

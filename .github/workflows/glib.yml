@@ -23,11 +23,17 @@ defaults:
   run:
     shell: cmd
 jobs:
+  matrix:
+    uses: ./.github/workflows/build-matrix.yml
+    with:
+      php: ${{ inputs.php }}
   build:
+    name: build ${{ matrix.arch }}
+    needs: matrix
     strategy:
-      matrix:
-          arch: [x64, x86]
-    runs-on: ${{ (inputs.php == '8.6' || inputs.php == 'master') && 'windows-2025-vs2026' || 'windows-2022' }}
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.matrix.outputs.matrix) }}
+    runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout winlib-builder
         uses: actions/checkout@v5
@@ -41,17 +47,30 @@ jobs:
           ref: ${{github.event.inputs.version}}
       - name: Compute virtual inputs
         id: virtuals
-        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}} -sdk ${{ matrix.sdk }}
+      - name: Setup MSVC development environment
+        if: matrix.arch == 'arm64'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.msvc_arch }}
+          toolset: ${{ steps.virtuals.outputs.toolset }}
+          sdk: ${{ matrix.msvc_sdk }}
       - name: Fetch dependencies
         run: powershell winlib-builder/scripts/fetch-deps -lib glib -version ${{github.event.inputs.php}} -vs ${{steps.virtuals.outputs.vs}} -arch ${{matrix.arch}} -stability ${{github.event.inputs.stability}} -workflow_run_ids:'${{github.event.inputs.workflow_run_ids}}'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Setup msbuild
+        if: matrix.arch != 'arm64'
         uses: microsoft/setup-msbuild@v2
+      - name: Locate Python for ARM64 code generators
+        if: matrix.arch == 'arm64'
+        id: python
+        shell: pwsh
+        run: '"directory=$((Get-Command python.exe).Source | Split-Path)" >> $env:GITHUB_OUTPUT'
       - name: Build glib
-        run: cd glib && msbuild /p:Configuration=Release_BundledPCRE;Platform=${{steps.virtuals.outputs.msarch}};PlatformToolset=${{steps.virtuals.outputs.msts}};WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}};PythonPath=C:\hostedtoolcache\windows\Python\3.7.9\x64 win32\vs${{steps.virtuals.outputs.vsnum}}\glib.sln
+        run: cd glib && msbuild /p:Configuration=Release_BundledPCRE;Platform=${{steps.virtuals.outputs.msarch}};PlatformToolset=${{steps.virtuals.outputs.msts}};WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}} "/p:PythonPath=${{ matrix.arch == 'arm64' && steps.python.outputs.directory || 'C:\hostedtoolcache\windows\Python\3.7.9\x64' }}" win32\vs${{ matrix.arch == 'arm64' && '17' || steps.virtuals.outputs.vsnum }}\glib.sln
       - name: Install glib
-        run: xcopy /e vs${{steps.virtuals.outputs.vsnum}}\${{steps.virtuals.outputs.msarch}} install\*
+        run: xcopy /e vs${{ matrix.arch == 'arm64' && '17' || steps.virtuals.outputs.vsnum }}\${{steps.virtuals.outputs.msarch}} install\*
       - name: Copy license files
         run: xcopy glib\COPYING install\share\licenses\glib\*
       - name: Generate SBOMs

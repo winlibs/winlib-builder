@@ -13,11 +13,17 @@ defaults:
   run:
     shell: cmd
 jobs:
+  matrix:
+    uses: ./.github/workflows/build-matrix.yml
+    with:
+      php: ${{ inputs.php }}
   build:
+    name: build ${{ matrix.arch }}
+    needs: matrix
     strategy:
-      matrix:
-          arch: [x64, x86]
-    runs-on: ${{ (inputs.php == '8.6' || inputs.php == 'master') && 'windows-2025-vs2026' || 'windows-2022' }}
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.matrix.outputs.matrix) }}
+    runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout winlib-builder
         uses: actions/checkout@v5
@@ -31,19 +37,33 @@ jobs:
           ref: ${{github.event.inputs.version}}
       - name: Compute virtual inputs
         id: virtuals
-        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+        run: powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}} -sdk ${{ matrix.sdk }}
+      - name: Setup MSVC development environment
+        if: matrix.arch == 'arm64'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.msvc_arch }}
+          toolset: ${{ steps.virtuals.outputs.toolset }}
+          sdk: ${{ matrix.msvc_sdk }}
       - name: Setup msbuild
+        if: matrix.arch != 'arm64'
         uses: microsoft/setup-msbuild@v2
+      - name: Patch libffi for ARM64
+        if: matrix.arch == 'arm64'
+        run: cd libffi && git apply --ignore-whitespace ..\winlib-builder\patches\libffi-arm64.patch
       - name: Build libffi
-        run: cd libffi\win32\${{steps.virtuals.outputs.vs}}_${{matrix.arch}} && msbuild libffi-msvc.sln /p:Configuration=Release;Platform=${{steps.virtuals.outputs.msarch}};PlatformToolset=${{steps.virtuals.outputs.msts}};WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}}
+        run: cd libffi\win32\${{ matrix.arch == 'arm64' && 'arm64' || format('{0}_{1}', steps.virtuals.outputs.vs, matrix.arch) }} && msbuild /p:Configuration=Release;Platform=${{steps.virtuals.outputs.msarch}};PlatformToolset=${{steps.virtuals.outputs.msts}};WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}}
       - name: Install libffi
         run: |
           cd libffi
           xcopy include\ffi.h ..\install\include\*
           perl -pi -e "s/#define LIBFFI_H/#define LIBFFI_H\n#define FFI_STATIC_BUILD\n#define FFI_BUILDING/" ..\install\include\ffi.h
-          xcopy src\x86\ffitarget.h ..\install\include\*
+          xcopy src\${{ matrix.arch == 'arm64' && 'aarch64' || 'x86' }}\ffitarget.h ..\install\include\*
           xcopy fficonfig.h ..\install\include\*
-          if "${{matrix.arch}}" == "x64" (
+          if "${{matrix.arch}}" == "arm64" (
+              xcopy win32\arm64\ARM64\Release\libffi.lib ..\install\lib\*
+              xcopy win32\arm64\ARM64\Release\libffi.pdb ..\install\lib\*
+          ) else if "${{matrix.arch}}" == "x64" (
               xcopy win32\${{steps.virtuals.outputs.vs}}_${{matrix.arch}}\x64\Release\libffi.lib ..\install\lib\*
               xcopy win32\${{steps.virtuals.outputs.vs}}_${{matrix.arch}}\x64\Release\libffi.pdb ..\install\lib\*
           ) else (

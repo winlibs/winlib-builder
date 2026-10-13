@@ -13,11 +13,17 @@ defaults:
   run:
     shell: cmd
 jobs:
+  matrix:
+    uses: ./.github/workflows/build-matrix.yml
+    with:
+      php: ${{ inputs.php }}
   build:
+    name: build ${{ matrix.arch }}
+    needs: matrix
     strategy:
-      matrix:
-          arch: [x64, x86]
-    runs-on: ${{ (inputs.php == '8.6' || inputs.php == 'master') && 'windows-2025-vs2026' || 'windows-2022' }}
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.matrix.outputs.matrix) }}
+    runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout winlib-builder
         uses: actions/checkout@v5
@@ -32,19 +38,24 @@ jobs:
       - name: Compute virtual inputs
         id: virtuals
         run: |
-          powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}}
+          powershell winlib-builder/scripts/compute-virtuals -version ${{github.event.inputs.php}} -arch ${{matrix.arch}} -sdk ${{ matrix.sdk }}
           powershell -Command "'artifact-name=${{github.event.inputs.version}}' -replace 'icu4c','ICU' | Out-File -Append -FilePath $env:GITHUB_OUTPUT"
       - name: Setup MSVC development environment
         uses: ilammy/msvc-dev-cmd@v1
         with:
-          arch: ${{matrix.arch}}
+          arch: ${{ matrix.msvc_arch }}
           toolset: ${{steps.virtuals.outputs.toolset}}
+          sdk: ${{ matrix.msvc_sdk }}
       - name: Setup msbuild
+        if: matrix.arch != 'arm64'
         uses: microsoft/setup-msbuild@v2
       - name: Remove UWP projects
         run: |
           cd icu4c\source\allinone
           for /f %%i in ('dotnet sln allinone.sln list ^| findstr _uwp') do @dotnet sln allinone.sln remove %%i
+      - name: Patch ICU to use native ARM64 build tools
+        if: matrix.arch == 'arm64'
+        run: cd icu4c && git apply --ignore-whitespace ..\winlib-builder\patches\icu-arm64.patch
       - name: Build icu4c
         run: cd icu4c && msbuild /p:Configuration=Release;Platform=${{steps.virtuals.outputs.msarch}};PlatformToolset=${{steps.virtuals.outputs.msts}};WindowsTargetPlatformVersion=${{steps.virtuals.outputs.winsdk}} source\allinone\allinone.sln
       - name: Install icu4c
@@ -54,6 +65,10 @@ jobs:
           if "${{matrix.arch}}" == "x64" (
             set WB_BINDIR=%WB_BINDIR%64
             set WB_LIBDIR=%WB_LIBDIR%64
+          )
+          if "${{matrix.arch}}" == "arm64" (
+            set WB_BINDIR=icu4c\binARM64
+            set WB_LIBDIR=icu4c\libARM64
           )
           xcopy %WB_BINDIR%\* build\bin\*
           del build\bin\*test*.dll build\bin\*test*.exe

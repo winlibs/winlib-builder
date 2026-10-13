@@ -1,0 +1,24 @@
+--- a/crypto/md4/md4_dgst.c
++++ b/crypto/md4/md4_dgst.c
+@@ -39,6 +39,13 @@
+ #ifndef md4_block_data_order
+ #ifdef X
+ #undef X
++#endif
++/* MSVC's ARM64 optimizer can miscompile the MD4 compression function.
++ * https://github.com/openssl/openssl/issues/28310
++ * Keep this workaround confined to the compression function.
++ */
++#if defined(_M_ARM64) && defined(_MSC_VER) && _MSC_VER >= 1930
++# pragma optimize("", off)
+ #endif
+ void md4_block_data_order(MD4_CTX *c, const void *data_, size_t num)
+ {
+@@ -150,4 +157,7 @@
+         D = c->D += D;
+     }
+ }
++#if defined(_M_ARM64) && defined(_MSC_VER) && _MSC_VER >= 1930
++# pragma optimize("", on)
+ #endif
++#endif

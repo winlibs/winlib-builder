@@ -1,0 +1,26 @@
+name: Generate build matrix
+on:
+  workflow_call:
+    inputs:
+      php:
+        required: true
+        type: string
+    outputs:
+      matrix:
+        description: Architecture and runner pairs
+        value: ${{ jobs.matrix.outputs.matrix }}
+jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Generate build matrix
+        id: matrix
+        shell: pwsh
+        env:
+          PHP_SERIES: ${{ inputs.php }}
+        run: ./scripts/build-matrix.ps1 -Php $env:PHP_SERIES
