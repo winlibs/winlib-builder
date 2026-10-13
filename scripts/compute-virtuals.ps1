@@ -47,8 +47,9 @@ $toolsets = @{
     "vc14" = "14.0"
 }
 $dir = vswhere -latest -find "VC\Tools\MSVC"
+$compilerHost = if ($vs -eq 'vs16') { 'Hostx64' } else { 'Hostarm64' }
 foreach ($ts in (Get-ChildItem $dir -Directory | Sort-Object { [version] $_.Name })) {
-    if ($arch -eq 'arm64' -and -not (Test-Path "$($ts.FullName)/bin/Hostx64/arm64/cl.exe")) { continue }
+    if ($arch -eq 'arm64' -and -not (Test-Path "$($ts.FullName)/bin/$compilerHost/arm64/cl.exe")) { continue }
     $tsv = $ts.Name.split(".")
     if ((14 -eq $tsv[0]) -and (9 -ge $tsv[1])) {
         $toolsets."vc14" = $ts.Name

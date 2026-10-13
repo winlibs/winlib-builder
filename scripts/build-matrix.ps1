@@ -19,7 +19,7 @@ $matrix = @{
             if ($arch -eq 'arm64') {
                 $runner = if ($vs18) { 'windows-11-vs2026-arm' } else { 'windows-11-arm' }
                 $sdk = if ($vs18) { '10.0.26100.0' } else { '10.0.22621.0' }
-                $msvcArch = 'amd64_arm64'
+                $msvcArch = if ($Php -in '8.2', '8.3') { 'amd64_arm64' } else { 'arm64' }
                 $msvcSdk = $sdk
             }
             @{ arch = $arch; msvc_arch = $msvcArch; runner = $runner; sdk = $sdk; msvc_sdk = $msvcSdk }
