@@ -18,5 +18,69 @@
     "id": "curl"
   },
   "purl": "pkg:generic/curl@{upstreamVersion}",
-  "cpe": "cpe:2.3:a:haxx:curl:{upstreamVersion}:*:*:*:*:*:*:*"
+  "cpe": "cpe:2.3:a:haxx:curl:{upstreamVersion}:*:*:*:*:*:*:*",
+  "patchedBuilds": [
+    {
+      "tag": "libcurl-8.23.0",
+      "upstream": {
+        "repository": "curl/curl",
+        "tag": "curl-8_23_0",
+        "version": "8.23.0"
+      },
+      "fork": {
+        "repository": "winlibs/curl",
+        "tag": "libcurl-8.23.0"
+      },
+      "patches": [
+        {
+          "url": "https://github.com/winlibs/curl/commit/21d4089f0235269313381c04a99b38422e1439ba.patch",
+          "detail": "Backports upstream curl commit 18a926eca1a885f623eea33fd042a68e781dee40 in the Winlibs source to make TLS session peer-key fields unambiguous."
+        }
+      ]
+    },
+    {
+      "tag": "libcurl-8.23.0-1",
+      "upstream": {
+        "repository": "curl/curl",
+        "tag": "curl-8_23_0",
+        "version": "8.23.0"
+      },
+      "fork": {
+        "repository": "winlibs/curl",
+        "tag": "libcurl-8.23.0-1"
+      },
+      "patches": [
+        {
+          "url": "https://github.com/winlibs/curl/commit/7e4f763c52f86dcad2452a60b959532374d784e2.patch",
+          "detail": "Restores the previous SMB1/NTLMv1 and SMBS implementation, including authentication hash-error checks. SMB2/3 are not added; upstream 8.23.0 security fixes remain in place."
+        },
+        {
+          "url": "https://github.com/winlibs/curl/commit/43598272579250d20c3587d018bda5a2d5222f92.patch",
+          "detail": "Backports upstream curl commit 18a926eca1a885f623eea33fd042a68e781dee40 in the Winlibs source to make TLS session peer-key fields unambiguous."
+        }
+      ]
+    },
+    {
+      "tag": "libcurl-8.23.0-2",
+      "upstream": {
+        "repository": "curl/curl",
+        "tag": "curl-8_23_0",
+        "version": "8.23.0"
+      },
+      "fork": {
+        "repository": "winlibs/curl",
+        "tag": "libcurl-8.23.0-2"
+      },
+      "patches": [
+        {
+          "url": "https://github.com/winlibs/curl/commit/7e4f763c52f86dcad2452a60b959532374d784e2.patch",
+          "detail": "Restores the previous SMB1/NTLMv1 and SMBS implementation, including authentication hash-error checks. SMB2/3 are not added; upstream 8.23.0 security fixes remain in place."
+        },
+        {
+          "url": "https://github.com/winlibs/curl/commit/43598272579250d20c3587d018bda5a2d5222f92.patch",
+          "detail": "Backports upstream curl commit 18a926eca1a885f623eea33fd042a68e781dee40 in the Winlibs source to make TLS session peer-key fields unambiguous."
+        }
+      ]
+    }
+  ]
 }

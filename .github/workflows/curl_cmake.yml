@@ -16,6 +16,11 @@ on:
       workflow_run_ids:
         description: Comma-separated winlib-builder workflow run IDs to download dependency artifacts from
         required: false
+      smb_support:
+        description: Enable SMB/SMBS (requires a source tag with SMB support)
+        type: boolean
+        required: false
+        default: true
 permissions:
   actions: read
   contents: read
@@ -74,7 +79,7 @@ jobs:
             -DUSE_WIN32_IDN=ON^
             -DCURL_WINDOWS_SSPI=ON^
             -DCURL_ENABLE_NTLM=ON^
-            -DCURL_ENABLE_SMB=ON^
+            -DCURL_ENABLE_SMB=${{ inputs.smb_support && 'ON' || 'OFF' }}^
             -DCURL_DISABLE_MQTT=ON^
             -DCURL_USE_OPENSSL=ON^
             -DCURL_ZSTD=ON^
@@ -99,6 +104,23 @@ jobs:
           lib /OUT:libcurl_a.lib libcurl_static.lib %GITHUB_WORKSPACE%\deps\lib\libzstd_a.lib secur32.lib iphlpapi.lib
           if errorlevel 1 exit /b 1
           del libcurl_static.lib
+      - name: Verify built protocols
+        shell: pwsh
+        env:
+          SMB_SUPPORT: ${{ inputs.smb_support }}
+        run: |
+          $env:PATH = "$env:GITHUB_WORKSPACE\deps\bin;$env:PATH"
+          $version = & .\install\bin\curl.exe --version
+          if ($LASTEXITCODE -ne 0) { throw 'The built curl executable failed to start.' }
+          $version | Write-Output
+          $protocols = @((($version | Where-Object { $_ -match '^Protocols:' }) -replace '^Protocols:\s*', '') -split '\s+')
+          if ($env:SMB_SUPPORT -eq 'true') {
+            if ('smb' -notin $protocols -or 'smbs' -notin $protocols) {
+              throw 'The built curl must support both SMB and SMBS.'
+            }
+          } elseif ('smb' -in $protocols -or 'smbs' -in $protocols) {
+            throw 'The built curl unexpectedly supports SMB or SMBS.'
+          }
       - name: Copy license files
         run: xcopy curl\COPYING install\share\licenses\libcurl\*
       - name: Generate SBOMs

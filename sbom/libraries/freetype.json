@@ -15,5 +15,29 @@
     "expression": "FTL OR GPL-2.0-or-later"
   },
   "purl": "pkg:generic/freetype@{upstreamVersion}",
-  "cpe": "cpe:2.3:a:freetype:freetype:{upstreamVersion}:*:*:*:*:*:*:*"
+  "cpe": "cpe:2.3:a:freetype:freetype:{upstreamVersion}:*:*:*:*:*:*:*",
+  "patchedBuilds": [
+    {
+      "tag": "freetype-2.15.0",
+      "upstream": {
+        "repository": "freetype/freetype",
+        "tag": "VER-2-15-0",
+        "version": "2.15.0"
+      },
+      "fork": {
+        "repository": "winlibs/freetype",
+        "tag": "freetype-2.15.0"
+      },
+      "patches": [
+        {
+          "url": "https://github.com/freetype/freetype/commit/023fd06e3dbe84ab7327ddddd9fe851824fe1ade.patch",
+          "detail": "Backports the post-2.15.0 bounds check for hdmx advances when the incremental interface supplies a glyph index outside the font glyph range."
+        },
+        {
+          "url": "https://github.com/winlibs/freetype/commit/64edb7bb59160252ff9c9ae7a89d80e5aa96e012.patch",
+          "detail": "Retains the Winlibs freetype_a library naming and applies the incremental glyph bounds fix."
+        }
+      ]
+    }
+  ]
 }
