@@ -1,11 +1,14 @@
 name: Build librdkafka
-run-name: "Build librdkafka-${{ inputs.version }} for PHP ${{ inputs.php }}"
+run-name: "Build librdkafka-${{ inputs.version }}${{ inputs.revision && format('-{0}', inputs.revision) || '' }} for PHP ${{ inputs.php }}"
 on:
   workflow_dispatch:
     inputs:
       version:
         description: librdkafka tag to build
         required: true
+      revision:
+        description: Optional positive Winlibs rebuild revision
+        required: false
       php:
         description: PHP version to build for
         required: true
@@ -63,21 +66,34 @@ jobs:
           cmake --install . --config RelWithDebInfo --prefix ${{github.workspace}}\install
           del /s /q ..\install\lib\pkgconfig
           copy ..\install\share\licenses\librdkafka\LICENSES.txt ..\install\LICENSE
+      - name: Normalize version
+        id: normalize_version
+        shell: pwsh
+        run: |
+          $version = '${{ inputs.version }}' -replace '^v', ''
+          if ($version -notmatch '^\d+\.\d+\.\d+$') {
+              throw "Unsupported librdkafka tag: ${{ inputs.version }}"
+          }
+          $revision = '${{ inputs.revision }}'
+          if ($revision -ne '') {
+              if ($revision -notmatch '^[1-9][0-9]*$') {
+                  throw "Invalid rebuild revision: $revision"
+              }
+              $version = "$version-$revision"
+          }
+          "version=$version" >> $env:GITHUB_OUTPUT
       - name: Generate SBOMs
         shell: pwsh
         run: >
           .\winlib-builder\scripts\generate-sbom.ps1
           -Library librdkafka
-          -Version '${{ inputs.version }}'
+          -Version '${{ steps.normalize_version.outputs.version }}'
           -InstallRoot 'install'
           -Vs '${{ steps.virtuals.outputs.vs }}'
           -Arch '${{ matrix.arch }}'
           -PhpVersion '${{ inputs.php }}'
+          -DownloadLocation 'https://downloads.php.net/~windows/pecl/deps/librdkafka-${{ steps.normalize_version.outputs.version }}-${{ steps.virtuals.outputs.vs }}-${{ matrix.arch }}.zip'
           -DependencyRoot 'deps'
-      - name: Normalize version
-        id: normalize_version
-        shell: pwsh
-        run: echo "version=$('${{ github.event.inputs.version }}' -replace '^v')" >> $env:GITHUB_OUTPUT
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

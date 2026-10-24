@@ -213,6 +213,7 @@ jobs:
           -Vs '${{ steps.virtuals.outputs.vs }}'
           -Arch '${{ matrix.arch }}'
           -PhpVersion '${{ inputs.php }}'
+          -DownloadLocation 'https://downloads.php.net/~windows/pecl/deps/cairo-${{ steps.version.outputs.value }}-${{ steps.virtuals.outputs.vs }}-${{ matrix.arch }}.zip'
           -DependencyRoot 'deps'
 
       - name: Upload artifacts
