@@ -1250,6 +1250,11 @@ foreach ($patch in ConvertTo-Array (Get-JsonProperty $entry 'patchedDependencies
     }
 }
 
+foreach ($ref in $componentMap.Keys) {
+    # SPDX packages can be dependency leaves without explicit relationships.
+    # Keep those nodes in the graph so consumers can verify complete closure.
+    Add-Dependency -Map $dependencyMap -Ref $ref -DependsOn @()
+}
 Add-Dependency -Map $dependencyMap -Ref $bomRef -DependsOn @($rootDependencyRefs)
 $cycloneDependencies = foreach ($ref in $dependencyMap.Keys | Sort-Object) {
     [ordered]@{ ref = $ref; dependsOn = @($dependencyMap[$ref] | Sort-Object) }
