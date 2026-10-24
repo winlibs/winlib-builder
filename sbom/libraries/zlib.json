@@ -15,5 +15,32 @@
     "id": "Zlib"
   },
   "purl": "pkg:generic/zlib@{upstreamVersion}",
-  "cpe": "cpe:2.3:a:zlib:zlib:{upstreamVersion}:*:*:*:*:*:*:*"
+  "cpe": "cpe:2.3:a:zlib:zlib:{upstreamVersion}:*:*:*:*:*:*:*",
+  "patchedBuilds": [
+    {
+      "tag": "zlib-1.3.2-1",
+      "upstream": {
+        "repository": "madler/zlib",
+        "tag": "v1.3.2",
+        "version": "1.3.2"
+      },
+      "fork": {
+        "repository": "winlibs/zlib",
+        "tag": "zlib-1.3.2-1"
+      },
+      "fixedCves": [
+        {
+          "id": "CVE-2026-85091",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-85091",
+          "detail": "Fixed in zlib-1.3.2-1 by backporting the upstream input-state reset after a failed non-blocking gzwrite, preventing stale external buffer pointers from reaching gzprintf or gzvprintf.",
+          "references": [
+            "https://github.com/winlibs/zlib/commit/838fe0e338adb28f5662e5ac332b0f0eb96ba93a",
+            "https://github.com/madler/zlib/commit/df84af25dc1942490e1d1c899a07619152a46148",
+            "https://github.com/madler/zlib/issues/1310"
+          ]
+        }
+      ]
+    }
+  ]
 }
