@@ -70,5 +70,27 @@
       },
       "purl": "pkg:generic/apr-iconv@{upstreamVersion}"
     }
+  ],
+  "patchedDependencies": [
+    {
+      "name": "zlib",
+      "version": "1.3.2-winlibs.1",
+      "purlPrefix": "pkg:vcpkg/zlib@1.3.2-winlibs.1?",
+      "sourceRepository": "winlibs/zlib",
+      "sourceCommit": "838fe0e338adb28f5662e5ac332b0f0eb96ba93a",
+      "fixedCves": [
+        {
+          "id": "CVE-2026-85091",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-85091",
+          "detail": "Fixed in the Apache vcpkg zlib overlay 1.3.2-winlibs.1 using Winlibs zlib commit 838fe0e338adb28f5662e5ac332b0f0eb96ba93a (zlib-1.3.2-1), which backports upstream df84af25dc1942490e1d1c899a07619152a46148.",
+          "references": [
+            "https://github.com/winlibs/zlib/commit/838fe0e338adb28f5662e5ac332b0f0eb96ba93a",
+            "https://github.com/madler/zlib/commit/df84af25dc1942490e1d1c899a07619152a46148",
+            "https://github.com/madler/zlib/issues/1310"
+          ]
+        }
+      ]
+    }
   ]
 }

@@ -84,6 +84,9 @@ jobs:
           -PcreLibPath "${{ steps.httpd_profile.outputs.pcre_lib_path }}"
           -AprIconvVersion "${{ env.APR_ICONV_VERSION }}"
 
+      - name: Test shared and static compression dependencies
+        run: pwsh -File winlib-builder/scripts/apache/test-compression.ps1 -Arch "${{ matrix.arch }}"
+
       - name: Patch ARM64 image base addresses
         if: matrix.arch == 'arm64'
         run: cd httpd && git apply --ignore-whitespace ..\winlib-builder\patches\apache-arm64.patch
@@ -155,6 +158,7 @@ jobs:
           -Vs '${{ steps.virtuals.outputs.vs }}'
           -Arch '${{ matrix.arch }}'
           -PhpVersion '${{ github.event.inputs.php }}'
+          -DependencyRoot '${{ steps.deps.outputs.static_root }}/share/zlib'
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:

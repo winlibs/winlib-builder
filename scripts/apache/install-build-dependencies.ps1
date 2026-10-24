@@ -6,6 +6,11 @@ param (
 $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $true
 
+# Both linkage variants must use the same reviewed security backport. The
+# overlay's distinct version also invalidates vcpkg's old binary cache entries.
+$env:VCPKG_OVERLAY_PORTS = Join-Path $PSScriptRoot 'vcpkg-ports'
+"VCPKG_OVERLAY_PORTS=$env:VCPKG_OVERLAY_PORTS" | Add-Content $env:GITHUB_ENV
+
 if ($Arch -eq 'arm64') {
     $overlay = Join-Path $env:RUNNER_TEMP 'winlib-vcpkg-triplets'
     New-Item $overlay -ItemType Directory -Force | Out-Null

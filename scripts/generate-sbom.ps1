@@ -1198,9 +1198,55 @@ foreach ($file in $dependencySbomFiles | Where-Object { $_ -match '\.spdx\.json$
     foreach ($relationship in ConvertTo-Array (Get-JsonProperty $dependencySbom 'relationships')) {
         $from = $spdxRefs[[string](Get-JsonProperty $relationship 'spdxElementId')]
         $to = $spdxRefs[[string](Get-JsonProperty $relationship 'relatedSpdxElement')]
+        if ((Get-JsonProperty $relationship 'spdxElementId') -eq (Get-JsonProperty $dependencySbom 'SPDXID') -and
+            (Get-JsonProperty $relationship 'relationshipType') -eq 'DESCRIBES' -and $null -ne $to) {
+            $rootDependencyRefs.Add($to) | Out-Null
+        }
         if ($null -ne $from -and $null -ne $to -and (Get-JsonProperty $relationship 'relationshipType') -in @('DEPENDS_ON', 'CONTAINS')) {
             Add-Dependency -Map $dependencyMap -Ref $from -DependsOn @($to)
         }
+    }
+}
+
+$patchedDependencyStatements = [System.Collections.Generic.List[object]]::new()
+$patchedDependencyAnnotations = @{}
+foreach ($patch in ConvertTo-Array (Get-JsonProperty $entry 'patchedDependencies')) {
+    $matched = @($componentMap.Values | Where-Object {
+        (Get-JsonProperty $_ 'name') -eq $patch.name -and
+        (Get-JsonProperty $_ 'version') -eq $patch.version -and
+        ([string](Get-JsonProperty $_ 'purl')).StartsWith($patch.purlPrefix, [StringComparison]::Ordinal)
+    })
+    if ($matched.Count -eq 0) {
+        throw "Missing patched dependency '$($patch.name)@$($patch.version)'. Refusing to emit unverified fixed-CVE evidence."
+    }
+    foreach ($dependencyComponent in $matched) {
+        $ref = [string](Get-JsonProperty $dependencyComponent 'bom-ref')
+        $sourceUrl = "https://github.com/$($patch.sourceRepository)/commit/$($patch.sourceCommit)"
+        $dependencyComponent.properties = @(
+            [ordered]@{ name = 'php:source-repository'; value = $patch.sourceRepository },
+            [ordered]@{ name = 'php:source-commit'; value = $patch.sourceCommit }
+        )
+        $dependencyComponent.pedigree = [ordered]@{
+            commits = @([ordered]@{ uid = $patch.sourceCommit; url = $sourceUrl })
+            notes = "Patched source selected by the Apache vcpkg overlay: $sourceUrl"
+        }
+        $rootDependencyRefs.Add($ref) | Out-Null
+        foreach ($cve in $patch.fixedCves) {
+            $vulnerabilities.Add([ordered]@{
+                id = $cve.id
+                source = [ordered]@{ name = $cve.source; url = $cve.url }
+                affects = @([ordered]@{ ref = $ref })
+                analysis = [ordered]@{ state = 'resolved_with_pedigree'; response = @('update'); detail = $cve.detail }
+            }) | Out-Null
+            $patchedDependencyStatements.Add([ordered]@{
+                vulnerability = [ordered]@{ name = $cve.id }
+                timestamp = $created
+                products = @([ordered]@{ '@id' = $ref; identifiers = [ordered]@{ purl = $dependencyComponent.purl } })
+                status = 'fixed'
+                action_statement = $cve.detail
+            }) | Out-Null
+        }
+        $patchedDependencyAnnotations[$dependencyComponent.purl] = "source=$sourceUrl; fixed-cves=$([string]::Join(',', @($patch.fixedCves | ForEach-Object { $_.id })))"
     }
 }
 
@@ -1387,6 +1433,16 @@ foreach ($file in $dependencySbomFiles | Where-Object { $_ -match '\.spdx\.json$
             $packageCopy | Add-Member -NotePropertyName filesAnalyzed -NotePropertyValue $false -Force
             $packageCopy.PSObject.Properties.Remove('packageVerificationCode')
             $packageCopy.PSObject.Properties.Remove('licenseInfoFromFiles')
+            if ($null -ne $packagePurl -and $patchedDependencyAnnotations.ContainsKey($packagePurl)) {
+                $packageCopy | Add-Member -NotePropertyName annotations -NotePropertyValue @(
+                    [ordered]@{
+                        annotationType = 'OTHER'
+                        annotator = "Tool: $toolName-1.0.0"
+                        annotationDate = $created
+                        comment = $patchedDependencyAnnotations[$packagePurl]
+                    }
+                ) -Force
+            }
             $spdx.packages += $packageCopy
             $spdxPackageIdsByKey[$packageKey] = $newSpdxId
         }
@@ -1412,6 +1468,11 @@ foreach ($file in $dependencySbomFiles | Where-Object { $_ -match '\.spdx\.json$
         $from = $spdxIdMap[[string](Get-JsonProperty $relationship 'spdxElementId')]
         $to = $spdxIdMap[[string](Get-JsonProperty $relationship 'relatedSpdxElement')]
         $type = [string](Get-JsonProperty $relationship 'relationshipType')
+        if ((Get-JsonProperty $relationship 'spdxElementId') -eq (Get-JsonProperty $dependencySbom 'SPDXID') -and
+            $type -eq 'DESCRIBES') {
+            $from = $spdxId
+            $type = 'DEPENDS_ON'
+        }
         $key = "$from|$type|$to"
         if ($null -ne $from -and $null -ne $to -and $spdxRelationshipKeys.Add($key)) {
             $spdx.relationships += [ordered]@{ spdxElementId = $from; relationshipType = $type; relatedSpdxElement = $to }
@@ -1423,8 +1484,11 @@ if ($extractedLicenses.Count -gt 0) {
     $spdx.hasExtractedLicensingInfos = @($extractedLicenses)
 }
 
-if ($fixedVulnerabilities.Count -gt 0 -or $notAffectedCves.Count -gt 0) {
+if ($fixedVulnerabilities.Count -gt 0 -or $notAffectedCves.Count -gt 0 -or $patchedDependencyStatements.Count -gt 0) {
     $openVexStatements = [System.Collections.Generic.List[object]]::new()
+    foreach ($statement in $patchedDependencyStatements) {
+        $openVexStatements.Add($statement) | Out-Null
+    }
     foreach ($cve in $fixedVulnerabilities) {
         $cveId = [string](Get-JsonProperty $cve 'id')
         $detail = [string](Get-JsonProperty $cve 'detail')
