@@ -22,7 +22,7 @@ on:
       jpeg:
         description: libjpeg-turbo tag to build
         required: true
-        default: 3.2.0
+        default: 3.2.1
       stability:
         description: Dependency series stability
         default: staging
@@ -247,17 +247,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $vs = '${{ steps.virtuals.outputs.vs }}'
           $arch = '${{ matrix.arch }}'
-          if ($arch -eq 'arm64') {
-            ./winlib-builder/scripts/fetch-deps.ps1 -lib libheif -version '${{ inputs.php }}' -vs $vs -arch $arch -stability '${{ inputs.stability }}' -workflow_run_ids '${{ inputs.workflow_run_ids }}' -destination sdk-jpeg
-          } else {
-            $base = 'https://downloads.php.net/~windows/php-sdk/deps'
-            $series = (Invoke-WebRequest "$base/series/packages-${{ inputs.php }}-$vs-$arch-staging.txt").Content
-            $jpegPackages = @($series -split '[\r\n]+' | Where-Object { $_ -match "^libjpeg-turbo-[0-9][0-9A-Za-z.\-]*-$vs-$arch\.zip$" })
-            if ($jpegPackages.Count -ne 1) { throw 'Expected one SDK JPEG package in the staging series' }
-            Write-Host "Validating static libheif with SDK package $($jpegPackages[0])"
-            Invoke-WebRequest "$base/$vs/$arch/$($jpegPackages[0])" -OutFile sdk-jpeg.zip
-            Expand-Archive sdk-jpeg.zip -DestinationPath sdk-jpeg -Force
-          }
+          ./winlib-builder/scripts/fetch-deps.ps1 -lib libheif -version '${{ inputs.php }}' -vs $vs -arch $arch -stability '${{ inputs.stability }}' -workflow_run_ids '${{ inputs.workflow_run_ids }}' -destination sdk-jpeg
           $config = Get-Content sdk-jpeg/include/jconfig.h -Raw
           if ($config -notmatch '#define\s+JPEG_LIB_VERSION\s+80\b') { throw 'SDK JPEG ABI changed; review libheif JPEG configuration' }
           & cl /nologo /W3 /MD /Zi /Fdcheck-libheif-sdk-compile.pdb /DLIBHEIF_STATIC_BUILD /Iinstall\include winlib-builder\.github\ci\check-libheif.c /link /DEBUG /WX /PDB:check-libheif-sdk.pdb /LIBPATH:install\lib /LIBPATH:sdk-jpeg\lib heif_a.lib aom_a.lib dav1d_a.lib libjpeg_a.lib Advapi32.lib /OUT:check-libheif-sdk.exe
