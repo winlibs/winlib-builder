@@ -25,6 +25,10 @@ jobs:
       matrix: ${{ fromJSON(needs.matrix.outputs.matrix) }}
     runs-on: ${{ matrix.runner }}
     steps:
+      - name: Preserve source and test fixture bytes
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.eol lf
       - name: Checkout winlib-builder
         uses: actions/checkout@v5
         with:
