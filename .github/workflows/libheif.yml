@@ -48,6 +48,10 @@ jobs:
       matrix: ${{ fromJSON(needs.matrix.outputs.matrix) }}
     runs-on: ${{ matrix.runner }}
     steps:
+      - name: Preserve source and test fixture bytes
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.eol lf
       - name: Checkout winlib-builder
         uses: actions/checkout@v5
         with:
@@ -101,9 +105,14 @@ jobs:
           meson install -C dav1d\build
       - name: Build libjpeg-turbo
         run: |
-          cmake -S libjpeg-turbo -B libjpeg-turbo\build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="%GITHUB_WORKSPACE%\deps" -DENABLE_SHARED=OFF -DENABLE_STATIC=ON -DWITH_CRT_DLL=ON -DWITH_JPEG8=ON -DWITH_TURBOJPEG=OFF -DWITH_TOOLS=OFF -DWITH_TESTS=OFF
+          cmake -S libjpeg-turbo -B libjpeg-turbo\build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="%GITHUB_WORKSPACE%\deps" -DENABLE_SHARED=OFF -DENABLE_STATIC=ON -DWITH_CRT_DLL=ON -DWITH_JPEG8=ON -DWITH_TURBOJPEG=OFF -DWITH_SIMD=OFF -DREQUIRE_SIMD=OFF -DWITH_TOOLS=ON -DWITH_TESTS=ON
+          if errorlevel 1 exit /b %errorlevel%
           cmake --build libjpeg-turbo\build --config Release
+          if errorlevel 1 exit /b %errorlevel%
+          ctest --test-dir libjpeg-turbo\build --build-config Release --output-on-failure --parallel 2
+          if errorlevel 1 exit /b %errorlevel%
           cmake --install libjpeg-turbo\build --config Release
+          if errorlevel 1 exit /b %errorlevel%
           copy /Y deps\lib\jpeg-static.lib deps\lib\jpeg.lib
       - name: Normalize CMake paths
         run: echo CMAKE_WORKSPACE=%GITHUB_WORKSPACE:\=/%>>"%GITHUB_ENV%"
