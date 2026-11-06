@@ -1,0 +1,51 @@
+ CMakeLists.txt | 4 ++--
+ mediancut.c    | 6 +++++-
+ 2 files changed, 7 insertions(+), 3 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index d14f058..46c7ef8 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -52,5 +52,5 @@ configure_file(imagequant.pc.in imagequant.pc @ONLY)
+ 
+ install(TARGETS imagequant        LIBRARY           DESTINATION ${LIB_INSTALL_DIR})
+ install(FILES                     libimagequant.h   DESTINATION include)
+-install(FILES ${CMAKE_BINARY_DIR}/libimagequant_a.a DESTINATION ${LIB_INSTALL_DIR} RENAME libimagequant.a)
+-install(FILES ${CMAKE_BINARY_DIR}/imagequant.pc     DESTINATION ${LIB_INSTALL_DIR}/pkgconfig)
++# install(FILES ${CMAKE_BINARY_DIR}/libimagequant_a.a DESTINATION lib RENAME libimagequant.a)
++install(FILES ${CMAKE_BINARY_DIR}/imagequant.pc     DESTINATION lib/pkgconfig)
+diff --git a/mediancut.c b/mediancut.c
+index 2df7941..21b38cf 100644
+--- a/mediancut.c
++++ b/mediancut.c
+@@ -200,7 +200,7 @@ static double prepare_sort(struct box *b, hist_item achv[])
+ #if __GNUC__ >= 9 || __clang__
+     #pragma omp parallel for if (colors > 25000) \
+         schedule(static) default(none) shared(achv, channels, colors, ind1)
+-#else
++#elif !defined(_MSC_VER)
+     #pragma omp parallel for if (colors > 25000) \
+         schedule(static) default(none) shared(achv, channels)
+ #endif
+@@ -217,8 +217,10 @@ static double prepare_sort(struct box *b, hist_item achv[])
+     // box will be split to make color_weight of each side even
+     const unsigned int ind = b->ind, end = ind+b->colors;
+     double totalvar = 0;
++#ifndef _MSC_VER
+     #pragma omp parallel for if (end - ind > 15000) \
+         schedule(static) default(shared) reduction(+:totalvar)
++#endif
+     for(unsigned int j=ind; j < end; j++) totalvar += (achv[j].color_weight = color_weight(median, achv[j]));
+     return totalvar / 2.0;
+ }
+@@ -439,8 +441,10 @@ static f_pixel averagepixels(unsigned int clrs, const hist_item achv[])
+ {
+     double r = 0, g = 0, b = 0, a = 0, sum = 0;
+ 
++#ifndef _MSC_VER
+     #pragma omp parallel for if (clrs > 25000) \
+         schedule(static) default(shared) reduction(+:a) reduction(+:r) reduction(+:g) reduction(+:b) reduction(+:sum)
++#endif
+     for(unsigned int i = 0; i < clrs; i++) {
+         const f_pixel px = achv[i].acolor;
+         const double weight = achv[i].adjusted_weight;
