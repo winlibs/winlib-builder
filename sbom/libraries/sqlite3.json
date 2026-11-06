@@ -20,5 +20,33 @@
     "text": "The author disclaims copyright to this source code. In place of a legal notice, here is a blessing: May you do good and not evil. May you find forgiveness for yourself and forgive others. May you share freely, never taking more than you give."
   },
   "purl": "pkg:generic/sqlite@{upstreamVersion}",
-  "cpe": "cpe:2.3:a:sqlite:sqlite:{upstreamVersion}:*:*:*:*:*:*:*"
+  "cpe": "cpe:2.3:a:sqlite:sqlite:{upstreamVersion}:*:*:*:*:*:*:*",
+  "patchedBuilds": [
+    {
+      "tag": "sqlite3-3.54.1-1",
+      "upstream": {
+        "repository": "sqlite/sqlite",
+        "tag": "version-3.54.1",
+        "version": "3.54.1"
+      },
+      "fork": {
+        "repository": "winlibs/sqlite3",
+        "tag": "sqlite3-3.54.1-1"
+      },
+      "notAffectedCves": [
+        {
+          "id": "CVE-2026-119586",
+          "source": "NVD",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-119586",
+          "detail": "The Winlibs build does not define SQLITE_ENABLE_DBPAGE_VTAB, so shell.c sets SQLITE_SHELL_HAVE_RECOVER to 0 and excludes the recovery implementation and .recover command from sqlite3.exe. The SQLite DLL and static library also exclude the shell. Published x86, x64 and ARM64 executables were verified to reject .recover and omit ENABLE_DBPAGE_VTAB from PRAGMA compile_options.",
+          "justification": "vulnerable_code_not_present",
+          "references": [
+            "https://github.com/winlibs/sqlite3/blob/9652784a43e2719e1ab71f3276b87e5be8a66696/Makefile#L18",
+            "https://github.com/winlibs/sqlite3/blob/9652784a43e2719e1ab71f3276b87e5be8a66696/shell.c#L20770",
+            "https://github.com/shivammathur/test-setup-php/actions/runs/42209715450"
+          ]
+        }
+      ]
+    }
+  ]
 }
