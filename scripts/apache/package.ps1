@@ -76,7 +76,8 @@ if (Test-Path $staticLibRoot) {
     }
 }
 
-Get-ChildItem -Path $packageLibRoot -Filter 'lib*.lib' -File | ForEach-Object {
+Get-ChildItem -Path $packageLibRoot -Filter 'lib*.lib' -File |
+    Where-Object { $_.BaseName -notin @('libz', 'libzs') } | ForEach-Object {
     $aliasName = $_.Name.Substring(3)
     $aliasTarget = Join-Path $packageLibRoot $aliasName
     if (-not (Test-Path $aliasTarget)) {

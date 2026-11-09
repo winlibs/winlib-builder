@@ -1,14 +1,15 @@
 # Based on microsoft/vcpkg 07f4812200df3d3c931c0c8a6081d3b21fe2bf9f ports/zlib.
-# zlib-1.3.2-1 includes the CVE-2026-85091 backport.
+# Use zlib 1.4 with its upstream MSVC library names.
 # When this port is updated, the minizip port should be updated at the same time
 vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
     REPO winlibs/zlib
-    REF 838fe0e338adb28f5662e5ac332b0f0eb96ba93a
-    SHA512 5db24ac7c4ec4a311269d22cf213b06cfd60684ad6963a1be2437efd9e1b42d0847e0cdf29facfbd19ba1dd324ccb1683d211dd94017d623b6865f66f66a8848
+    REF cf7eb981cf4fce56a88608c68fd3f255a2c452c9
+    SHA512 7d44dcae97cbc5581b021346837aa58cef57902ea2382cb2289d187afa2402be6a09c8775de422c2262216d15164dc3c1e3a1e462da68700ce722ec7882181da
     HEAD_REF master
     PATCHES
         0001-no-version-script-on-ohos.patch
+        0002-honor-selected-library-components.patch
 )
 
 string(COMPARE EQUAL "${VCPKG_LIBRARY_LINKAGE}" "dynamic" ZLIB_BUILD_SHARED)
@@ -27,17 +28,20 @@ vcpkg_copy_pdbs()
 vcpkg_cmake_config_fixup(CONFIG_PATH "lib/cmake/zlib")
 vcpkg_fixup_pkgconfig()
 
-if(VCPKG_TARGET_IS_WINDOWS AND VCPKG_LIBRARY_LINKAGE STREQUAL "static")
-    vcpkg_replace_string("${CURRENT_PACKAGES_DIR}/lib/pkgconfig/zlib.pc" " -lz" " -lzs")
+set(ZLIB_PKGCONFIG_LIBRARY z)
+if(VCPKG_TARGET_IS_WINDOWS)
+    if(NOT VCPKG_TARGET_IS_MINGW)
+        set(ZLIB_PKGCONFIG_LIBRARY libz)
+    endif()
+    if(VCPKG_LIBRARY_LINKAGE STREQUAL "static")
+        string(APPEND ZLIB_PKGCONFIG_LIBRARY s)
+    endif()
 endif()
+vcpkg_replace_string("${CURRENT_PACKAGES_DIR}/lib/pkgconfig/zlib.pc" " -lz" " -l${ZLIB_PKGCONFIG_LIBRARY}")
 if(NOT VCPKG_BUILD_TYPE)
     vcpkg_replace_string("${CURRENT_PACKAGES_DIR}/debug/lib/pkgconfig/zlib.pc" "/include" "/../include")
     if(VCPKG_TARGET_IS_WINDOWS)
-        if(VCPKG_LIBRARY_LINKAGE STREQUAL "static")
-            vcpkg_replace_string("${CURRENT_PACKAGES_DIR}/debug/lib/pkgconfig/zlib.pc" " -lz" " -lzsd")
-        else()
-            vcpkg_replace_string("${CURRENT_PACKAGES_DIR}/debug/lib/pkgconfig/zlib.pc" " -lz" " -lzd")
-        endif()
+        vcpkg_replace_string("${CURRENT_PACKAGES_DIR}/debug/lib/pkgconfig/zlib.pc" " -lz" " -l${ZLIB_PKGCONFIG_LIBRARY}d")
     endif()
 endif()
 

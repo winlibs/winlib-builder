@@ -10,7 +10,7 @@ try {
     $env:PATH = "$sharedRoot/bin;$originalPath"
     foreach ($linkage in 'shared', 'static') {
         $zlibRoot = if ($linkage -eq 'static') { $staticRoot } else { $sharedRoot }
-        $zlibLibrary = if ($linkage -eq 'static') { 'zs.lib' } else { 'z.lib' }
+        $zlibLibrary = if ($linkage -eq 'static') { 'libzs.lib' } else { 'libz.lib' }
         $exe = Join-Path $env:RUNNER_TEMP "apache-compression-$linkage.exe"
         $object = Join-Path $env:RUNNER_TEMP "apache-compression-$linkage.obj"
         & cl.exe /nologo /W4 /MD "/I$zlibRoot/include" "/I$sharedRoot/include" $source "/Fo$object" "/Fe$exe" /link `

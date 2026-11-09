@@ -112,6 +112,8 @@ jobs:
             -DPCRE_CFLAGS="${{ steps.httpd_profile.outputs.pcre_flags }}" ^
             -DNGHTTP2_INCLUDE_DIR="${{ steps.deps.outputs.deps_root }}/include" ^
             -DNGHTTP2_LIBRARIES="${{ steps.deps.outputs.deps_root }}/lib/nghttp2.lib" ^
+            -DZLIB_INCLUDE_DIR="${{ steps.deps.outputs.deps_root }}/include" ^
+            -DZLIB_LIBRARY_RELEASE="${{ steps.deps.outputs.deps_root }}/lib/libz.lib" ^
             -DBROTLI_INCLUDE_DIR="${{ steps.deps.outputs.deps_root }}/include" ^
             "-DBROTLI_LIBRARIES=${{ steps.deps.outputs.deps_root }}/lib/brotlienc.lib;${{ steps.deps.outputs.deps_root }}/lib/brotlicommon.lib" ^
             -DCURL_INCLUDE_DIR="${{ steps.deps.outputs.deps_root }}/include" ^
@@ -130,6 +132,16 @@ jobs:
 
       - name: Install apache/httpd
         run: cmake --install build --config Release
+
+      - name: Check Apache zlib linkage
+        shell: pwsh
+        run: |
+          $PSNativeCommandUseErrorActionPreference = $true
+          $env:PATH = "${{ steps.deps.outputs.deps_root }}/bin;$env:PATH"
+          & ./apache-install/bin/httpd.exe -v
+          $imports = & dumpbin /nologo /dependents ./apache-install/modules/mod_deflate.so
+          if (-not ($imports -match '^\s+libz\.dll\s*$')) { throw 'mod_deflate must link to libz.dll' }
+          Write-Host 'Apache zlib linkage passed: libz.dll'
 
       - name: Package apache
         run: >-

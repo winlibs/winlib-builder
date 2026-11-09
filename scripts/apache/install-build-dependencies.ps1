@@ -6,8 +6,13 @@ param (
 $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $true
 
-# Both linkage variants must use the same reviewed security backport. The
-# overlay's distinct version also invalidates vcpkg's old binary cache entries.
+# Use a source mirror during Lua.org outages; vcpkg still verifies its pinned hash.
+$luaPort = 'C:/vcpkg/ports/lua/portfile.cmake'
+(Get-Content $luaPort -Raw).Replace('URLS "https://www.lua.org/ftp/lua-${VERSION}.tar.gz"',
+    'URLS "https://distfiles.alpinelinux.org/distfiles/edge/lua-${VERSION}.tar.gz" "https://www.lua.org/ftp/lua-${VERSION}.tar.gz"') | Set-Content $luaPort
+
+# Both linkage variants must use the same overlay sources.
+# The overlay versions invalidate vcpkg's older binary cache entries.
 $env:VCPKG_OVERLAY_PORTS = Join-Path $PSScriptRoot 'vcpkg-ports'
 "VCPKG_OVERLAY_PORTS=$env:VCPKG_OVERLAY_PORTS" | Add-Content $env:GITHUB_ENV
 

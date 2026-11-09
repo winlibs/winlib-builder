@@ -14,9 +14,8 @@ int main(void) {
     gzFile file;
     size_t i;
 
-    CHECK(strcmp(zlibVersion(), "1.3.2") == 0);
-    CHECK(BrotliDecoderVersion() == 0x01002001);
-    CHECK(BrotliEncoderVersion() == 0x01002001);
+    CHECK(strcmp(zlibVersion(), ZLIB_VERSION) == 0);
+    CHECK(BrotliDecoderVersion() == BrotliEncoderVersion());
     for (i = 0; i < sizeof(input); i++) input[i] = (unsigned char)(i * 37 + i / 23);
     CHECK(compress2(compressed, &compressed_size, input, sizeof(input), Z_BEST_COMPRESSION) == Z_OK);
     CHECK(uncompress(output, &output_size, compressed, compressed_size) == Z_OK);
@@ -40,6 +39,7 @@ int main(void) {
         sizeof(input), input, &brotli_size, compressed));
     CHECK(BrotliDecoderDecompress(brotli_size, compressed, &decoded_size, output) == BROTLI_DECODER_RESULT_SUCCESS);
     CHECK(decoded_size == sizeof(input) && memcmp(input, output, sizeof(input)) == 0);
-    printf("Apache compression QA passed: zlib %s; Brotli 1.2.1; deflate, gzip write/printf/read, Brotli encode/decode\n", zlibVersion());
+    printf("Apache compression QA passed: zlib %s; Brotli %u.%u.%u; deflate, gzip write/printf/read, Brotli encode/decode\n", zlibVersion(),
+        BrotliDecoderVersion() >> 24, (BrotliDecoderVersion() >> 12) & 0xfff, BrotliDecoderVersion() & 0xfff);
     return 0;
 }
